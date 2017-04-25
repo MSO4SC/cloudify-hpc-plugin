@@ -1,0 +1,20 @@
+plugins:
+    # Name could be anything, this name is what appears on the beginning of operation
+    # mappings.
+    hpc:
+        # Could be 'central_deployment_agent' or 'host_agent'.
+        # If 'central_deployment_agent', this plugin will be executed on the
+        # deployment dedicated agent, other wise it will be executed on the host agent.
+        # We set it the 'central_deployment_agent' here because 'host_agent' plugins should
+        # be contained in a host and this is not required for testing purposes
+        executor: central_deployment_agent
+
+        # Setting install to false in testing environment. In the non-test plugin definition
+        # this property could be omitted usually (its default is true), in which case
+        # the source property should be set
+        install: false
+
+        # source: URL to archive containing the plugin or name of directory containing
+        #         the plugin if it is included in the the blueprint directory under the
+        #         "plugins" directory. Not required in testing environments as the plugin
+        #         need not be installed on any agent
