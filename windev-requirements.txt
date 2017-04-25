@@ -3,4 +3,5 @@
 -e git+https://github.com/cloudify-cosmo/cloudify-plugins-common@4.0.1#egg=cloudify-plugins-common==4.0.1
 nose
 mock
+pypiwin32
 pycrypto
