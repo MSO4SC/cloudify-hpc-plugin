@@ -24,11 +24,11 @@ from hpc_plugin.ssh import SshClient
 
 
 @operation
-def my_task(some_property, file_name, credentials_path, **kwargs):
-    """ blah """
-    # setting node instance runtime property
-    ctx.instance.runtime_properties['some_property'] = some_property
-
+def login_connection(credentials_path, **kwargs):
+    """ Tries to connect to a login node
+    TODO Generate an error if connectio is not possible
+    TODO Error Handling
+    """
     ctx.logger.info('Connecting to login node. Credentials_file: {0}'
                     .format(os.getcwd() + '/' + credentials_path))
 
@@ -38,12 +38,13 @@ def my_task(some_property, file_name, credentials_path, **kwargs):
         client = SshClient(credentials['host'],
                            credentials['user'],
                            credentials['password'])
-        client.send_command('touch '+file_name)
+        result, _ = client.send_command('uname')
+    ctx.instance.runtime_properties['login'] = result
 
 
 @operation
 def preconfigure_job(credentials_path, **kwargs):
-    """ blah """
+    """ Set the job with the HPC credentials """
     ctx.logger.info('Preconfiguring HPC job. Credentials_file: {0}'
                     .format(os.getcwd() + '/' + credentials_path))
 
@@ -60,7 +61,7 @@ def preconfigure_job(credentials_path, **kwargs):
 
 @operation
 def send_job(_command, **kwargs):
-    """ blah """
+    """ Sends a job to the HPC """
     # setting node instance runtime property
     ctx.instance.runtime_properties['job_sent'] = _command
 

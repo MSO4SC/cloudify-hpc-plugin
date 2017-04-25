@@ -18,3 +18,46 @@ plugins:
         #         the plugin if it is included in the the blueprint directory under the
         #         "plugins" directory. Not required in testing environments as the plugin
         #         need not be installed on any agent
+
+node_types:
+    hpc.nodes.slurm:
+        derived_from: cloudify.nodes.Compute
+        properties:
+            credentials:
+                description: file in which ssh connection credentials are stored
+                type: string
+            agent_config:
+                default:
+                    install_method: none
+        interfaces:
+            cloudify.interfaces.lifecycle:
+                start:
+                    implementation: hpc.hpc_plugin.tasks.login_connection
+                    inputs:
+                        credentials_path:
+                            default: { get_property: [SELF, credentials] }
+
+    hpc.nodes.job:
+        derived_from: cloudify.nodes.Root
+        properties:
+            command:
+                type: string
+        interfaces:
+            cloudify.interfaces.lifecycle:
+                start:
+                    implementation: hpc.hpc_plugin.tasks.send_job
+                    inputs:
+                        _command:
+                            default: { get_property: [SELF, command] }
+
+relationships:
+    job_contained_in_hpc:
+        derived_from: cloudify.relationships.contained_in
+        source_interfaces:
+            cloudify.interfaces.relationship_lifecycle:
+                preconfigure:
+                    implementation: hpc.hpc_plugin.tasks.preconfigure_job
+                    inputs:
+                        credentials_path: 
+                            default: { get_property: [TARGET, credentials] }
+                            

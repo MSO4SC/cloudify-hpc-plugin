@@ -38,9 +38,9 @@ class TestPlugin(unittest.TestCase):
         instance = cfy_local.storage.get_node_instances()[0]
 
         # assert runtime properties is properly set in node instance
-        self.assertEqual(instance.runtime_properties['some_property'],
-                         'new_test_input')
+        self.assertEqual(instance.runtime_properties['login'],
+                         True)
 
         # assert deployment outputs are ok
         self.assertDictEqual(cfy_local.outputs(),
-                             {'test_output': 'new_test_input'})
+                             {'job_command': 'touch job.test'})

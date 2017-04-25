@@ -13,16 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-# DSL version, should appear in the main blueprint.yaml
-# and may appear in other imports. In such case, the versions must match
 tosca_definitions_version: cloudify_dsl_1_3
 
 imports:
-    # importing cloudify related types, plugins, workflow, etc...
     # to speed things up, it is possible downloading this file,
-    # including it in the blueprint directory and importing it
-    # instead.
     - http://www.getcloudify.org/spec/cloudify/4.0.1/types.yaml
     # relative import of plugin.yaml that resides in the blueprint directory
     - hpc_plugin/test_plugin.yaml
@@ -33,42 +27,10 @@ inputs:
         description: an input for the test
         default: default_test_input
 
-node_types:
-    hpc.nodes.slurm:
-        derived_from: cloudify.nodes.Compute
-        properties:
-            credentials:
-                description: file in which ssh connection credentials are stored
-                type: string
-            agent_config:
-                default:
-                    install_method: none
-        interfaces:
-            cloudify.interfaces.lifecycle:
-                start:
-                    implementation: hpc.hpc_plugin.tasks.my_task
-                    inputs:
-                        some_property: 
-                            default: { get_input: test_input }
-                        file_name:
-                            default: "cloudify.test"
-                        credentials_path:
-                            default: { get_property: [SELF, credentials] }
 
-    hpc.nodes.job:
-        derived_from: cloudify.nodes.Root
-        properties:
-            command:
-                type: string
-        interfaces:
-            cloudify.interfaces.lifecycle:
-                start:
-                    implementation: hpc.hpc_plugin.tasks.send_job
-                    inputs:
-                        _command:
-                            default: { get_property: [SELF, command] }
 
 ################################################################################################
+node_types:
     hpc.nodes.cesga:
         derived_from: hpc.nodes.slurm
         properties:
@@ -76,25 +38,12 @@ node_types:
                 default: 'hpc_plugin\tests\blueprint\credentials\cesga.json'
 ################################################################################################
 
-relationships:
-    job_contained_in_hpc:
-        derived_from: cloudify.relationships.contained_in
-        source_interfaces:
-            cloudify.interfaces.relationship_lifecycle:
-                preconfigure:
-                    implementation: hpc.hpc_plugin.tasks.preconfigure_job
-                    inputs:
-                        credentials_path: 
-                            default: { get_property: [TARGET, credentials] }
-
-################################################################################################
-
 node_templates:
     hpc_node:
         # using base cloudify type
         type: hpc.nodes.cesga
     
-    test_job_template:
+    job_test:
         type: hpc.nodes.job
         properties:
             command: 'touch job.test'
@@ -105,6 +54,6 @@ node_templates:
 
 outputs:
     # example output the could be used to simplify assertions by test
-    test_output:
+    job_command:
         description: an output for the test
-        value: { get_attribute: [hpc_node, some_property] }
+        value: { get_attribute: [job_test, command] }
