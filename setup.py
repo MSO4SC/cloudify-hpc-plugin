@@ -31,15 +31,11 @@ setup(
     # This must correspond to the actual packages in the plugin.
     packages=['hpc_plugin'],
 
-    license='Apache 2.0',
     zip_safe=False,
     install_requires=[
         # Necessary dependency for developing plugins, do not remove!
         "cloudify-plugins-common>=4.0.1",
         "paramiko>=2.1.2"
     ],
-    test_requires=[
-        "cloudify-dsl-parser>=4.0.1",
-        "nose"
-    ]
+    license='LICENSE'
 )

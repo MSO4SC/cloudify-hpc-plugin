@@ -1,6 +1,4 @@
 plugins:
-  # Name could be anything, this name is what appears on the beginning of operation
-  # mappings.
   hpc:
     # Could be 'central_deployment_agent' or 'host_agent'.
     # If 'central_deployment_agent', this plugin will be executed on the
@@ -11,6 +9,8 @@ plugins:
     # the plugin if it is included in the the blueprint directory under the
     # "plugins" directory.
     source: https://github.com/MSO4SC/cloudify-hpc-plugin/archive/master.zip
+    package_name: cloudify-hpc-plugin
+    package_version: '0.1'
 
 node_types:
     hpc.nodes.slurm:
