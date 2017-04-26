@@ -23,11 +23,8 @@ imports:
 
 inputs:
     # example input that could be injected by test
-    test_input:
-        description: an input for the test
-        default: default_test_input
-
-
+    ft2_credentials:
+        description: Path to ft2 credentials file
 
 ################################################################################################
 node_types:
@@ -35,7 +32,7 @@ node_types:
         derived_from: hpc.nodes.slurm
         properties:
             credentials: 
-                default: 'hpc_plugin\tests\blueprint\credentials\cesga.json'
+                default: { get_input: ft2_credentials }
 ################################################################################################
 
 node_templates:

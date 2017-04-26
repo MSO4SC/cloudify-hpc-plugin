@@ -30,7 +30,7 @@ def login_connection(credentials_path, **kwargs):
     TODO Error Handling
     """
     ctx.logger.info('Connecting to login node. Credentials_file: {0}'
-                    .format(os.getcwd() + '/' + credentials_path))
+                    .format(os.path.join(os.getcwd(), credentials_path)))
 
     with open(credentials_path) as credentials_file:
         credentials = json.load(credentials_file)
@@ -46,7 +46,7 @@ def login_connection(credentials_path, **kwargs):
 def preconfigure_job(credentials_path, **kwargs):
     """ Set the job with the HPC credentials """
     ctx.logger.info('Preconfiguring HPC job. Credentials_file: {0}'
-                    .format(os.getcwd() + '/' + credentials_path))
+                    .format(os.path.join(os.getcwd(), credentials_path)))
 
     with open(credentials_path) as credentials_file:
         credentials = json.load(credentials_file)

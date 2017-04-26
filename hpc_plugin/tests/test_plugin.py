@@ -26,7 +26,11 @@ class TestPlugin(unittest.TestCase):
                    resources_to_copy=[(path.join('blueprint', 'hpc_plugin',
                                                  'test_plugin.yaml'),
                                        'hpc_plugin')],
-                   inputs={'test_input': 'new_test_input'})
+                   inputs={'ft2_credentials': path.join('hpc_plugin',
+                                                        'tests',
+                                                        'blueprint',
+                                                        'credentials',
+                                                        'cesga.json')})
     def test_my_task(self, cfy_local):
         """
 
