@@ -13,7 +13,7 @@ plugins:
     package_version: '0.1'
 
 node_types:
-    hpc.nodes.slurm:
+    hpc.nodes.Compute:
         derived_from: cloudify.nodes.Compute
         properties:
             credentials:

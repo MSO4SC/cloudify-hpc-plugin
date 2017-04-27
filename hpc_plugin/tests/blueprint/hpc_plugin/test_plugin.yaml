@@ -20,11 +20,14 @@ plugins:
         #         need not be installed on any agent
 
 node_types:
-    hpc.nodes.slurm:
+    hpc.nodes.Compute:
         derived_from: cloudify.nodes.Compute
         properties:
             credentials:
                 description: file in which ssh connection credentials are stored
+                type: string
+            workload_manager:
+                description: 'workload manager of the HPC (currently supported values: SLURM)'
                 type: string
             agent_config:
                 default:
@@ -60,4 +63,6 @@ relationships:
                     inputs:
                         credentials_path: 
                             default: { get_property: [TARGET, credentials] }
+                        workload_type:
+                            default: { get_property: [TARGET, workload_manager] }
                             

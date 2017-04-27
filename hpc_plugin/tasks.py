@@ -43,7 +43,7 @@ def login_connection(credentials_path, **kwargs):
 
 
 @operation
-def preconfigure_job(credentials_path, **kwargs):
+def preconfigure_job(credentials_path, workload_type, **kwargs):
     """ Set the job with the HPC credentials """
     ctx.logger.info('Preconfiguring HPC job. Credentials_file: {0}'
                     .format(os.path.join(os.getcwd(), credentials_path)))
@@ -57,6 +57,8 @@ def preconfigure_job(credentials_path, **kwargs):
         client.send_command('touch preconfigure.test')
 
         ctx.source.instance.runtime_properties['credentials'] = credentials
+        ctx.source.instance.runtime_properties['workload_manager'] = \
+            workload_type
 
 
 @operation
@@ -65,8 +67,10 @@ def send_job(_command, **kwargs):
     # setting node instance runtime property
     ctx.instance.runtime_properties['job_sent'] = _command
 
-    ctx.logger.info('Connecting to login node. Command: {0}'
-                    .format(_command))
+    ctx.logger.info('Connecting to login node. Workload: {0}. Command: {1}'
+                    .format(ctx.instance.
+                            runtime_properties['workload_manager'],
+                            _command))
 
     credentials = ctx.instance.runtime_properties['credentials']
 

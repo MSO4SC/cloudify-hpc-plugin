@@ -29,10 +29,12 @@ inputs:
 ################################################################################################
 node_types:
     hpc.nodes.cesga:
-        derived_from: hpc.nodes.slurm
+        derived_from: hpc.nodes.Compute
         properties:
             credentials: 
                 default: { get_input: ft2_credentials }
+            workload_manager:
+                default: 'SLURM'
 ################################################################################################
 
 node_templates:
