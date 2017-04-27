@@ -34,8 +34,8 @@ setup(
     zip_safe=False,
     install_requires=[
         # Necessary dependency for developing plugins, do not remove!
-        "cloudify-plugins-common>=4.0.1",
-        "paramiko>=2.1.2"
+        "cloudify-plugins-common",
+        "paramiko"
     ],
     license='LICENSE'
 )
