@@ -56,7 +56,7 @@ class SshClient(object):
         """Sends a command and returns stdout, stderr and exitcode"""
 
         # Check if connection is made previously
-        if self._client:
+        if self._client is not None:
             # there is one channel per command
             stdin, stdout, stderr = self._client.exec_command(
                 command,
@@ -120,12 +120,13 @@ class SshClient(object):
 
             if want_exitcode:
                 # exit code is always ready at this point
-                return (True,
-                        ''.join(stdout_chunks),
+                return (''.join(stdout_chunks),
                         stdout.channel.recv_exit_status())
-            return (True, ''.join(stdout_chunks))
+            else:
+                return ''.join(stdout_chunks)
         else:
             if want_exitcode:
                 # exit code is always ready at this point
-                return (False, '', 0)
-            return (False, '')
+                return (None, None)
+            else:
+                return None

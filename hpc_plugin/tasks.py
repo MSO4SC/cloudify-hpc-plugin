@@ -16,11 +16,13 @@
 """ Holds the plugin tasks """
 import os
 import json
+import ast
 
 from cloudify import ctx
 from cloudify.decorators import operation
 
 from hpc_plugin.ssh import SshClient
+from hpc_plugin.slurm import submit_job
 
 
 @operation
@@ -38,8 +40,8 @@ def login_connection(credentials_path, **kwargs):
         client = SshClient(credentials['host'],
                            credentials['user'],
                            credentials['password'])
-        result, _ = client.send_command('uname')
-    ctx.instance.runtime_properties['login'] = result
+        _, exit_code = client.send_command('uname', want_exitcode=True)
+    ctx.instance.runtime_properties['login'] = (exit_code == 0)
 
 
 @operation
@@ -51,30 +53,37 @@ def preconfigure_job(credentials_path, workload_type, **kwargs):
     with open(credentials_path) as credentials_file:
         credentials = json.load(credentials_file)
 
-        client = SshClient(credentials['host'],
-                           credentials['user'],
-                           credentials['password'])
-        client.send_command('touch preconfigure.test')
-
         ctx.source.instance.runtime_properties['credentials'] = credentials
         ctx.source.instance.runtime_properties['workload_manager'] = \
             workload_type
 
 
 @operation
-def send_job(_command, **kwargs):
+def send_job(job_settings_json, **kwargs):
     """ Sends a job to the HPC """
-    # setting node instance runtime property
-    ctx.instance.runtime_properties['job_sent'] = _command
 
-    ctx.logger.info('Connecting to login node. Workload: {0}. Command: {1}'
+    ctx.logger.info('Connecting to login node using workload manager: {0}.'
                     .format(ctx.instance.
-                            runtime_properties['workload_manager'],
-                            _command))
+                            runtime_properties['workload_manager']))
+
+    # Transform json to double quotes (single quote not supported by json)
+    # job_settings_data = ast.literal_eval(job_settings_json)
+    # ctx.logger.info('{0}'.format(job_settings_data))
+    # job_settings = json.loads(job_settings_data)
+    job_settings = ast.literal_eval(job_settings_json)
 
     credentials = ctx.instance.runtime_properties['credentials']
 
     client = SshClient(credentials['host'],
                        credentials['user'],
                        credentials['password'])
-    client.send_command(_command)
+
+    # TODO(emepetres): use workload manager type
+    name = submit_job(client, 'cfy', job_settings)
+
+    client.close_connection()
+
+    if name is not None:
+        ctx.logger.info('Sent job with name ' + name)
+
+    ctx.instance.runtime_properties['job_name'] = name

@@ -14,13 +14,58 @@
 # limitations under the License.
 
 """ Holds the slurm functions """
+import string
+import random
+from hpc_plugin.ssh import SshClient
 
 
-def get_slurm_call(job_name, job_settings):
-    """ Generates slurm command line string """
+def submit_job(ssh_client, base_name, job_settings):
+    """
+    Sends a job to the HPC using Slurm
+
+    @type ssh_client: SshClient
+    @param ssh_client: ssh client connected to an HPC login node
+    @type base_name: string
+    @param base_name: base name of the job in slurm
+    @type job_settings: dictionary
+    @param job_settings: dictionary with the job options
+    @rtype string
+    @return Slurm's job name sent. None if an error arise.
+    """
+    if not isinstance(ssh_client, SshClient) or not ssh_client.is_open():
+        # TODO(emepetres): Raise error
+        return None
+
+    name = get_random_name(base_name)
+    call = get_slurm_call(name, job_settings)
+
+    if call is None:
+        # TODO(emepetres): Raise error
+        return None
+
+    _, exit_code = ssh_client.send_command(call, want_exitcode=True)
+
+    if exit_code == 0:
+        return name
+    else:
+        # TODO(emepetres): Raise error
+        return None
+
+
+def get_slurm_call(name, job_settings):
+    """
+    Generates slurm command line as a string
+
+    @type name: string
+    @param name: name of the job in slurm
+    @type job_settings: dictionary
+    @param job_settings: dictionary with the job options
+    @rtype string
+    @return string to call slurm with its parameters. None if an error arise.
+    """
 
     # check input information correctness
-    if not isinstance(job_settings, dict) or not isinstance(job_name,
+    if not isinstance(job_settings, dict) or not isinstance(name,
                                                             basestring):
         # TODO(emepetres): Raise error
         return None
@@ -39,9 +84,9 @@ def get_slurm_call(job_name, job_settings):
 
     if job_settings['type'] == 'SBATCH':
         # sbatch command plus job name
-        slurm_call += "sbatch -J '" + job_name + "'"
+        slurm_call += "sbatch -J '" + name + "'"
     elif job_settings['type'] == 'SRUN':
-        slurm_call += "nohup srun -J '" + job_name + "'"
+        slurm_call += "nohup srun -J '" + name + "'"
     else:
         # TODO(empetres): Raise error
         return None
@@ -78,67 +123,15 @@ def get_slurm_call(job_name, job_settings):
     return slurm_call
 
 
+def get_random_name(base_name):
+    return base_name + '_' + __id_generator()
+
+
+def __id_generator(size=6, chars=string.digits + string.ascii_letters):
+    return ''.join(random.SystemRandom().choice(chars) for _ in range(size))
+
+
 """
-  string getSlurmCall(const string& job_name,
-                      const slurm_framework::jobsettings& job_settings) const {
-    stringstream slurm_call_stream;
-
-    // first set modules
-    if (job_settings.modules_size() > 0) {
-      slurm_call_stream << "module load";
-      for (int i = 0; i < job_settings.modules_size(); ++i) {
-        slurm_call_stream << " " << job_settings.modules(i);
-      }
-      slurm_call_stream << " > mod.o; ";
-    }
-
-    if (job_settings.type() == slurm_framework::jobsettings::SBATCH) {
-      // sbatch command plus job name
-      slurm_call_stream << "sbatch -J '" << job_name << "'";
-    } else if (job_settings.type() == slurm_framework::jobsettings::SRUN) {
-      // srun command plus nohup to detach the execution from this session and
-      // job name
-      slurm_call_stream << "nohup srun -J '" << job_name << "'";
-    } else {
-      // TODO(emepetres) ERROR
-    }
-
-    // add slurm parameters
-    if (job_settings.has_partition()) {
-      slurm_call_stream << " -p " << job_settings.partition();
-    }
-
-    if (job_settings.has_nodes()) {
-      slurm_call_stream << " -N " << job_settings.nodes();
-    }
-
-    if (job_settings.has_tasks()) {
-      slurm_call_stream << " -n " << job_settings.tasks();
-    }
-
-    if (job_settings.has_tasks_per_node()) {
-      slurm_call_stream << " --ntasks-per-node="
-                        << job_settings.tasks_per_node();
-    }
-
-    if (job_settings.has_max_time()) {
-      slurm_call_stream << " -t " << job_settings.max_time();
-    }
-
-    // add executable and arguments
-    slurm_call_stream << " " << job_settings.command();
-
-    //    //disable output
-    //    slurm_call_stream << " >/dev/null 2>&1";
-
-    if (job_settings.type() == slurm_framework::jobsettings::SRUN) {
-      // run in the background (don't get blocked until it finish)
-      slurm_call_stream << " &";
-    }
-
-    return slurm_call_stream.str();
-  }
-
   int callSlurm(const string& slurm_call) const {
     ssh_channel channel;
     int rc;

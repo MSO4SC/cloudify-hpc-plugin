@@ -45,7 +45,7 @@ node_templates:
     job_test:
         type: hpc.nodes.job
         properties:
-            command: 'touch job.test'
+            job_config: "{'command': 'touch cfy.test', 'type': 'SRUN', 'max_time': '00:10'}"
         relationships:
             - type: job_contained_in_hpc
               target: hpc_node
@@ -53,6 +53,6 @@ node_templates:
 
 outputs:
     # example output the could be used to simplify assertions by test
-    job_command:
+    job_name:
         description: an output for the test
-        value: { get_attribute: [job_test, command] }
+        value: { get_attribute: [job_test, job_name] }

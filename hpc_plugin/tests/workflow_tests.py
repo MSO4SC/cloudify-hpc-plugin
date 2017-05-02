@@ -32,11 +32,8 @@ class TestPlugin(unittest.TestCase):
                                                         'blueprint',
                                                         'credentials',
                                                         'cesga.json')})
-    def test_my_task(self, cfy_local):
-        """
-
-        :param cfy_local:
-        """
+    def test_install(self, cfy_local):
+        """ Install workflow. """
         cfy_local.execute('install', task_retries=0)
 
         # extract single node instance
@@ -51,5 +48,4 @@ class TestPlugin(unittest.TestCase):
             logging.warning('[WARNING] Login could not be tested')
 
         # assert deployment outputs are ok
-        self.assertDictEqual(cfy_local.outputs(),
-                             {'job_command': 'touch job.test'})
+        self.assertEqual(cfy_local.outputs()['job_name'][:4], 'cfy_')
