@@ -66,4 +66,6 @@ relationships:
                             default: { get_property: [TARGET, credentials] }
                         workload_type:
                             default: { get_property: [TARGET, workload_manager] }
-                            
+
+    job_depends_on:
+        derived_from: cloudify.relationships.depends_on

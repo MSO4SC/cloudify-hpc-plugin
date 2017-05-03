@@ -57,3 +57,6 @@ relationships:
                     inputs:
                         credentials_path: 
                             default: { get_property: [TARGET, credentials] }
+
+    job_depends_on:
+        derived_from: cloudify.relationships.depends_on

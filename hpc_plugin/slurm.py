@@ -19,7 +19,7 @@ import random
 from hpc_plugin.ssh import SshClient
 
 
-def submit_job(ssh_client, base_name, job_settings):
+def submit_job(ssh_client, name, job_settings):
     """
     Sends a job to the HPC using Slurm
 
@@ -34,22 +34,23 @@ def submit_job(ssh_client, base_name, job_settings):
     """
     if not isinstance(ssh_client, SshClient) or not ssh_client.is_open():
         # TODO(emepetres): Raise error
-        return None
+        return False
 
-    name = get_random_name(base_name)
     call = get_slurm_call(name, job_settings)
 
     if call is None:
         # TODO(emepetres): Raise error
-        return None
+        return False
 
-    _, exit_code = ssh_client.send_command(call, want_exitcode=True)
-
-    if exit_code == 0:
-        return name
+    is_submitted = False
+    # if we execute srun we don't want output (it can take long)
+    if job_settings['type'] == 'SRUN':
+        is_submitted = ssh_client.send_command(call)
     else:
-        # TODO(emepetres): Raise error
-        return None
+        _, exit_code = ssh_client.send_command(call, want_output=True)
+        is_submitted = (exit_code == 0)
+
+    return is_submitted
 
 
 def get_slurm_call(name, job_settings):
@@ -124,6 +125,7 @@ def get_slurm_call(name, job_settings):
 
 
 def get_random_name(base_name):
+    """ Get a random name with a prefix """
     return base_name + '_' + __id_generator()
 
 

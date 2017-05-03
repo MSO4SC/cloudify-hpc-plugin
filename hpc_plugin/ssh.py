@@ -28,7 +28,7 @@ class SshClient(object):
     _client = None
 
     def __init__(self, address, username, password, port=22):
-        print "Connecting to server ", str(address)+":"+str(port)
+        # print "Connecting to server ", str(address)+":"+str(port)
         self._client = client.SSHClient()
         self._client.set_missing_host_key_policy(client.AutoAddPolicy())
         self._client.connect(
@@ -52,7 +52,7 @@ class SshClient(object):
                      command,
                      exec_timeout=3000,
                      read_chunk_timeout=500,
-                     want_exitcode=False):
+                     want_output=False):
         """Sends a command and returns stdout, stderr and exitcode"""
 
         # Check if connection is made previously
@@ -61,72 +61,74 @@ class SshClient(object):
             stdin, stdout, stderr = self._client.exec_command(
                 command,
                 timeout=exec_timeout)
-            # get the shared channel for stdout/stderr/stdin
-            channel = stdout.channel
 
-            # we do not need stdin
-            stdin.close()
-            # indicate that we're not going to write to that channel anymore
-            channel.shutdown_write()
+            if want_output:
+                # get the shared channel for stdout/stderr/stdin
+                channel = stdout.channel
 
-            # read stdout/stderr in order to prevent read block hangs
-            stdout_chunks = []
-            stdout_chunks.append(stdout.channel.recv(
-                len(stdout.channel.in_buffer)))
-            # chunked read to prevent stalls
-            while (not channel.closed
-                   or channel.recv_ready()
-                   or channel.recv_stderr_ready()):
-                # Stop if channel was closed prematurely,
-                # and there is no data in the buffers.
-                got_chunk = False
-                readq, _, _ = select.select([stdout.channel],
-                                            [],
-                                            [],
-                                            read_chunk_timeout)
-                for c in readq:
-                    if c.recv_ready():
-                        stdout_chunks.append(stdout.channel.recv(
-                            len(c.in_buffer)))
-                        got_chunk = True
-                    if c.recv_stderr_ready():
-                        # make sure to read stderr to prevent stall
-                        stderr.channel.recv_stderr(len(c.in_stderr_buffer))
-                        got_chunk = True
-                '''
-                1) make sure that there are at least 2 cycles with no data in
-                    the input buffers in order to not exit too early (i.e.
-                    cat on a >200k file).
-                2) if no data arrived in the last loop, check if we already
-                    received the exit code
-                3) check if input buffers are empty
-                4) exit the loop
-                '''
-                if (not got_chunk
-                        and stdout.channel.exit_status_ready()
-                        and not stderr.channel.recv_stderr_ready()
-                        and not stdout.channel.recv_ready()):
-                    # Indicate that we're not going to read from
-                    # this channel anymore
-                    stdout.channel.shutdown_read()
-                    # close the channel
-                    stdout.channel.close()
-                    # Exit as remote side is finished & our bufferes are empty
-                    break
+                # we do not need stdin
+                stdin.close()
+                # indicate that we're not going to write to that channel
+                channel.shutdown_write()
+
+                # read stdout/stderr in order to prevent read block hangs
+                stdout_chunks = []
+                stdout_chunks.append(stdout.channel.recv(
+                    len(stdout.channel.in_buffer)))
+                # chunked read to prevent stalls
+                while (not channel.closed
+                       or channel.recv_ready()
+                       or channel.recv_stderr_ready()):
+                    # Stop if channel was closed prematurely,
+                    # and there is no data in the buffers.
+                    got_chunk = False
+                    readq, _, _ = select.select([stdout.channel],
+                                                [],
+                                                [],
+                                                read_chunk_timeout)
+                    for c in readq:
+                        if c.recv_ready():
+                            stdout_chunks.append(stdout.channel.recv(
+                                len(c.in_buffer)))
+                            got_chunk = True
+                        if c.recv_stderr_ready():
+                            # make sure to read stderr to prevent stall
+                            stderr.channel.recv_stderr(len(c.in_stderr_buffer))
+                            got_chunk = True
+                    '''
+                    1) make sure that there are at least 2 cycles with no data
+                        in the input buffers in order to not exit too early
+                        (i.e. cat on a >200k file).
+                    2) if no data arrived in the last loop, check if we already
+                        received the exit code
+                    3) check if input buffers are empty
+                    4) exit the loop
+                    '''
+                    if (not got_chunk
+                            and stdout.channel.exit_status_ready()
+                            and not stderr.channel.recv_stderr_ready()
+                            and not stdout.channel.recv_ready()):
+                        # Indicate that we're not going to read from
+                        # this channel anymore
+                        stdout.channel.shutdown_read()
+                        # close the channel
+                        stdout.channel.close()
+                        # Remote side is finished & our bufferes are empty
+                        break
 
             # close all the pseudofiles
             stdout.close()
             stderr.close()
 
-            if want_exitcode:
+            if want_output:
                 # exit code is always ready at this point
                 return (''.join(stdout_chunks),
                         stdout.channel.recv_exit_status())
             else:
-                return ''.join(stdout_chunks)
+                return True
         else:
-            if want_exitcode:
+            if want_output:
                 # exit code is always ready at this point
                 return (None, None)
             else:
-                return None
+                return False
