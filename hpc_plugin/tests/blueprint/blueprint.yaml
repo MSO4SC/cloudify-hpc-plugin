@@ -45,7 +45,7 @@ node_templates:
     first_job:
         type: hpc.nodes.job
         properties:
-            job_config: "{'command': 'touch cfy1.test', 'type': 'SRUN', 'max_time': '00:01'}"
+            job_config: "{'command': 'touch.script cfy1.test', 'type': 'SBATCH'}"
         relationships:
             - type: job_contained_in_hpc
               target: hpc_node
@@ -73,7 +73,7 @@ node_templates:
     fourth_job:
         type: hpc.nodes.job
         properties:
-            job_config: "{'command': 'touch cfy4.test', 'type': 'SRUN', 'max_time': '00:01'}"
+            job_config: "{'command': 'touch.script cfy4.test', 'type': 'SBATCH'}"
         relationships:
             - type: job_contained_in_hpc
               target: hpc_node

@@ -22,7 +22,7 @@ from cloudify import ctx
 from cloudify.decorators import operation
 
 from hpc_plugin.ssh import SshClient
-from hpc_plugin.slurm import submit_job
+from hpc_plugin import slurm
 
 
 @operation
@@ -64,30 +64,57 @@ def preconfigure_job(credentials_path,
 def send_job(job_settings_json, **kwargs):  # pylint: disable=W0613
     """ Sends a job to the HPC """
 
-    ctx.logger.info('Connecting to login node using workload manager: {0}.'
-                    .format(ctx.instance.
-                            runtime_properties['workload_manager']))
+    if ctx.operation.retry_number == 0:
+        ctx.logger.info('Connecting to login node using workload manager: {0}.'
+                        .format(ctx.instance.
+                                runtime_properties['workload_manager']))
 
-    # Transform & load json to double quotes (single quote not supported)
-    job_settings = ast.literal_eval(job_settings_json)
+        # Transform & load json to double quotes (single quote not supported)
+        job_settings = ast.literal_eval(job_settings_json)
 
-    credentials = ctx.instance.runtime_properties['credentials']
+        credentials = ctx.instance.runtime_properties['credentials']
+        client = SshClient(credentials['host'],
+                           credentials['user'],
+                           credentials['password'])
 
-    client = SshClient(credentials['host'],
-                       credentials['user'],
-                       credentials['password'])
+        # TODO(emepetres): use workload manager type
+        is_submitted, job_id = slurm.submit_job(client,
+                                                ctx.instance.id,
+                                                job_settings)
+        job_id = slurm.get_jobid_by_name(client, ctx.instance.id)
 
-    ctx.logger.debug('Id: {0}.'.format(ctx.instance.id))
+        client.close_connection()
 
-    # TODO(emepetres): use workload manager type
-    is_submitted = submit_job(client, ctx.instance.id, job_settings)
+        if is_submitted:
+            ctx.logger.info('Job ' + ctx.instance.id + ' sent.')
+        else:
+            # TODO(empetres): Raise error
+            ctx.logger.error('Job ' + ctx.instance.id + ' not sent.')
+            return
 
-    client.close_connection()
+        ctx.instance.runtime_properties['job_name'] = ctx.instance.id
 
-    if is_submitted:
-        ctx.logger.info('Job ' + ctx.instance.id + ' sent.')
+        if job_id is None:
+            # Request a first retry after 30 seconds
+            return ctx.operation.retry(message='Waiting for JobID of ' +
+                                       ctx.instance.id + '..',
+                                       retry_after=30)
+        else:
+            ctx.instance.runtime_properties['job_id'] = job_id
     else:
-        # TODO(empetres): Raise error
-        ctx.logger.error('Job ' + ctx.instance.id + ' sent.')
+        credentials = ctx.instance.runtime_properties['credentials']
+        client = SshClient(credentials['host'],
+                           credentials['user'],
+                           credentials['password'])
 
-    ctx.instance.runtime_properties['job_name'] = ctx.instance.id
+        job_id = slurm.get_jobid_by_name(client, ctx.instance.id)
+
+        client.close_connection()
+
+        if job_id is None:
+            # Request a first retry after 60 seconds
+            return ctx.operation.retry(message='Waiting for JobID of '
+                                       + ctx.instance.id + '..',
+                                       retry_after=30)
+        else:
+            ctx.instance.runtime_properties['job_id'] = job_id

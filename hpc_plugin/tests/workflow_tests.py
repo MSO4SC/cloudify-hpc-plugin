@@ -34,7 +34,12 @@ class TestPlugin(unittest.TestCase):
                                                         'cesga.json')})
     def test_install(self, cfy_local):
         """ Install workflow. """
-        cfy_local.execute('install', task_retries=0)
+        cfy_local.execute('install', task_retries=10)
+
+        # self.assertRaises(RuntimeError,
+        #                   cfy_local.execute,
+        #                   'install',
+        #                   )
 
         # extract single node instance
         instance = cfy_local.storage.get_node_instances()[0]

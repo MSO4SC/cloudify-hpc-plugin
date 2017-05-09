@@ -89,7 +89,7 @@ class TestSlurm(unittest.TestCase):
         """ Basic sbatch command. """
         call = slurm.get_slurm_call('test', {'command': 'cmd',
                                              'type': 'SBATCH'})
-        self.assertEqual(call, "sbatch -J 'test' cmd")
+        self.assertEqual(call, "sbatch --parsable -J 'test' cmd")
 
     def test_complete_sbatch_call(self):
         """ Complete sbatch command. """
@@ -102,7 +102,7 @@ class TestSlurm(unittest.TestCase):
                                              'tasks_per_node': 24,
                                              'max_time': '05:00'})
         self.assertEqual(call, "module load mod1 mod2; "
-                               "sbatch -J 'test'"
+                               "sbatch --parsable -J 'test'"
                                " -p thinnodes"
                                " -N 4"
                                " -n 96"
@@ -124,3 +124,33 @@ class TestSlurm(unittest.TestCase):
             names.append(slurm.get_random_name('base'))
 
         self.assertEqual(len(names), len(set(names)))
+
+    def test_parse_clean_sbatch_output(self):
+        """ JobID parser from clean sbatch output """
+        parsed = slurm.parse_sbatch_jobid("012345\n")
+
+        self.assertEqual("012345", parsed)
+
+    def test_parse_dirty_sbatch_output(self):
+        """ JobID parser from dirty sbatch output """
+        parsed = slurm.parse_sbatch_jobid("012345;  \n")
+
+        self.assertEqual("012345", parsed)
+
+    def test_parse_complete_sbatch(self):
+        """ JobID parser from cluster name sbatch output """
+        parsed = slurm.parse_sbatch_jobid("012345;cluster_name\n")
+
+        self.assertEqual("012345", parsed)
+
+    def test_parse_sacct_jobid(self):
+        """ Parse JobID from sacct """
+        parsed = slurm.parse_sacct_jobid("012345\n123456\n234567\n")
+
+        self.assertEqual("012345", parsed)
+
+    def test_parse_clean_sacct_jobid(self):
+        """ Parse no output from sacct """
+        parsed = slurm.parse_sacct_jobid("\n")
+
+        self.assertIsNone(parsed)

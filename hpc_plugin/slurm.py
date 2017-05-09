@@ -43,14 +43,55 @@ def submit_job(ssh_client, name, job_settings):
         return False
 
     is_submitted = False
+    job_id = None
     # if we execute srun we don't want output (it can take long)
     if job_settings['type'] == 'SRUN':
         is_submitted = ssh_client.send_command(call)
-    else:
-        _, exit_code = ssh_client.send_command(call, want_output=True)
-        is_submitted = (exit_code == 0)
 
-    return is_submitted
+    else:
+        output, exit_code = ssh_client.send_command(call, want_output=True)
+        if exit_code == 0:
+            is_submitted = True
+            job_id = parse_sbatch_jobid('-------->'+output)
+
+    return is_submitted, job_id
+
+
+def get_jobid_by_name(ssh_client, job_name):
+    """
+    Get JobID from sacct command
+
+    This function uses sacct command to query Slurm. In this case Slurm
+    strongly recommends that the code should performs these queries once
+    every 60 seconds or longer. Using these commands contacts the master
+    controller directly, the same process responsible for scheduling all
+    work on the cluster. Polling more frequently, especially across all
+    users on the cluster, will slow down response times and may bring
+    scheduling to a crawl. Please don't.
+    """
+    call = "sacct -n -o jobid -X --name='" + job_name + "'"
+    output, exit_code = ssh_client.send_command(call, want_output=True)
+
+    job_id = None
+    if exit_code == 0:
+        job_id = parse_sacct_jobid(output)
+
+    return job_id
+
+
+def parse_sbatch_jobid(sbatch_output):
+    """ Get JobID from sbatch command output (parsable option activated) """
+    return sbatch_output.strip().split(';')[0]
+
+
+def parse_sacct_jobid(sbatch_output):
+    """ Get JobID from sbatch command output (parsable option activated) """
+    ids = sbatch_output.splitlines()
+    job_id = None
+    if ids and ids[0] is not '':
+        job_id = ids[0]
+
+    return job_id
 
 
 def get_slurm_call(name, job_settings):
@@ -85,7 +126,7 @@ def get_slurm_call(name, job_settings):
 
     if job_settings['type'] == 'SBATCH':
         # sbatch command plus job name
-        slurm_call += "sbatch -J '" + name + "'"
+        slurm_call += "sbatch --parsable -J '" + name + "'"
     elif job_settings['type'] == 'SRUN':
         slurm_call += "nohup srun -J '" + name + "'"
     else:
@@ -134,31 +175,6 @@ def __id_generator(size=6, chars=string.digits + string.ascii_letters):
 
 
 """
-  int callSlurm(const string& slurm_call) const {
-    ssh_channel channel;
-    int rc;
-    char buffer[256];
-    int nbytes;
-    channel = ssh_channel_new(my_ssh_session);
-    if (channel == NULL) return SSH_ERROR;
-    rc = ssh_channel_open_session(channel);
-    if (rc != SSH_OK) {
-      ssh_channel_free(channel);
-      return rc;
-    }
-    rc = ssh_channel_request_exec(channel, slurm_call.c_str());
-    if (rc != SSH_OK) {
-      ssh_channel_close(channel);
-      ssh_channel_free(channel);
-      return rc;
-    }
-
-    ssh_channel_send_eof(channel);
-    ssh_channel_close(channel);
-    ssh_channel_free(channel);
-    return SSH_OK;
-  }
-
   /** FIXME
    * We highly recommend that people writing meta-schedulers or that wish to
    * interrogate SLURM in scripts do so using the squeue and sacct commands. We
