@@ -9,9 +9,6 @@ install:
 - pip install tox
 script:
 - tox -e $TOX_ENV
-before_install:
-- openssl aes-256-cbc -K $encrypted_a985e5e25865_key -iv $encrypted_a985e5e25865_iv
-  -in hpc_plugin/tests/blueprint/credentials/cesga.json.enc -out hpc_plugin/tests/blueprint/credentials/cesga.json -d
 branches:
   only:
   - master

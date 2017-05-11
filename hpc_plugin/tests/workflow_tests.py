@@ -25,10 +25,8 @@ from cloudify.test_utils import workflow_test
 class TestPlugin(unittest.TestCase):
     """ Test workflows class """
 
-    def set_inputs(self, *args, **kwargs):
+    def set_inputs(self, *args, **kwargs):  # pylint: disable=W0613
         """ Parse inputs yaml file """
-        print args
-        print kwargs
         inputs = {}
         with open(os.path.join('hpc_plugin',
                                'tests',

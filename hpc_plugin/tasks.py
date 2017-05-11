@@ -43,20 +43,19 @@ def login_connection(credentials, **kwargs):  # pylint: disable=W0613
 
 @operation
 def preconfigure_job(credentials,
-                     workload_type,
+                     workload_manager,
                      **kwargs):  # pylint: disable=W0613
     """ Set the job with the HPC credentials """
     ctx.logger.info('Preconfiguring HPC job..')
 
     ctx.source.instance.runtime_properties['credentials'] = credentials
     ctx.source.instance.runtime_properties['workload_manager'] = \
-        workload_type
+        workload_manager
 
 
 @operation
 def send_job(job_settings_json, **kwargs):  # pylint: disable=W0613
     """ Sends a job to the HPC """
-
     if ctx.operation.retry_number == 0:
         ctx.logger.info('Connecting to login node using workload manager: {0}.'
                         .format(ctx.instance.

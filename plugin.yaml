@@ -29,7 +29,7 @@ node_types:
                 start:
                     implementation: hpc.hpc_plugin.tasks.login_connection
                     inputs:
-                        credentials_path:
+                        credentials:
                             default: { get_property: [SELF, credentials] }
 
     hpc.nodes.job:
@@ -54,8 +54,11 @@ relationships:
                 preconfigure:
                     implementation: hpc.hpc_plugin.tasks.preconfigure_job
                     inputs:
-                        credentials_path: 
+                        credentials: 
                             default: { get_property: [TARGET, credentials] }
+                        workload_type:
+                            default: { get_property: [TARGET, workload_manager] }
 
     job_depends_on:
         derived_from: cloudify.relationships.depends_on
+        
