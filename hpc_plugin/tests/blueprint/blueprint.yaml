@@ -22,25 +22,22 @@ imports:
     - hpc_plugin/test_plugin.yaml
 
 inputs:
-    # example input that could be injected by test
+    # CESGA FTII parameters
     ft2_credentials:
-        description: Path to ft2 credentials file
-
-################################################################################################
-node_types:
-    hpc.nodes.cesga:
-        derived_from: hpc.nodes.Compute
-        properties:
-            credentials: 
-                default: { get_input: ft2_credentials }
-            workload_manager:
-                default: 'SLURM'
-################################################################################################
+        description: FTII connection credentials
+        default: {}
+    
+    # SZE test infrastructure parameters
+    sze_credentials:
+        description: SZE test infrastructure credentials
+        default: {}
 
 node_templates:
-    hpc_node:
-        # using base cloudify type
-        type: hpc.nodes.cesga
+    ft2_node:
+        type: hpc.nodes.Compute
+        properties:
+            credentials: { get_input: ft2_credentials }
+            workload_manager: 'SLURM'
     
     first_job:
         type: hpc.nodes.job
@@ -48,7 +45,7 @@ node_templates:
             job_config: "{'command': 'touch.script cfy1.test', 'type': 'SBATCH'}"
         relationships:
             - type: job_contained_in_hpc
-              target: hpc_node
+              target: ft2_node
 
     second_parallel_job:
         type: hpc.nodes.job
@@ -56,7 +53,7 @@ node_templates:
             job_config: "{'command': 'touch cfy2.test', 'type': 'SRUN', 'max_time': '00:01'}"
         relationships:
             - type: job_contained_in_hpc
-              target: hpc_node
+              target: ft2_node
             - type: job_depends_on
               target: first_job
     
@@ -66,7 +63,7 @@ node_templates:
             job_config: "{'command': 'touch cfy3.test', 'type': 'SRUN', 'max_time': '00:01'}"
         relationships:
             - type: job_contained_in_hpc
-              target: hpc_node
+              target: ft2_node
             - type: job_depends_on
               target: first_job
 
@@ -76,7 +73,7 @@ node_templates:
             job_config: "{'command': 'touch.script cfy4.test', 'type': 'SBATCH'}"
         relationships:
             - type: job_contained_in_hpc
-              target: hpc_node
+              target: ft2_node
             - type: job_depends_on
               target: second_parallel_job
             - type: job_depends_on
@@ -84,7 +81,15 @@ node_templates:
 
 
 outputs:
-    # example output the could be used to simplify assertions by test
-    job_name:
-        description: an output for the test
+    first_job_name:
+        description: first job name
         value: { get_attribute: [first_job, job_name] }
+    second_job_name:
+        description: second job name
+        value: { get_attribute: [second_parallel_job, job_name] }
+    third_job_name:
+        description: third job name
+        value: { get_attribute: [third_parallel_job, job_name] }
+    fourth_job_name:
+        description: fourth job name
+        value: { get_attribute: [fourth_job, job_name] }

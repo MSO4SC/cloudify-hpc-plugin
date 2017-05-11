@@ -35,7 +35,8 @@ setup(
     install_requires=[
         # Necessary dependency for developing plugins, do not remove!
         "cloudify-plugins-common",
-        "paramiko"
+        "paramiko",
+        "pyyaml"
     ],
     license='LICENSE'
 )

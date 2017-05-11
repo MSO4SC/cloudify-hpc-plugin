@@ -18,7 +18,6 @@ node_types:
         properties:
             credentials:
                 description: file in which ssh connection credentials are stored
-                type: string
             workload_manager:
                 description: 'workload manager of the HPC (currently supported values: SLURM)'
                 type: string

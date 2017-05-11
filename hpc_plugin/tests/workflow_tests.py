@@ -14,24 +14,39 @@
 # limitations under the License.
 
 """ Holds the unit tests """
-from os import path
+import os
 import unittest
 import logging
+import yaml
 
 from cloudify.test_utils import workflow_test
 
 
 class TestPlugin(unittest.TestCase):
-    """ Test plugin class """
-    @workflow_test(path.join('blueprint', 'blueprint.yaml'),
-                   resources_to_copy=[(path.join('blueprint', 'hpc_plugin',
-                                                 'test_plugin.yaml'),
+    """ Test workflows class """
+
+    def set_inputs(self, *args, **kwargs):
+        """ Parse inputs yaml file """
+        print args
+        print kwargs
+        inputs = {}
+        with open(os.path.join('hpc_plugin',
+                               'tests',
+                               'blueprint',
+                               'blueprint-inputs.yaml'),
+                  'r') as stream:
+            try:
+                inputs = yaml.load(stream)
+            except yaml.YAMLError as exc:
+                print exc
+
+        return inputs
+
+    @workflow_test(os.path.join('blueprint', 'blueprint.yaml'),
+                   resources_to_copy=[(os.path.join('blueprint', 'hpc_plugin',
+                                                    'test_plugin.yaml'),
                                        'hpc_plugin')],
-                   inputs={'ft2_credentials': path.join('hpc_plugin',
-                                                        'tests',
-                                                        'blueprint',
-                                                        'credentials',
-                                                        'cesga.json')})
+                   inputs='set_inputs')
     def test_install(self, cfy_local):
         """ Install workflow. """
         cfy_local.execute('install', task_retries=10)

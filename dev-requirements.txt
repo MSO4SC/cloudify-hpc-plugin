@@ -4,3 +4,4 @@ https://github.com/cloudify-cosmo/cloudify-plugins-common/archive/4.0.1.zip
 nose
 mock
 pycrypto
+pyyaml

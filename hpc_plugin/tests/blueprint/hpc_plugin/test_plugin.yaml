@@ -25,7 +25,6 @@ node_types:
         properties:
             credentials:
                 description: file in which ssh connection credentials are stored
-                type: string
             workload_manager:
                 description: 'workload manager of the HPC (currently supported values: SLURM)'
                 type: string
@@ -37,7 +36,7 @@ node_types:
                 start:
                     implementation: hpc.hpc_plugin.tasks.login_connection
                     inputs:
-                        credentials_path:
+                        credentials:
                             default: { get_property: [SELF, credentials] }
 
     hpc.nodes.job:
@@ -62,7 +61,7 @@ relationships:
                 preconfigure:
                     implementation: hpc.hpc_plugin.tasks.preconfigure_job
                     inputs:
-                        credentials_path: 
+                        credentials: 
                             default: { get_property: [TARGET, credentials] }
                         workload_type:
                             default: { get_property: [TARGET, workload_manager] }

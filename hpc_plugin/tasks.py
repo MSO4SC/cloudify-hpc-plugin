@@ -26,38 +26,31 @@ from hpc_plugin import slurm
 
 
 @operation
-def login_connection(credentials_path, **kwargs):  # pylint: disable=W0613
+def login_connection(credentials, **kwargs):  # pylint: disable=W0613
     """ Tries to connect to a login node
     TODO Generate an error if connection is not possible
     TODO Error Handling
     """
-    ctx.logger.info('Connecting to login node. Credentials_file: {0}'
-                    .format(os.path.join(os.getcwd(), credentials_path)))
+    ctx.logger.info('Connecting to login node..')
 
-    with open(credentials_path) as credentials_file:
-        credentials = json.load(credentials_file)
+    client = SshClient(credentials['host'],
+                       credentials['user'],
+                       credentials['password'])
+    _, exit_code = client.send_command('uname', want_output=True)
 
-        client = SshClient(credentials['host'],
-                           credentials['user'],
-                           credentials['password'])
-        _, exit_code = client.send_command('uname', want_output=True)
     ctx.instance.runtime_properties['login'] = (exit_code == 0)
 
 
 @operation
-def preconfigure_job(credentials_path,
+def preconfigure_job(credentials,
                      workload_type,
                      **kwargs):  # pylint: disable=W0613
     """ Set the job with the HPC credentials """
-    ctx.logger.info('Preconfiguring HPC job. Credentials_file: {0}'
-                    .format(os.path.join(os.getcwd(), credentials_path)))
+    ctx.logger.info('Preconfiguring HPC job..')
 
-    with open(credentials_path) as credentials_file:
-        credentials = json.load(credentials_file)
-
-        ctx.source.instance.runtime_properties['credentials'] = credentials
-        ctx.source.instance.runtime_properties['workload_manager'] = \
-            workload_type
+    ctx.source.instance.runtime_properties['credentials'] = credentials
+    ctx.source.instance.runtime_properties['workload_manager'] = \
+        workload_type
 
 
 @operation
