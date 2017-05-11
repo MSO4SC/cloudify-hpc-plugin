@@ -42,7 +42,9 @@ node_templates:
     first_job:
         type: hpc.nodes.job
         properties:
-            job_config: "{'command': 'touch.script cfy1.test', 'type': 'SBATCH'}"
+            job_options:
+                type: 'SBATCH'
+                command: 'touch.script cfy1.test'
         relationships:
             - type: job_contained_in_hpc
               target: ft2_node
@@ -50,7 +52,10 @@ node_templates:
     second_parallel_job:
         type: hpc.nodes.job
         properties:
-            job_config: "{'command': 'touch cfy2.test', 'type': 'SRUN', 'max_time': '00:01'}"
+            job_options: 
+                type: 'SRUN'
+                command: 'touch cfy2.test'
+                max_time: '00:01'
         relationships:
             - type: job_contained_in_hpc
               target: ft2_node
@@ -60,7 +65,10 @@ node_templates:
     third_parallel_job:
         type: hpc.nodes.job
         properties:
-            job_config: "{'command': 'touch cfy3.test', 'type': 'SRUN', 'max_time': '00:01'}"
+            job_options:
+                type: 'SRUN'
+                command: 'touch cfy3.test'
+                max_time: '00:01'
         relationships:
             - type: job_contained_in_hpc
               target: ft2_node
@@ -70,7 +78,9 @@ node_templates:
     fourth_job:
         type: hpc.nodes.job
         properties:
-            job_config: "{'command': 'touch.script cfy4.test', 'type': 'SBATCH'}"
+            job_options:
+                type: 'SBATCH'
+                command: 'touch.script cfy1.test'
         relationships:
             - type: job_contained_in_hpc
               target: ft2_node
@@ -78,7 +88,6 @@ node_templates:
               target: second_parallel_job
             - type: job_depends_on
               target: third_parallel_job
-
 
 outputs:
     first_job_name:

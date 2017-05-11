@@ -42,16 +42,15 @@ node_types:
     hpc.nodes.job:
         derived_from: cloudify.nodes.Root
         properties:
-            job_config:
-                description: json with job configuration (execution parameters)
-                type: string
+            job_options:
+                description: job main command and options
         interfaces:
             cloudify.interfaces.lifecycle:
                 start:
                     implementation: hpc.hpc_plugin.tasks.send_job
                     inputs:
-                        job_settings_json:
-                            default: { get_property: [SELF, job_config] }
+                        job_options:
+                            default: { get_property: [SELF, job_options] }
 
 relationships:
     job_contained_in_hpc:

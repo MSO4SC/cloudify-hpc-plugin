@@ -54,15 +54,12 @@ def preconfigure_job(credentials,
 
 
 @operation
-def send_job(job_settings_json, **kwargs):  # pylint: disable=W0613
+def send_job(job_options, **kwargs):  # pylint: disable=W0613
     """ Sends a job to the HPC """
     if ctx.operation.retry_number == 0:
         ctx.logger.info('Connecting to login node using workload manager: {0}.'
                         .format(ctx.instance.
                                 runtime_properties['workload_manager']))
-
-        # Transform & load json to double quotes (single quote not supported)
-        job_settings = ast.literal_eval(job_settings_json)
 
         credentials = ctx.instance.runtime_properties['credentials']
         client = SshClient(credentials['host'],
@@ -72,7 +69,7 @@ def send_job(job_settings_json, **kwargs):  # pylint: disable=W0613
         # TODO(emepetres): use workload manager type
         is_submitted, job_id = slurm.submit_job(client,
                                                 ctx.instance.id,
-                                                job_settings)
+                                                job_options)
         job_id = slurm.get_jobid_by_name(client, ctx.instance.id)
 
         client.close_connection()
