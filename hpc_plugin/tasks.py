@@ -28,7 +28,7 @@ from hpc_plugin import slurm
 @operation
 def login_connection(credentials_path, **kwargs):  # pylint: disable=W0613
     """ Tries to connect to a login node
-    TODO Generate an error if connectio is not possible
+    TODO Generate an error if connection is not possible
     TODO Error Handling
     """
     ctx.logger.info('Connecting to login node. Credentials_file: {0}'
@@ -96,8 +96,8 @@ def send_job(job_settings_json, **kwargs):  # pylint: disable=W0613
 
         if job_id is None:
             # Request a first retry after 30 seconds
-            return ctx.operation.retry(message='Waiting for JobID of ' +
-                                       ctx.instance.id + '..',
+            return ctx.operation.retry(message='JobID of ' + ctx.instance.id
+                                       + ' not yet available..',
                                        retry_after=30)
         else:
             ctx.instance.runtime_properties['job_id'] = job_id
@@ -113,8 +113,8 @@ def send_job(job_settings_json, **kwargs):  # pylint: disable=W0613
 
         if job_id is None:
             # Request a first retry after 60 seconds
-            return ctx.operation.retry(message='Waiting for JobID of '
-                                       + ctx.instance.id + '..',
+            return ctx.operation.retry(message='JobID of ' + ctx.instance.id
+                                       + ' not yet available..',
                                        retry_after=30)
         else:
             ctx.instance.runtime_properties['job_id'] = job_id
