@@ -38,6 +38,7 @@ node_templates:
         properties:
             credentials: { get_input: ft2_credentials }
             workload_manager: 'SLURM'
+            simulate: True
     
     first_job:
         type: hpc.nodes.job

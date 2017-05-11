@@ -1,0 +1,15 @@
+#############################
+# Provider specific Inputs
+#############################
+
+# CESGA FTII credentials
+ft2_credentials:
+    host: "HOST"
+    user: "USER"
+    password: "PASSWD"
+
+# SZE test infrastructure credentials
+sze_credentials:
+    host: "HOST"
+    user: "USER"
+    password: "PASSWD"

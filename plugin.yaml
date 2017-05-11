@@ -21,6 +21,10 @@ node_types:
             workload_manager:
                 description: 'workload manager of the HPC (currently supported values: SLURM)'
                 type: string
+            simulate:
+                description: Set to true to simulate job without sending it
+                type: boolean
+                default: false
             agent_config:
                 default:
                     install_method: none
@@ -31,6 +35,8 @@ node_types:
                     inputs:
                         credentials:
                             default: { get_property: [SELF, credentials] }
+                        simulate:
+                            default: { get_property: [SELF, simulate] }
 
     hpc.nodes.job:
         derived_from: cloudify.nodes.Root
