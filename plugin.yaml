@@ -12,6 +12,9 @@ plugins:
     package_name: cloudify-hpc-plugin
     package_version: '0.1'
 
+workflows:
+    run: hpc.hpc_plugin.workflows.run
+
 node_types:
     hpc.nodes.Compute:
         derived_from: cloudify.nodes.Compute
@@ -44,8 +47,8 @@ node_types:
             job_options:
                 description: job main command and options
         interfaces:
-            cloudify.interfaces.lifecycle:
-                start:
+            hpc.interfaces.lifecycle:
+                queue:
                     implementation: hpc.hpc_plugin.tasks.send_job
                     inputs:
                         job_options:
