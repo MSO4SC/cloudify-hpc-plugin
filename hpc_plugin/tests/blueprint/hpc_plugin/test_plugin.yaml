@@ -20,7 +20,7 @@ plugins:
         #         need not be installed on any agent
 
 workflows:
-    run: hpc.hpc_plugin.workflows.run
+    run_jobs: hpc.hpc_plugin.workflows.run_jobs
 
 node_types:
     hpc.nodes.Compute:
