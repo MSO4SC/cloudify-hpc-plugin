@@ -13,7 +13,12 @@ plugins:
     package_version: '0.1'
 
 workflows:
-    run_jobs: hpc.hpc_plugin.workflows.run_jobs
+    run_jobs:
+        mapping: hpc.hpc_plugin.workflows.run_jobs
+        parameters:
+            simulate:
+                description: True to simulate the monitoring connection
+                default: False
 
 node_types:
     hpc.nodes.Compute:

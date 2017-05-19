@@ -42,22 +42,24 @@ def submit_job(ssh_client, name, job_settings):
         # TODO(emepetres): Raise error
         return False
 
-    is_submitted = False
-    job_id = None
-    # if we execute srun we don't want output (it can take long)
-    if job_settings['type'] == 'SRUN':
-        is_submitted = ssh_client.send_command(call)
+    # is_submitted = False
+    # job_id = None
+    # # if we execute srun we don't want output (it can take long)
+    # if job_settings['type'] == 'SRUN':
+    #     is_submitted = ssh_client.send_command(call)
 
-    else:
-        output, exit_code = ssh_client.send_command(call, want_output=True)
-        if exit_code == 0:
-            is_submitted = True
-            job_id = parse_sbatch_jobid('-------->'+output)
+    # else:
+    #     output, exit_code = ssh_client.send_command(call, want_output=True)
+    #     if exit_code == 0:
+    #         is_submitted = True
+    #         job_id = parse_sbatch_jobid('-------->'+output)
 
-    return is_submitted, job_id
+    # return is_submitted, job_id
+
+    return ssh_client.send_command(call)
 
 
-def get_jobid_by_name(ssh_client, job_name):
+def get_jobids_by_name(ssh_client, job_names):
     """
     Get JobID from sacct command
 
@@ -69,29 +71,50 @@ def get_jobid_by_name(ssh_client, job_name):
     users on the cluster, will slow down response times and may bring
     scheduling to a crawl. Please don't.
     """
-    call = "sacct -n -o jobid -X --name='" + job_name + "'"
+    # TODO(emepetres) set first day of consulting(sacct only check current day)
+    call = "sacct -n -o jobname%32,jobid -X --name=" + ','.join(job_names)
     output, exit_code = ssh_client.send_command(call, want_output=True)
 
-    job_id = None
+    ids = {}
     if exit_code == 0:
-        job_id = parse_sacct_jobid(output)
+        ids = parse_sacct(output)
 
-    return job_id
-
-
-def parse_sbatch_jobid(sbatch_output):
-    """ Get JobID from sbatch command output (parsable option activated) """
-    return sbatch_output.strip().split(';')[0]
+    return ids
 
 
-def parse_sacct_jobid(sbatch_output):
-    """ Get JobID from sbatch command output (parsable option activated) """
-    ids = sbatch_output.splitlines()
-    job_id = None
-    if ids and ids[0] is not '':
-        job_id = ids[0]
+def get_status(ssh_client, job_ids):
+    """
+    Get Status from sacct command
 
-    return job_id
+    This function uses sacct command to query Slurm. In this case Slurm
+    strongly recommends that the code should performs these queries once
+    every 60 seconds or longer. Using these commands contacts the master
+    controller directly, the same process responsible for scheduling all
+    work on the cluster. Polling more frequently, especially across all
+    users on the cluster, will slow down response times and may bring
+    scheduling to a crawl. Please don't.
+    """
+    # TODO(emepetres) set first day of consulting(sacct only check current day)
+    call = "sacct -n -o jobid,state -X --jobs=" + ','.join(job_ids)
+    output, exit_code = ssh_client.send_command(call, want_output=True)
+
+    states = {}
+    if exit_code == 0:
+        states = parse_sacct(output)
+
+    return states
+
+
+def parse_sacct(sacct_output):
+    """ Parse two colums sacct entries into a dict """
+    jobs = sacct_output.splitlines()
+    parsed = {}
+    if jobs and (len(jobs) > 1 or jobs[0] is not ''):
+        for job in jobs:
+            first, second = job.strip().split()
+            parsed[first] = second
+
+    return parsed
 
 
 def get_slurm_call(name, job_settings):

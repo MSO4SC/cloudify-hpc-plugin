@@ -14,25 +14,27 @@
 # limitations under the License.
 """ Holds the plugin workflows """
 
-# from time import sleep
+import time
 from cloudify.decorators import workflow
 from cloudify.workflows import ctx
 
-# from hpc_plugin import slurm
+from hpc_plugin.ssh import SshClient
+from hpc_plugin import slurm
 
 
 class JobGraphInstance(object):
     """ blah """
     def __init__(self, parent, instance):
         self.name = instance.id
-        self.status = 'WAITING'
+        self._status = 'WAITING'
         self.parent_node = parent
         self.cfy_instance = instance
+        self.job_id = -1
 
         if parent.type is 'hpc.nodes.job':
-            self.status = 'WAITING'
+            self._status = 'WAITING'
         else:
-            self.status = 'NONE'
+            self._status = 'NONE'
 
     def queue(self):
         """ blah """
@@ -44,15 +46,25 @@ class JobGraphInstance(object):
                                                      'lifecycle.queue')
         self.cfy_instance.send_event('..HPC job queued')
         result.task.wait_for_terminated()
-        self.status = 'RUNNING'
+        self._status = 'PENDING'
         # print result.task.dump()
 
     def is_finished(self):
         """ blah """
-        if self.parent_node.type is not 'hpc.nodes.job':
+        if not self.parent_node.type == 'hpc.nodes.job':
             return True
 
-        return self.status is 'FINISHED'
+        return self._status == 'FINISHED'
+
+    def has_job_id(self):
+        """ blah """
+        return self.job_id is not -1
+
+    def update_status(self, status):
+        """ blah """
+        if not status == self._status:
+            self._status = status
+            self.cfy_instance.send_event('State changed to '+self._status)
 
 
 class JobGraphNode(object):
@@ -62,14 +74,14 @@ class JobGraphNode(object):
         self.type = node.type
         self.cfy_node = node
 
-        if node.type is 'hpc.nodes.job':
+        if node.type == 'hpc.nodes.job':
             self.status = 'WAITING'
         else:
             self.status = 'NONE'
 
         self.instances = {}
         for instance in node.instances:
-            self.instances[self.name] = JobGraphInstance(self, instance)
+            self.instances[instance.id] = JobGraphInstance(self, instance)
 
         self.parents = []
         self.children = []
@@ -83,16 +95,6 @@ class JobGraphNode(object):
     def add_child(self, node):
         """ blah """
         self.children.append(node)
-
-    def get_next_jobs_nodes(self):
-        """ blah """
-        if self.cfy_node is 'hpc.nodes.job':
-            return [self]
-        else:
-            job_nodes = []
-            for child in self.children:
-                job_nodes += child.get_next_jobs_nodes()
-            return job_nodes
 
     def queue_all_instances(self):
         """ blah """
@@ -112,13 +114,17 @@ class JobGraphNode(object):
         for child in self.children:
             child.parent_depencencies_left -= 1
 
-    def is_finished(self):
-        """ blah """
-        if self.status is 'NONE':
+    def check_finished(self):
+        """
+        Check if all instances has finished
+
+        If all of them have finished, changes node status as well
+        """
+        if self.status == 'NONE':
             self._remove_children_dependency()
             return True
 
-        if self.status is 'FINISHED':
+        if self.status == 'FINISHED':
             return True
 
         for _, job_instance in self.instances.iteritems():
@@ -138,10 +144,16 @@ class JobGraphNode(object):
                 readys.append(child)
         return readys
 
+    def get_instances_iter(self):
+        """ blah """
+        return self.instances.iteritems()
+
     def __str__(self):
         to_print = self.name + '\n'
+        for name, _ in self.instances.iteritems():
+            to_print += '- ' + name + '\n'
         for child in self.children:
-            to_print += '\t' + child.name + '\n'
+            to_print += '    ' + child.name + '\n'
         return to_print
 
 
@@ -161,7 +173,7 @@ class JobGraph(object):
                 self.root_nodes.append(new_node)
 
         # then set relationships
-        for child_name, child in self.nodes.iteritems():
+        for _, child in self.nodes.iteritems():
             for relationship in child.cfy_node.relationships:
                 parent = self.nodes[relationship.target_node.id]
                 parent.add_child(child)
@@ -176,57 +188,129 @@ class JobGraph(object):
 
 class Monitor(object):
     """ blah """
-    def __init__(self):
+    def __init__(self, simulated):
         self.job_ids = {}
+        self.execution_pool = {}
+        self.timestamp = 0
+        self.simulated = simulated
 
-    def check_status(self, execution_pool):
+    def check_status(self):
         """ blah """
-        # FIXME(emepetres) MOCK implemented
-        for _, job_node in execution_pool.iteritems():
-            if job_node.cfy_node.type is 'hpc.nodes.job':
-                for _, job_instance in job_node.instances.itertitems():
-                    job_instance.status = 'FINISHED'
-                job_node.status = 'FINISHED'
+        # FIXME(emepetres) Direct Slurm monitoring implemented
 
-    def getJobId(self, job_name):
+        # We wait to not sature slurm
+        seconds_to_wait = 30 - (time.time() - self.timestamp)
+        if seconds_to_wait > 0:
+            time.sleep(seconds_to_wait)
+
+        if not self.simulated:
+            # first check what operations need to do
+            jobs_to_check_id = []
+            instances_nodes_map = {}
+            jobs_to_check_status = []
+            ids_instances_map = {}
+            for node_name, node in self.execution_pool.iteritems():
+                if node.type == 'hpc.nodes.job':
+                    for inst_name, inst in node.instances.iteritems():
+                        instances_nodes_map[inst_name] = node_name
+                        if not inst.has_job_id():
+                            jobs_to_check_id.append(inst_name)
+                        else:
+                            jobs_to_check_status.append(inst.job_id)
+                            ids_instances_map[inst.job_id] = inst_name
+
+            client = SshClient('[HOST]',
+                               '[USER]',
+                               '[PASSWD]')
+
+            # first try to get job ids
+            if jobs_to_check_id:
+                ids = slurm.get_jobids_by_name(client, jobs_to_check_id)
+                for job_name in jobs_to_check_id:
+                    if job_name in ids:
+                        job_node_name = instances_nodes_map[job_name]
+                        self.execution_pool[job_node_name].\
+                            instances[job_name].job_id = ids[job_name]
+                        jobs_to_check_status.append(ids[job_name])
+                        ids_instances_map[ids[job_name]] = job_name
+
+            # then look for the status of the jobs that we have id for
+            if jobs_to_check_status:
+                states = slurm.get_status(client, jobs_to_check_status)
+                for job_id in jobs_to_check_status:
+                    if job_id in states:
+                        # FIXME(emepetres): contemplate failed states
+                        if states[job_id] == 'BOOT_FAIL' or \
+                                states[job_id] == 'CANCELLED' or \
+                                states[job_id] == 'COMPLETED' or \
+                                states[job_id] == 'FAILED' or \
+                                states[job_id] == 'PREEMPTED' or \
+                                states[job_id] == 'REVOKED' or \
+                                states[job_id] == 'TIMEOUT':
+                            states[job_id] = 'FINISHED'
+
+                        job_instance_name = ids_instances_map[job_id]
+                        job_node_name = instances_nodes_map[job_instance_name]
+                        job_node = self.execution_pool[job_node_name]
+                        job_instance = job_node.instances[job_instance_name]
+                        job_instance.update_status(states[job_id])
+
+            client.close_connection()
+            self.timestamp = time.time()
+        else:
+            for _, job_node in self.execution_pool.iteritems():
+                if job_node.type == 'hpc.nodes.job':
+                    for _, job_instance in job_node.instances.iteritems():
+                        job_instance.update_status('FINISHED')
+
+    def get_executions_iterator(self):
         """ blah """
-        pass
+        return self.execution_pool.iteritems()
+
+    def add_node(self, node):
+        """ blah """
+        self.execution_pool[node.name] = node
+
+    def finish_node(self, node_name):
+        """ blah """
+        del self.execution_pool[node_name]
+
+    def is_something_executing(self):
+        """ blah """
+        return self.execution_pool
 
 
 @workflow
-def run_jobs(**kwargs):  # pylint: disable=W0613
+def run_jobs(simulate, **kwargs):  # pylint: disable=W0613
     """ Workflow to execute long running batch operations """
 
     graph = JobGraph(ctx.nodes)
-    print graph
-    print '------------------------------'
+    monitor = Monitor(simulate)
 
     # Execution of first job instances
-    execution_pool = {}
     for root in graph.root_nodes:
         root.queue_all_instances()
-        execution_pool[root.name] = root
+        monitor.add_node(root)
 
     # Monitoring and next executions loop
-    monitor = Monitor()
-    while execution_pool:
+    while monitor.is_something_executing():
         # Monitor the infrastructure
-        monitor.check_status(execution_pool)
+        monitor.check_status()
         exec_nodes_finished = []
         new_exec_nodes = []
-        for node_id, exec_node in execution_pool.iteritems():
+        for node_id, exec_node in monitor.get_executions_iterator():
             # TODO(emepetres): support different states
-            if exec_node.is_finished():
+            if exec_node.check_finished():
                 exec_nodes_finished.append(node_id)
                 new_nodes_to_execute = exec_node.get_children_ready()
                 for new_node in new_nodes_to_execute:
                     new_exec_nodes.append(new_node)
         # remove finished nodes
-        for node_id in exec_nodes_finished:
-            del execution_pool[node_id]
+        for node_name in exec_nodes_finished:
+            monitor.finish_node(node_name)
         # perform new executions
         for new_node in new_exec_nodes:
             new_node.queue_all_instances()
-            execution_pool[new_node.name] = new_node
+            monitor.add_node(new_node)
 
     return

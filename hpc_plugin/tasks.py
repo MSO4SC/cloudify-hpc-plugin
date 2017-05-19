@@ -59,60 +59,32 @@ def preconfigure_job(credentials,
 def send_job(job_options, **kwargs):  # pylint: disable=W0613
     """ Sends a job to the HPC """
     simulate = ctx.instance.runtime_properties['simulate']
-    if simulate or ctx.operation.retry_number == 0:
-        ctx.logger.info('Connecting to login node using workload manager: {0}.'
-                        .format(ctx.instance.
-                                runtime_properties['workload_manager']))
+    ctx.logger.info('Connecting to login node using workload manager: {0}.'
+                    .format(ctx.instance.
+                            runtime_properties['workload_manager']))
 
-        credentials = ctx.instance.runtime_properties['credentials']
+    credentials = ctx.instance.runtime_properties['credentials']
 
-        if not simulate:
-            client = SshClient(credentials['host'],
-                               credentials['user'],
-                               credentials['password'])
-
-            # TODO(emepetres): use workload manager type
-            is_submitted, job_id = slurm.submit_job(client,
-                                                    ctx.instance.id,
-                                                    job_options)
-            job_id = slurm.get_jobid_by_name(client, ctx.instance.id)
-
-            client.close_connection()
-        else:
-            ctx.logger.warning('Job ' + ctx.instance.id + ' simulated')
-            is_submitted = True
-            job_id = "012345"
-
-        if is_submitted:
-            ctx.logger.info('Job ' + ctx.instance.id + ' sent.')
-        else:
-            # TODO(empetres): Raise error
-            ctx.logger.error('Job ' + ctx.instance.id + ' not sent.')
-            return
-
-        ctx.instance.runtime_properties['job_name'] = ctx.instance.id
-
-        if job_id is None:
-            # Request a first retry after 30 seconds
-            return ctx.operation.retry(message='JobID of ' + ctx.instance.id
-                                       + ' not yet available..',
-                                       retry_after=30)
-        else:
-            ctx.instance.runtime_properties['job_id'] = job_id
-    else:
-        credentials = ctx.instance.runtime_properties['credentials']
+    if not simulate:
         client = SshClient(credentials['host'],
                            credentials['user'],
                            credentials['password'])
 
-        job_id = slurm.get_jobid_by_name(client, ctx.instance.id)
+        # TODO(emepetres): use workload manager type
+        is_submitted = slurm.submit_job(client,
+                                        ctx.instance.id,
+                                        job_options)
 
         client.close_connection()
+    else:
+        ctx.logger.warning('Job ' + ctx.instance.id + ' simulated')
+        is_submitted = True
 
-        if job_id is None:
-            # Request a first retry after 60 seconds
-            return ctx.operation.retry(message='JobID of ' + ctx.instance.id
-                                       + ' not yet available..',
-                                       retry_after=30)
-        else:
-            ctx.instance.runtime_properties['job_id'] = job_id
+    if is_submitted:
+        ctx.logger.info('Job ' + ctx.instance.id + ' sent.')
+    else:
+        # TODO(empetres): Raise error
+        ctx.logger.error('Job ' + ctx.instance.id + ' not sent.')
+        return
+
+    ctx.instance.runtime_properties['job_name'] = ctx.instance.id

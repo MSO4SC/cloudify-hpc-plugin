@@ -49,7 +49,9 @@ class TestPlugin(unittest.TestCase):
         """ Install & Run workflows. """
         cfy_local.execute('install', task_retries=10)
 
-        cfy_local.execute('run_jobs', task_retries=10)
+        cfy_local.execute('run_jobs',
+                          parameters={'simulate': True},
+                          task_retries=10)
 
         # extract single node instance
         instance = cfy_local.storage.get_node_instances()[0]

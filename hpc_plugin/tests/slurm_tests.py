@@ -125,32 +125,17 @@ class TestSlurm(unittest.TestCase):
 
         self.assertEqual(len(names), len(set(names)))
 
-    def test_parse_clean_sbatch_output(self):
-        """ JobID parser from clean sbatch output """
-        parsed = slurm.parse_sbatch_jobid("012345\n")
-
-        self.assertEqual("012345", parsed)
-
-    def test_parse_dirty_sbatch_output(self):
-        """ JobID parser from dirty sbatch output """
-        parsed = slurm.parse_sbatch_jobid("012345;  \n")
-
-        self.assertEqual("012345", parsed)
-
-    def test_parse_complete_sbatch(self):
-        """ JobID parser from cluster name sbatch output """
-        parsed = slurm.parse_sbatch_jobid("012345;cluster_name\n")
-
-        self.assertEqual("012345", parsed)
-
     def test_parse_sacct_jobid(self):
         """ Parse JobID from sacct """
-        parsed = slurm.parse_sacct_jobid("012345\n123456\n234567\n")
+        parsed = slurm.parse_sacct("   test1 012345\n  test2     "
+                                   "123456\n   test3    234567\n")
 
-        self.assertEqual("012345", parsed)
+        self.assertDictEqual(parsed, {'test1': '012345',
+                                      'test2': '123456',
+                                      'test3': '234567'})
 
-    def test_parse_clean_sacct_jobid(self):
+    def test_parse_clean_sacct(self):
         """ Parse no output from sacct """
-        parsed = slurm.parse_sacct_jobid("\n")
+        parsed = slurm.parse_sacct("\n")
 
-        self.assertIsNone(parsed)
+        self.assertDictEqual(parsed, {})
