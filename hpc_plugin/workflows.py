@@ -51,7 +51,7 @@ class JobGraphInstance(object):
 
     def is_finished(self):
         """ blah """
-        if not self.parent_node.type == 'hpc.nodes.job':
+        if not self.parent_node.is_job:
             return True
 
         return self._status == 'FINISHED'
