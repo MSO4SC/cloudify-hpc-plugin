@@ -198,59 +198,7 @@ def __id_generator(size=6, chars=string.digits + string.ascii_letters):
 
 
 """
-  /** FIXME
-   * We highly recommend that people writing meta-schedulers or that wish to
-   * interrogate SLURM in scripts do so using the squeue and sacct commands. We
-   * strongly recommend that your code performs these queries once every 60
-   * seconds or longer. Using these commands contacts the master controller
-   * directly, the same process responsible for scheduling all work on the
-   * cluster. Polling more frequently, especially across all users on the
-   * cluster, will slow down response times and may bring scheduling to a crawl
-   * Please don't.
-   */
-  int getJobIdByName(const string& name, ulong* jobid) const {
-    string command = "sacct -n -o jobid -X --name='" + name + "'";
-
-    ssh_channel channel;
-    int rc;
-    char buffer[256];
-    int nbytes;
-    channel = ssh_channel_new(my_ssh_session);
-    if (channel == NULL) return SSH_ERROR;
-    rc = ssh_channel_open_session(channel);
-    if (rc != SSH_OK) {
-      ssh_channel_free(channel);
-      return rc;
-    }
-    rc = ssh_channel_request_exec(channel, command.c_str());
-    if (rc != SSH_OK) {
-      ssh_channel_close(channel);
-      ssh_channel_free(channel);
-      return rc;
-    }
-
-    stringstream output;
-    nbytes = ssh_channel_read(channel, buffer, sizeof(buffer), 0);
-    while (nbytes > 0) {
-      output.write(buffer, nbytes);
-      nbytes = ssh_channel_read(channel, buffer, sizeof(buffer), 0);
-    }
-
-    if (nbytes < 0) {
-      ssh_channel_close(channel);
-      ssh_channel_free(channel);
-      return SSH_ERROR;
-    } else if (output.str().size() > 0) {
-      *jobid = std::stoul(output.str());
-    }
-
-    ssh_channel_send_eof(channel);
-    ssh_channel_close(channel);
-    ssh_channel_free(channel);
-    return SSH_OK;
-  }
-
-  /** FIXME
+  /** 
    * We highly recommend that people writing meta-schedulers or that wish to
    * interrogate SLURM in scripts do so using the squeue and sacct commands. We
    * strongly recommend that your code performs these queries once every 60
@@ -319,19 +267,6 @@ def __id_generator(size=6, chars=string.digits + string.ascii_letters):
     ssh_channel_close(channel);
     ssh_channel_free(channel);
     return SSH_OK;
-  }
-
-  string getRandomString(const int len) {
-    stringstream ramdom_ss;
-
-    boost::random::random_device rng;
-    boost::random::uniform_int_distribution<> index_dist(0,
-                                                         alphanum.size() - 1);
-    for (int i = 0; i < len; ++i) {
-      ramdom_ss << alphanum[index_dist(rng)];
-    }
-
-    return ramdom_ss.str();
   }
 };
 """

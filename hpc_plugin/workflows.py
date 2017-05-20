@@ -31,14 +31,14 @@ class JobGraphInstance(object):
         self.cfy_instance = instance
         self.job_id = -1
 
-        if parent.type is 'hpc.nodes.job':
+        if parent.is_job:
             self._status = 'WAITING'
         else:
             self._status = 'NONE'
 
     def queue(self):
         """ blah """
-        if not self.parent_node.type == 'hpc.nodes.job':
+        if not self.parent_node.is_job:
             return
 
         self.cfy_instance.send_event('Queuing HPC job..')
@@ -74,7 +74,12 @@ class JobGraphNode(object):
         self.type = node.type
         self.cfy_node = node
 
-        if node.type == 'hpc.nodes.job':
+        if 'hpc.nodes.job' in node.type_hierarchy:
+            self.is_job = True
+        else:
+            self.is_job = False
+
+        if self.is_job:
             self.status = 'WAITING'
         else:
             self.status = 'NONE'
@@ -98,7 +103,7 @@ class JobGraphNode(object):
 
     def queue_all_instances(self):
         """ blah """
-        if not self.type == 'hpc.nodes.job':
+        if not self.is_job:
             return
 
         for _, job_instance in self.instances.iteritems():
@@ -218,7 +223,7 @@ class Monitor(object):
             jobs_to_check_status = []
             ids_instances_map = {}
             for node_name, node in self.execution_pool.iteritems():
-                if node.type == 'hpc.nodes.job':
+                if node.is_job:
                     for inst_name, inst in node.instances.iteritems():
                         instances_nodes_map[inst_name] = node_name
                         if not inst.has_job_id():
@@ -267,7 +272,7 @@ class Monitor(object):
             self.timestamp = time.time()
         else:
             for _, job_node in self.execution_pool.iteritems():
-                if job_node.type == 'hpc.nodes.job':
+                if job_node.is_job:
                     for _, job_instance in job_node.instances.iteritems():
                         job_instance.update_status('FINISHED')
 
