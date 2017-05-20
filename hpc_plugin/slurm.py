@@ -198,7 +198,7 @@ def __id_generator(size=6, chars=string.digits + string.ascii_letters):
 
 
 """
-  /** 
+  /**
    * We highly recommend that people writing meta-schedulers or that wish to
    * interrogate SLURM in scripts do so using the squeue and sacct commands. We
    * strongly recommend that your code performs these queries once every 60
