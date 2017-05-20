@@ -63,7 +63,7 @@ node_types:
         interfaces:
             cloudify.interfaces.lifecycle:
                 start:
-                    implementation: hpc.hpc_plugin.tasks.deploy
+                    implementation: hpc.hpc_plugin.tasks.deploy_job
                     inputs:
                         deployment:
                             description: Deployment script and inputs
