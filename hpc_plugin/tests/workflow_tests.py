@@ -31,6 +31,7 @@ class TestPlugin(unittest.TestCase):
         with open(os.path.join('hpc_plugin',
                                'tests',
                                'blueprint',
+                               # MODIFY to test against a real HPC
                                'blueprint-inputs.yaml'),
                   'r') as stream:
             try:
@@ -43,14 +44,21 @@ class TestPlugin(unittest.TestCase):
     @workflow_test(os.path.join('blueprint', 'blueprint.yaml'),
                    resources_to_copy=[(os.path.join('blueprint', 'hpc_plugin',
                                                     'test_plugin.yaml'),
-                                       'hpc_plugin')],
+                                       'hpc_plugin'),
+                                      (os.path.join('blueprint', 'scripts',
+                                                    'deploy.sh'),
+                                       'scripts')],
                    inputs='set_inputs')
     def test_install(self, cfy_local):
         """ Install & Run workflows. """
         cfy_local.execute('install', task_retries=10)
 
         cfy_local.execute('run_jobs',
-                          parameters={'simulate': True},
+                          # MODIFY to test against a real HPC
+                          parameters={'simulate': True,
+                                      'monitor_config': {'host': '[HOST]',
+                                                         'user': '[USER]',
+                                                         'passwd': '[PASS]'}},
                           task_retries=10)
 
         # extract single node instance

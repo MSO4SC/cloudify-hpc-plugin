@@ -19,6 +19,12 @@ workflows:
             simulate:
                 description: True to simulate the monitoring connection
                 default: False
+            monitor_config:
+                description: Monitor system configuration
+                default:
+                    host: '[HOST]'
+                    user: '[USER]'
+                    passwd: '[PASSWD]'
 
 node_types:
     hpc.nodes.Compute:
@@ -49,9 +55,19 @@ node_types:
     hpc.nodes.job:
         derived_from: cloudify.nodes.Root
         properties:
+            deployment:
+                description: Deployment script and inputs
+                default: {}
             job_options:
-                description: job main command and options
+                description: Job main command and options
         interfaces:
+            cloudify.interfaces.lifecycle:
+                start:
+                    implementation: hpc.hpc_plugin.tasks.deploy
+                    inputs:
+                        deployment:
+                            description: Deployment script and inputs
+                            default: { get_property: [SELF, deployment] }
             hpc.interfaces.lifecycle:
                 queue:
                     implementation: hpc.hpc_plugin.tasks.send_job

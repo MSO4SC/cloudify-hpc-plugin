@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/MSO4SC/cloudify-hpc-plugin.svg?branch=master)](https://travis-ci.org/MSO4SC/cloudify-hpc-plugin)
+
 # cloudify-hpc-plugin
 Plugin to allow Cloudify to deploy and orchestrate HPC resources
 

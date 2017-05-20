@@ -188,11 +188,19 @@ class JobGraph(object):
 
 class Monitor(object):
     """ blah """
-    def __init__(self, simulated):
+    def __init__(self, simulated, config):
         self.job_ids = {}
         self.execution_pool = {}
         self.timestamp = 0
         self.simulated = simulated
+        if not simulated:
+            self.host = config['host']
+            self.user = config['user']
+            self.passwd = config['passwd']
+        else:
+            self.host = None
+            self.user = None
+            self.passwd = None
 
     def check_status(self):
         """ blah """
@@ -219,9 +227,9 @@ class Monitor(object):
                             jobs_to_check_status.append(inst.job_id)
                             ids_instances_map[inst.job_id] = inst_name
 
-            client = SshClient('[HOST]',
-                               '[USER]',
-                               '[PASSWD]')
+            client = SshClient(self.host,
+                               self.user,
+                               self.passwd)
 
             # first try to get job ids
             if jobs_to_check_id:
@@ -281,11 +289,11 @@ class Monitor(object):
 
 
 @workflow
-def run_jobs(simulate, **kwargs):  # pylint: disable=W0613
+def run_jobs(simulate, monitor_config, **kwargs):  # pylint: disable=W0613
     """ Workflow to execute long running batch operations """
 
     graph = JobGraph(ctx.nodes)
-    monitor = Monitor(simulate)
+    monitor = Monitor(simulate, monitor_config)
 
     # Execution of first job instances
     for root in graph.root_nodes:

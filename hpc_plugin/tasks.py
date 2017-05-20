@@ -14,6 +14,7 @@
 # limitations under the License.
 """ Holds the plugin tasks """
 
+import os
 from cloudify import ctx
 from cloudify.decorators import operation
 
@@ -53,6 +54,39 @@ def preconfigure_job(credentials,
     ctx.source.instance.runtime_properties['workload_manager'] = \
         workload_manager
     ctx.source.instance.runtime_properties['simulate'] = simulate
+
+
+@operation
+def deploy_job(deployment,
+               **kwarsgs):  # pylint: disable=W0613
+    """ Deploy a job using a script that receives SSH credentials as imput """
+    if not deployment:
+        return
+
+    ctx.logger.info('Deploying job..')
+
+    simulate = ctx.instance.runtime_properties['simulate']
+    if simulate:
+        ctx.logger.warning('HPC Deployment simulated')
+        return
+
+    # Build the execution call
+    call = os.path.normcase(deployment['file'])
+    credentials = ctx.instance.runtime_properties['credentials']
+    call += ' ' + credentials['host'] + ' ' + \
+        credentials['user'] + ' ' + \
+        credentials['password']
+    if 'inputs' in deployment:
+        for dinput in deployment['inputs']:
+            call += ' ' + dinput
+
+    print call
+    # Execute and print output
+    output = os.popen(call).read()
+    ctx.logger.info(output)
+
+    # TODO(emepetres): Handle errors
+    ctx.logger.info('..job deployed')
 
 
 @operation

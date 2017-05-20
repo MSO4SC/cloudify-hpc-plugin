@@ -38,7 +38,7 @@ node_templates:
         properties:
             credentials: { get_input: ft2_credentials }
             workload_manager: 'SLURM'
-            simulate: True
+            simulate: True  # MODIFY to test against a real HPC
     
     first_job:
         type: hpc.nodes.job
@@ -46,6 +46,10 @@ node_templates:
             job_options:
                 type: 'SBATCH'
                 command: 'touch.script cfy1.test'
+            deployment:
+                file: 'scripts/deploy.sh'
+                inputs:
+                    - 'first_job'
         relationships:
             - type: job_contained_in_hpc
               target: ft2_node
