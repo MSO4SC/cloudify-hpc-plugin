@@ -90,7 +90,7 @@ def deploy_job(deployment,
 
 
 @operation
-def send_job(job_options, **kwargs):  # pylint: disable=W0613
+def send_job(prefix_name, job_options, **kwargs):  # pylint: disable=W0613
     """ Sends a job to the HPC """
     simulate = ctx.instance.runtime_properties['simulate']
     ctx.logger.info('Connecting to login node using workload manager: {0}.'
@@ -99,6 +99,9 @@ def send_job(job_options, **kwargs):  # pylint: disable=W0613
 
     credentials = ctx.instance.runtime_properties['credentials']
 
+    instance_components = ctx.instance.id.split('_')
+    name = prefix_name + instance_components[-1]
+
     if not simulate:
         client = SshClient(credentials['host'],
                            credentials['user'],
@@ -106,19 +109,20 @@ def send_job(job_options, **kwargs):  # pylint: disable=W0613
 
         # TODO(emepetres): use workload manager type
         is_submitted = slurm.submit_job(client,
-                                        ctx.instance.id,
+                                        name,
                                         job_options)
 
         client.close_connection()
     else:
-        ctx.logger.warning('Job ' + ctx.instance.id + ' simulated')
+        ctx.logger.warning('Instance ' + ctx.instance.id + ' simulated')
         is_submitted = True
 
     if is_submitted:
-        ctx.logger.info('Job ' + ctx.instance.id + ' sent.')
+        ctx.logger.info('Job ' + name + ' (' + ctx.instance.id + ') sent.')
     else:
         # TODO(empetres): Raise error
-        ctx.logger.error('Job ' + ctx.instance.id + ' not sent.')
+        ctx.logger.error('Job ' + name + ' (' + ctx.instance.id +
+                         ') not sent.')
         return
 
-    ctx.instance.runtime_properties['job_name'] = ctx.instance.id
+    ctx.instance.runtime_properties['job_name'] = name

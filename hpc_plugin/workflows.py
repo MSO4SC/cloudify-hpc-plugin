@@ -25,10 +25,10 @@ from hpc_plugin import slurm
 class JobGraphInstance(object):
     """ blah """
     def __init__(self, parent, instance):
-        self.name = instance.id
+        self.name = 'UNKNOWN'
         self._status = 'WAITING'
         self.parent_node = parent
-        self.cfy_instance = instance
+        self.winstance = instance
         self.job_id = -1
 
         if parent.is_job:
@@ -41,11 +41,14 @@ class JobGraphInstance(object):
         if not self.parent_node.is_job:
             return
 
-        self.cfy_instance.send_event('Queuing HPC job..')
-        result = self.cfy_instance.execute_operation('hpc.interfaces.'
-                                                     'lifecycle.queue')
-        self.cfy_instance.send_event('..HPC job queued')
+        self.winstance.send_event('Queuing HPC job..')
+        result = self.winstance.execute_operation('hpc.interfaces.'
+                                                  'lifecycle.queue',
+                                                  kwargs={"prefix_name": "test_"},
+                                                  allow_kwargs_override=True)
+        self.winstance.send_event('..HPC job queued')
         result.task.wait_for_terminated()
+        self.name = 'test_'  # self.winstance._node_instance.runtime_properties['job_name']
         self._status = 'PENDING'
         # print result.task.dump()
 
@@ -64,7 +67,7 @@ class JobGraphInstance(object):
         """ blah """
         if not status == self._status:
             self._status = status
-            self.cfy_instance.send_event('State changed to '+self._status)
+            self.winstance.send_event('State changed to '+self._status)
 
 
 class JobGraphNode(object):
@@ -73,6 +76,7 @@ class JobGraphNode(object):
         self.name = node.id
         self.type = node.type
         self.cfy_node = node
+        print type(node)
 
         if 'hpc.nodes.job' in node.type_hierarchy:
             self.is_job = True
@@ -84,9 +88,10 @@ class JobGraphNode(object):
         else:
             self.status = 'NONE'
 
-        self.instances = {}
+        self.instances = []
         for instance in node.instances:
-            self.instances[instance.id] = JobGraphInstance(self, instance)
+            print type(instance)
+            self.instances.append(JobGraphInstance(self, instance))
 
         self.parents = []
         self.children = []
@@ -106,7 +111,7 @@ class JobGraphNode(object):
         if not self.is_job:
             return
 
-        for _, job_instance in self.instances.iteritems():
+        for job_instance in self.instances:
             job_instance.queue()
         self.status = 'RUNNING'
 
@@ -132,7 +137,7 @@ class JobGraphNode(object):
         if self.status == 'FINISHED':
             return True
 
-        for _, job_instance in self.instances.iteritems():
+        for job_instance in self.instances:
             if not job_instance.is_finished():
                 return False
 
@@ -149,14 +154,10 @@ class JobGraphNode(object):
                 readys.append(child)
         return readys
 
-    def get_instances_iter(self):
-        """ blah """
-        return self.instances.iteritems()
-
     def __str__(self):
         to_print = self.name + '\n'
-        for name, _ in self.instances.iteritems():
-            to_print += '- ' + name + '\n'
+        for instance in self.instances:
+            to_print += '- ' + instance.name + '\n'
         for child in self.children:
             to_print += '    ' + child.name + '\n'
         return to_print
@@ -224,13 +225,13 @@ class Monitor(object):
             ids_instances_map = {}
             for node_name, node in self.execution_pool.iteritems():
                 if node.is_job:
-                    for inst_name, inst in node.instances.iteritems():
-                        instances_nodes_map[inst_name] = node_name
+                    for inst in node.instances:
+                        instances_nodes_map[inst.name] = node_name
                         if not inst.has_job_id():
-                            jobs_to_check_id.append(inst_name)
+                            jobs_to_check_id.append(inst.name)
                         else:
                             jobs_to_check_status.append(inst.job_id)
-                            ids_instances_map[inst.job_id] = inst_name
+                            ids_instances_map[inst.job_id] = inst.name
 
             client = SshClient(self.host,
                                self.user,
@@ -273,7 +274,7 @@ class Monitor(object):
         else:
             for _, job_node in self.execution_pool.iteritems():
                 if job_node.is_job:
-                    for _, job_instance in job_node.instances.iteritems():
+                    for job_instance in job_node.instances:
                         job_instance.update_status('FINISHED')
 
     def get_executions_iterator(self):

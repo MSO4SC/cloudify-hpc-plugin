@@ -58,6 +58,9 @@ node_types:
             deployment:
                 description: Deployment script and inputs
                 default: {}
+            prefix_name:
+                description: Prefix of the job name
+                default: 'cloudify_'
             job_options:
                 description: Job main command and options
         interfaces:
@@ -72,6 +75,8 @@ node_types:
                 queue:
                     implementation: hpc.hpc_plugin.tasks.send_job
                     inputs:
+                        prefix_name:
+                            default: { get_property: [SELF, prefix_name] }
                         job_options:
                             default: { get_property: [SELF, job_options] }
 
