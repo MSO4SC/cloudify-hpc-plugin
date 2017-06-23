@@ -198,7 +198,7 @@ class Monitor(object):
     """ blah """
     def __init__(self, simulated, config):
         self.job_ids = {}
-        self.execution_pool = {}
+        self._execution_pool = {}
         self.timestamp = 0
         self.simulated = simulated
         if not simulated:
@@ -220,80 +220,54 @@ class Monitor(object):
             time.sleep(seconds_to_wait)
 
         if not self.simulated:
-            # first check what operations need to do
-            jobs_to_check_id = []
-            instances_nodes_map = {}
-            jobs_to_check_status = []
-            ids_instances_map = {}
-            for node_name, node in self.execution_pool.iteritems():
+            # first get the instances we need to check
+            instances_map = {}
+            for _, node in self.get_executions_iterator():
                 if node.is_job:
                     for inst in node.instances:
-                        instances_nodes_map[inst.name] = node_name
-                        if not inst.has_job_id():
-                            jobs_to_check_id.append(inst.name)
-                        else:
-                            jobs_to_check_status.append(inst.job_id)
-                            ids_instances_map[inst.job_id] = inst.name
+                        instances_map[inst.name] = inst
 
-            client = SshClient(self.host,
-                               self.user,
-                               self.passwd)
+            # then look for the status of the instances through its name
+            states = {}
+            # TODO(emepetres): check status prometheus(instances_map.keys())
+            for name in instances_map.keys():
+                states[name] = 'FINISHED'
+            #####
+            for inst_name, state in states.iteritems():
+                # FIXME(emepetres): contemplate failed states
+                if state == 'BOOT_FAIL' or \
+                        state == 'CANCELLED' or \
+                        state == 'COMPLETED' or \
+                        state == 'FAILED' or \
+                        state == 'PREEMPTED' or \
+                        state == 'REVOKED' or \
+                        state == 'TIMEOUT':
+                    state = 'FINISHED'
 
-            # first try to get job ids
-            if jobs_to_check_id:
-                ids = slurm.get_jobids_by_name(client, jobs_to_check_id)
-                for job_name in jobs_to_check_id:
-                    if job_name in ids:
-                        job_node_name = instances_nodes_map[job_name]
-                        self.execution_pool[job_node_name].\
-                            instances[job_name].job_id = ids[job_name]
-                        jobs_to_check_status.append(ids[job_name])
-                        ids_instances_map[ids[job_name]] = job_name
+                instances_map[inst_name].update_status(state)
 
-            # then look for the status of the jobs that we have id for
-            if jobs_to_check_status:
-                states = slurm.get_status(client, jobs_to_check_status)
-                for job_id in jobs_to_check_status:
-                    if job_id in states:
-                        # FIXME(emepetres): contemplate failed states
-                        if states[job_id] == 'BOOT_FAIL' or \
-                                states[job_id] == 'CANCELLED' or \
-                                states[job_id] == 'COMPLETED' or \
-                                states[job_id] == 'FAILED' or \
-                                states[job_id] == 'PREEMPTED' or \
-                                states[job_id] == 'REVOKED' or \
-                                states[job_id] == 'TIMEOUT':
-                            states[job_id] = 'FINISHED'
-
-                        job_instance_name = ids_instances_map[job_id]
-                        job_node_name = instances_nodes_map[job_instance_name]
-                        job_node = self.execution_pool[job_node_name]
-                        job_instance = job_node.instances[job_instance_name]
-                        job_instance.update_status(states[job_id])
-
-            client.close_connection()
             self.timestamp = time.time()
         else:
-            for _, job_node in self.execution_pool.iteritems():
+            for _, job_node in self._execution_pool.iteritems():
                 if job_node.is_job:
                     for job_instance in job_node.instances:
                         job_instance.update_status('FINISHED')
 
     def get_executions_iterator(self):
         """ blah """
-        return self.execution_pool.iteritems()
+        return self._execution_pool.iteritems()
 
     def add_node(self, node):
         """ blah """
-        self.execution_pool[node.name] = node
+        self._execution_pool[node.name] = node
 
     def finish_node(self, node_name):
         """ blah """
-        del self.execution_pool[node_name]
+        del self._execution_pool[node_name]
 
     def is_something_executing(self):
         """ blah """
-        return self.execution_pool
+        return self._execution_pool
 
 
 @workflow
@@ -317,10 +291,10 @@ def run_jobs(monitor_config,
         monitor.check_status()
         exec_nodes_finished = []
         new_exec_nodes = []
-        for node_id, exec_node in monitor.get_executions_iterator():
+        for node_name, exec_node in monitor.get_executions_iterator():
             # TODO(emepetres): support different states
             if exec_node.check_finished():
-                exec_nodes_finished.append(node_id)
+                exec_nodes_finished.append(node_name)
                 new_nodes_to_execute = exec_node.get_children_ready()
                 for new_node in new_nodes_to_execute:
                     new_exec_nodes.append(new_node)
