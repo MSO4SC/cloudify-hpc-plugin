@@ -90,7 +90,7 @@ def deploy_job(deployment,
 
 
 @operation
-def send_job(prefix_name, job_options, **kwargs):  # pylint: disable=W0613
+def send_job(job_options, **kwargs):  # pylint: disable=W0613
     """ Sends a job to the HPC """
     simulate = ctx.instance.runtime_properties['simulate']
     ctx.logger.info('Connecting to login node using workload manager: {0}.'
@@ -98,9 +98,7 @@ def send_job(prefix_name, job_options, **kwargs):  # pylint: disable=W0613
                             runtime_properties['workload_manager']))
 
     credentials = ctx.instance.runtime_properties['credentials']
-
-    instance_components = ctx.instance.id.split('_')
-    name = prefix_name + instance_components[-1]
+    name = kwargs['name']
 
     if not simulate:
         client = SshClient(credentials['host'],

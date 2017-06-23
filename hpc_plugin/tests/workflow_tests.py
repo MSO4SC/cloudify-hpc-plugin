@@ -55,11 +55,12 @@ class TestPlugin(unittest.TestCase):
 
         cfy_local.execute('run_jobs',
                           # MODIFY to test against a real HPC
-                          parameters={'simulate': True,
-                                      'monitor_config': {'host': '[HOST]',
+                          parameters={'monitor_config': {'host': '[HOST]',
                                                          'user': '[USER]',
-                                                         'passwd': '[PASS]'}},
-                          task_retries=10)
+                                                         'passwd': '[PASS]'},
+                                      'jobname_prefix': 'mso4sc',
+                                      'simulate': True},
+                          task_retries=0)
 
         # extract single node instance
         instance = cfy_local.storage.get_node_instances()[0]

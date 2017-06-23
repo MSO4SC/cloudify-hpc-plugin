@@ -24,8 +24,7 @@ from hpc_plugin import slurm
 
 class JobGraphInstance(object):
     """ blah """
-    def __init__(self, parent, instance):
-        self.name = 'UNKNOWN'
+    def __init__(self, parent, instance, prefix):
         self._status = 'WAITING'
         self.parent_node = parent
         self.winstance = instance
@@ -36,6 +35,10 @@ class JobGraphInstance(object):
         else:
             self._status = 'NONE'
 
+        # build job name
+        instance_components = instance.id.split('_')
+        self.name = prefix + instance_components[-1]
+
     def queue(self):
         """ blah """
         if not self.parent_node.is_job:
@@ -44,11 +47,10 @@ class JobGraphInstance(object):
         self.winstance.send_event('Queuing HPC job..')
         result = self.winstance.execute_operation('hpc.interfaces.'
                                                   'lifecycle.queue',
-                                                  kwargs={"prefix_name": "test_"},
-                                                  allow_kwargs_override=True)
+                                                  kwargs={"name": self.name})
         self.winstance.send_event('..HPC job queued')
         result.task.wait_for_terminated()
-        self.name = 'test_'  # self.winstance._node_instance.runtime_properties['job_name']
+
         self._status = 'PENDING'
         # print result.task.dump()
 
@@ -72,11 +74,10 @@ class JobGraphInstance(object):
 
 class JobGraphNode(object):
     """ blah """
-    def __init__(self, node):
+    def __init__(self, node, jobname_prefix):
         self.name = node.id
         self.type = node.type
         self.cfy_node = node
-        print type(node)
 
         if 'hpc.nodes.job' in node.type_hierarchy:
             self.is_job = True
@@ -90,8 +91,9 @@ class JobGraphNode(object):
 
         self.instances = []
         for instance in node.instances:
-            print type(instance)
-            self.instances.append(JobGraphInstance(self, instance))
+            self.instances.append(JobGraphInstance(self,
+                                                   instance,
+                                                   jobname_prefix))
 
         self.parents = []
         self.children = []
@@ -165,12 +167,12 @@ class JobGraphNode(object):
 
 class JobGraph(object):
     """ blah """
-    def __init__(self, nodes):
+    def __init__(self, nodes, jobname_prefix):
         # first create node structure
         self.nodes = {}
         self.root_nodes = []
         for node in nodes:
-            new_node = JobGraphNode(node)
+            new_node = JobGraphNode(node, jobname_prefix)
             self.nodes[node.id] = new_node
             # check if it is root node
             try:
@@ -295,11 +297,14 @@ class Monitor(object):
 
 
 @workflow
-def run_jobs(simulate, monitor_config, **kwargs):  # pylint: disable=W0613
+def run_jobs(monitor_config,
+             jobname_prefix,
+             simulate,
+             **kwargs):  # pylint: disable=W0613
     """ Workflow to execute long running batch operations """
 
-    graph = JobGraph(ctx.nodes)
-    monitor = Monitor(simulate, monitor_config)
+    graph = JobGraph(ctx.nodes, jobname_prefix)
+    monitor = Monitor(monitor_config, simulate)
 
     # Execution of first job instances
     for root in graph.root_nodes:
