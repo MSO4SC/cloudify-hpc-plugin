@@ -14,12 +14,47 @@
 # limitations under the License.
 """ Holds the plugin workflows """
 
+import sys
 import time
+import requests
+
 from cloudify.decorators import workflow
 from cloudify.workflows import ctx
 
-from hpc_plugin.ssh import SshClient
-from hpc_plugin import slurm
+
+BOOTFAIL = 0
+CANCELLED = 1
+COMPLETED = 2
+CONFIGURING = 3
+COMPLETING = 4
+FAILED = 5
+NODEFAIL = 6
+PENDING = 7
+PREEMPTED = 8
+REVOKED = 9
+RUNNING = 10
+SPECIALEXIT = 11
+STOPPED = 12
+SUSPENDED = 13
+TIMEOUT = 14
+
+JOBSTATES = [
+    "BOOT_FAIL",
+    "CANCELLED",
+    "COMPLETED",
+    "CONFIGURING",
+    "COMPLETING",
+    "FAILED",
+    "NODE_FAIL",
+    "PENDING",
+    "PREEMPTED",
+    "REVOKED",
+    "RUNNING",
+    "SPECIAL_EXIT",
+    "STOPPED",
+    "SUSPENDED",
+    "TIMEOUT",
+]
 
 
 class JobGraphInstance(object):
@@ -78,11 +113,7 @@ class JobGraphNode(object):
         self.name = node.id
         self.type = node.type
         self.cfy_node = node
-
-        if 'hpc.nodes.job' in node.type_hierarchy:
-            self.is_job = True
-        else:
-            self.is_job = False
+        self.is_job = 'hpc.nodes.job' in node.type_hierarchy
 
         if self.is_job:
             self.status = 'WAITING'
@@ -115,7 +146,7 @@ class JobGraphNode(object):
 
         for job_instance in self.instances:
             job_instance.queue()
-        self.status = 'RUNNING'
+        self.status = 'QUEUED'
 
     def is_ready(self):
         """ blah """
@@ -132,21 +163,23 @@ class JobGraphNode(object):
 
         If all of them have finished, changes node status as well
         """
-        if self.status == 'NONE':
-            self._remove_children_dependency()
-            return True
+        if not self.status == 'FINISHED':
+            if self.status == 'NONE':
+                self._remove_children_dependency()
+                self.status = 'FINISHED'
+            else:
+                all_finished = True
+                for job_instance in self.instances:
+                    if not job_instance.is_finished():
+                        all_finished = False
+                        break
 
-        if self.status == 'FINISHED':
-            return True
+                if all_finished:
+                    # The job node just finished, remove this dependency
+                    self.status = 'FINISHED'
+                    self._remove_children_dependency()
 
-        for job_instance in self.instances:
-            if not job_instance.is_finished():
-                return False
-
-        # The job node just finished, remove this dependency
-        self._remove_children_dependency()
-
-        return True
+        return self.status == 'FINISHED'
 
     def get_children_ready(self):
         """ blah """
@@ -165,42 +198,38 @@ class JobGraphNode(object):
         return to_print
 
 
-class JobGraph(object):
+def build_graph(nodes, jobname_prefix):
     """ blah """
-    def __init__(self, nodes, jobname_prefix):
-        # first create node structure
-        self.nodes = {}
-        self.root_nodes = []
-        for node in nodes:
-            new_node = JobGraphNode(node, jobname_prefix)
-            self.nodes[node.id] = new_node
-            # check if it is root node
-            try:
-                node.relationships.next()
-            except StopIteration:
-                self.root_nodes.append(new_node)
+    # first create node structure
+    nodes_map = {}
+    root_nodes = []
+    for node in nodes:
+        new_node = JobGraphNode(node, jobname_prefix)
+        nodes_map[node.id] = new_node
+        # check if it is root node
+        try:
+            node.relationships.next()
+        except StopIteration:
+            root_nodes.append(new_node)
 
-        # then set relationships
-        for _, child in self.nodes.iteritems():
-            for relationship in child.cfy_node.relationships:
-                parent = self.nodes[relationship.target_node.id]
-                parent.add_child(child)
-                child.add_parent(parent)
+    # then set relationships
+    for _, child in nodes_map.iteritems():
+        for relationship in child.cfy_node.relationships:
+            parent = nodes_map[relationship.target_node.id]
+            parent.add_child(child)
+            child.add_parent(parent)
 
-    def __str__(self):
-        to_print = ''
-        for _, node in self.nodes.iteritems():
-            to_print += node.__str__() + '\n'
-        return to_print
+    return root_nodes
 
 
 class Monitor(object):
     """ blah """
-    def __init__(self, simulated, config):
+    def __init__(self, config, simulated):
         self.job_ids = {}
         self._execution_pool = {}
         self.timestamp = 0
         self.simulated = simulated
+
         if not simulated:
             self.host = config['host']
             self.user = config['user']
@@ -212,12 +241,6 @@ class Monitor(object):
 
     def check_status(self):
         """ blah """
-        # FIXME(emepetres) Direct Slurm monitoring implemented
-
-        # We wait to not sature slurm
-        seconds_to_wait = 30 - (time.time() - self.timestamp)
-        if seconds_to_wait > 0:
-            time.sleep(seconds_to_wait)
 
         if not self.simulated:
             # first get the instances we need to check
@@ -227,12 +250,12 @@ class Monitor(object):
                     for inst in node.instances:
                         instances_map[inst.name] = inst
 
+            # nothing to do if we don't have nothing to monitor
+            if not instances_map:
+                return
+
             # then look for the status of the instances through its name
-            states = {}
-            # TODO(emepetres): check status prometheus(instances_map.keys())
-            for name in instances_map.keys():
-                states[name] = 'FINISHED'
-            #####
+            states = self._get_states(instances_map)
             for inst_name, state in states.iteritems():
                 # FIXME(emepetres): contemplate failed states
                 if state == 'BOOT_FAIL' or \
@@ -245,13 +268,36 @@ class Monitor(object):
                     state = 'FINISHED'
 
                 instances_map[inst_name].update_status(state)
-
-            self.timestamp = time.time()
         else:
             for _, job_node in self._execution_pool.iteritems():
                 if job_node.is_job:
                     for job_instance in job_node.instances:
                         job_instance.update_status('FINISHED')
+
+    def _get_states(self, instances):
+        if len(instances) == 1:
+            query = ('http://'+self.host+'/api/v1/query?query=job_status%7Bjob'
+                     '%3D%22FT2%22%2Cname%3D%22')
+        else:
+            query = ('http://'+self.host+'/api/v1/query?query=job_status%7Bjob'
+                     '%3D%22FT2%22%2Cname%3D~%22')
+        query += '|'.join(instances.keys()) + '%22%7D'
+
+        # We wait to not sature the monitor
+        seconds_to_wait = 15 - (time.time() - self.timestamp)
+        if seconds_to_wait > 0:
+            sys.stdout.flush()  # necessary to output work properly wiht sleep
+            time.sleep(seconds_to_wait)
+
+        payload = requests.get(query)
+
+        self.timestamp = time.time()
+
+        response = payload.json()
+        states = {}
+        for item in response["data"]["result"]:
+            states[item["metric"]["name"]] = JOBSTATES[int(item["value"][1])]
+        return states
 
     def get_executions_iterator(self):
         """ blah """
@@ -277,11 +323,11 @@ def run_jobs(monitor_config,
              **kwargs):  # pylint: disable=W0613
     """ Workflow to execute long running batch operations """
 
-    graph = JobGraph(ctx.nodes, jobname_prefix)
+    root_nodes = build_graph(ctx.nodes, jobname_prefix)
     monitor = Monitor(monitor_config, simulate)
 
     # Execution of first job instances
-    for root in graph.root_nodes:
+    for root in root_nodes:
         root.queue_all_instances()
         monitor.add_node(root)
 

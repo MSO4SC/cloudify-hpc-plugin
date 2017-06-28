@@ -32,7 +32,7 @@ class TestPlugin(unittest.TestCase):
                                'tests',
                                'blueprint',
                                # MODIFY to test against a real HPC
-                               'local-blueprint-inputs.yaml'),
+                               'blueprint-inputs.yaml'),
                   'r') as stream:
             try:
                 inputs = yaml.load(stream)
@@ -59,7 +59,7 @@ class TestPlugin(unittest.TestCase):
                                                          'user': '[USER]',
                                                          'passwd': '[PASS]'},
                                       'jobname_prefix': 'mso4sc',
-                                      'simulate': False},
+                                      'simulate': True},
                           task_retries=0)
 
         # extract single node instance
