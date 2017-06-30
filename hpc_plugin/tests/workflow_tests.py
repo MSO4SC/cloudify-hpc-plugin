@@ -32,7 +32,7 @@ class TestPlugin(unittest.TestCase):
                                'tests',
                                'blueprint',
                                # MODIFY to test against a real HPC
-                               'blueprint-inputs.yaml'),
+                               'local-blueprint-inputs.yaml'),
                   'r') as stream:
             try:
                 inputs = yaml.load(stream)
@@ -55,7 +55,7 @@ class TestPlugin(unittest.TestCase):
 
         cfy_local.execute('run_jobs',
                           # MODIFY to test against a real HPC
-                          parameters={'monitor_config': {'host': '[HOST]',
+                          parameters={'monitor_config': {'host': '192.168.56.22:9090',
                                                          'user': '[USER]',
                                                          'passwd': '[PASS]'},
                                       'jobname_prefix': 'mso4sc',

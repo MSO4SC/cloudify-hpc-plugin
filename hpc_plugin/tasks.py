@@ -43,6 +43,22 @@ def login_connection(credentials, simulate, **kwargs):  # pylint: disable=W0613
 
 
 @operation
+def monitor_hpc(credentials,
+                workload_manager,
+                country_tz,
+                simulate,
+                **kwargs):  # pylint: disable=W0613
+    """ TODO(emepetres) """
+    ctx.logger.info('Connecting to login node..')
+
+    if not simulate:
+        # TODO(emepetres)
+        pass
+    else:
+        ctx.logger.warning('HPC monitor simulated')
+
+
+@operation
 def preconfigure_job(credentials,
                      workload_manager,
                      simulate,

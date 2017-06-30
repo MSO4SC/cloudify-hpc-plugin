@@ -23,12 +23,12 @@ imports:
 
 inputs:
     # CESGA FTII parameters
-    ft2_credentials:
+    ft2_config:
         description: FTII connection credentials
         default: {}
     
     # SZE test infrastructure parameters
-    sze_credentials:
+    sze_config:
         description: SZE test infrastructure credentials
         default: {}
 
@@ -36,8 +36,7 @@ node_templates:
     ft2_node:
         type: hpc.nodes.Compute
         properties:
-            credentials: { get_input: ft2_credentials }
-            workload_manager: 'SLURM'
+            config: { get_input: ft2_config }
             simulate: True  # MODIFY to test against a real HPC
     
     first_job:

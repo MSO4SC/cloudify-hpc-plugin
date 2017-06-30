@@ -3,13 +3,19 @@
 #############################
 
 # CESGA FTII credentials
-ft2_credentials:
-    host: "HOST"
-    user: "USER"
-    password: "PASSWD"
+ft2_config:
+    credentials:
+        host: "HOST"
+        user: "USER"
+        password: "PASSWD"
+    country_tz: "Europe/Madrid"
+    workload_manager: "SLURM"
 
 # SZE test infrastructure credentials
-sze_credentials:
-    host: "HOST"
-    user: "USER"
-    password: "PASSWD"
+sze_config:
+    credentials:
+        host: "HOST"
+        user: "USER"
+        password: "PASSWD"
+    country_tz: "Europe/Budapest"
+    workload_manager: "SLURM"
