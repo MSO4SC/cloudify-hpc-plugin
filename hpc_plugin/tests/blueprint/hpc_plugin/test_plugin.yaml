@@ -55,20 +55,16 @@ node_types:
                 start:
                     implementation: hpc.hpc_plugin.tasks.login_connection
                     inputs:
-                        credentials:
-                            default: { get_property: [SELF, config, credentials] }
+                        config:
+                            default: { get_property: [SELF, config] }
                         simulate:
                             default: { get_property: [SELF, simulate] }
             cloudify.interfaces.monitoring:
                 start:
                     implementation: hpc.hpc_plugin.tasks.monitor_hpc
                     inputs:
-                        credentials:
-                            default: { get_property: [SELF, config, credentials] }
-                        workload_manager:
-                            default: { get_property: [SELF, config, workload_manager] }
-                        country_tz:
-                            default: { get_property: [SELF, config, country_tz] }
+                        config:
+                            default: { get_property: [SELF, config] }
                         simulate:
                             default: { get_property: [SELF, simulate] }
 
@@ -109,10 +105,8 @@ relationships:
                 preconfigure:
                     implementation: hpc.hpc_plugin.tasks.preconfigure_job
                     inputs:
-                        credentials: 
-                            default: { get_property: [TARGET, config, credentials] }
-                        workload_manager:
-                            default: { get_property: [TARGET, config, workload_manager] }
+                        config: 
+                            default: { get_property: [TARGET, config] }
                         simulate:
                             default: { get_property: [TARGET, simulate] }
 

@@ -23,13 +23,13 @@ from hpc_plugin import slurm
 
 
 @operation
-def login_connection(credentials, simulate, **kwargs):  # pylint: disable=W0613
+def login_connection(config, simulate, **kwargs):  # pylint: disable=W0613
     """ Tries to connect to a login node
     TODO Generate an error if connection is not possible
     TODO Error Handling
     """
     ctx.logger.info('Connecting to login node..')
-
+    credentials = config['credentials']
     if not simulate:
         client = SshClient(credentials['host'],
                            credentials['user'],
@@ -43,13 +43,14 @@ def login_connection(credentials, simulate, **kwargs):  # pylint: disable=W0613
 
 
 @operation
-def monitor_hpc(credentials,
-                workload_manager,
-                country_tz,
+def monitor_hpc(config,
                 simulate,
                 **kwargs):  # pylint: disable=W0613
     """ TODO(emepetres) """
     ctx.logger.info('Connecting to login node..')
+    credentials = config['credentials']
+    workload_manager = config['workload_manager']
+    country_tz = config['country_tz']
 
     if not simulate:
         # TODO(emepetres)
@@ -59,16 +60,15 @@ def monitor_hpc(credentials,
 
 
 @operation
-def preconfigure_job(credentials,
-                     workload_manager,
+def preconfigure_job(config,
                      simulate,
                      **kwargs):  # pylint: disable=W0613
     """ Set the job with the HPC credentials """
     ctx.logger.info('Preconfiguring HPC job..')
 
-    ctx.source.instance.runtime_properties['credentials'] = credentials
+    ctx.source.instance.runtime_properties['credentials'] = config['credentials']
     ctx.source.instance.runtime_properties['workload_manager'] = \
-        workload_manager
+        config['workload_manager']
     ctx.source.instance.runtime_properties['simulate'] = simulate
 
 
