@@ -59,20 +59,33 @@ JOBSTATES = [
 
 class JobGraphInstance(object):
     """ blah """
-    def __init__(self, parent, instance, prefix):
+
+    def __init__(self, parent, instance):
         self._status = 'WAITING'
         self.parent_node = parent
         self.winstance = instance
-        self.job_id = -1
 
         if parent.is_job:
             self._status = 'WAITING'
+
+            prefix = (instance._node_instance.  # pylint: disable=W0212
+                      runtime_properties["job_prefix"])
+
+            self.monitor_url = (instance._node_instance.  # pylint: disable=W0212
+                                runtime_properties["monitor_entrypoint"] +
+                                instance._node_instance.  # pylint: disable=W0212
+                                runtime_properties["monitor_port"])
+
+            self.simulate = (instance._node_instance.  # pylint: disable=W0212
+                             runtime_properties["simulate"])
+
+            # build job name
+            instance_components = instance.id.split('_')
+            self.name = prefix + instance_components[-1]
         else:
             self._status = 'NONE'
-
-        # build job name
-        instance_components = instance.id.split('_')
-        self.name = prefix + instance_components[-1]
+            self.name = instance.id
+            self.monitor_url = ""
 
     def queue(self):
         """ blah """
@@ -96,20 +109,17 @@ class JobGraphInstance(object):
 
         return self._status == 'FINISHED'
 
-    def has_job_id(self):
-        """ blah """
-        return self.job_id is not -1
-
     def update_status(self, status):
         """ blah """
         if not status == self._status:
             self._status = status
-            self.winstance.send_event('State changed to '+self._status)
+            self.winstance.send_event('State changed to ' + self._status)
 
 
 class JobGraphNode(object):
     """ blah """
-    def __init__(self, node, jobname_prefix):
+
+    def __init__(self, node, job_instances_map):
         self.name = node.id
         self.type = node.type
         self.cfy_node = node
@@ -122,9 +132,11 @@ class JobGraphNode(object):
 
         self.instances = []
         for instance in node.instances:
-            self.instances.append(JobGraphInstance(self,
-                                                   instance,
-                                                   jobname_prefix))
+            graph_instance = JobGraphInstance(self,
+                                              instance)
+            self.instances.append(graph_instance)
+            if graph_instance.parent_node.is_job:
+                job_instances_map[graph_instance.name] = graph_instance
 
         self.parents = []
         self.children = []
@@ -198,13 +210,16 @@ class JobGraphNode(object):
         return to_print
 
 
-def build_graph(nodes, jobname_prefix):
+def build_graph(nodes):
     """ blah """
+
+    job_instances_map = {}
+
     # first create node structure
     nodes_map = {}
     root_nodes = []
     for node in nodes:
-        new_node = JobGraphNode(node, jobname_prefix)
+        new_node = JobGraphNode(node, job_instances_map)
         nodes_map[node.id] = new_node
         # check if it is root node
         try:
@@ -219,84 +234,82 @@ def build_graph(nodes, jobname_prefix):
             parent.add_child(child)
             child.add_parent(parent)
 
-    return root_nodes
+    return root_nodes, job_instances_map
 
 
 class Monitor(object):
     """ blah """
-    def __init__(self, config, simulated):
+
+    def __init__(self, job_instances_map):
         self.job_ids = {}
         self._execution_pool = {}
         self.timestamp = 0
-        self.simulated = simulated
-
-        if not simulated:
-            self.host = config['host']
-            self.user = config['user']
-            self.passwd = config['passwd']
-        else:
-            self.host = None
-            self.user = None
-            self.passwd = None
+        self.job_instances_map = job_instances_map
 
     def check_status(self):
         """ blah """
 
-        if not self.simulated:
-            # first get the instances we need to check
-            instances_map = {}
-            for _, node in self.get_executions_iterator():
-                if node.is_job:
-                    for inst in node.instances:
-                        instances_map[inst.name] = inst
-
-            # nothing to do if we don't have nothing to monitor
-            if not instances_map:
-                return
-
-            # then look for the status of the instances through its name
-            states = self._get_states(instances_map)
-            for inst_name, state in states.iteritems():
-                # FIXME(emepetres): contemplate failed states
-                if state == 'BOOT_FAIL' or \
-                        state == 'CANCELLED' or \
-                        state == 'COMPLETED' or \
-                        state == 'FAILED' or \
-                        state == 'PREEMPTED' or \
-                        state == 'REVOKED' or \
-                        state == 'TIMEOUT':
-                    state = 'FINISHED'
-
-                instances_map[inst_name].update_status(state)
-        else:
-            for _, job_node in self._execution_pool.iteritems():
-                if job_node.is_job:
-                    for job_instance in job_node.instances:
+        # first get the instances we need to check
+        instances_map = {}
+        for _, job_node in self.get_executions_iterator():
+            if job_node.is_job:
+                for job_instance in job_node.instances:
+                    if not job_instance.simulate:
+                        if job_instance.monitor_url in instances_map:
+                            instances_map[job_instance.monitor_url].append(
+                                job_instance)
+                        else:
+                            instances_map[job_instance.monitor_url] = [
+                                job_instance]
+                    else:
                         job_instance.update_status('FINISHED')
 
-    def _get_states(self, instances):
-        if len(instances) == 1:
-            query = ('http://'+self.host+'/api/v1/query?query=job_status%7Bjob'
-                     '%3D%22FT2%22%2Cname%3D%22')
-        else:
-            query = ('http://'+self.host+'/api/v1/query?query=job_status%7Bjob'
-                     '%3D%22FT2%22%2Cname%3D~%22')
-        query += '|'.join(instances.keys()) + '%22%7D'
+        # nothing to do if we don't have nothing to monitor
+        if not instances_map:
+            return
 
-        # We wait to not sature the monitor
+        # then look for the status of the instances through its name
+        states = self._get_states(instances_map)
+        for inst_name, state in states.iteritems():
+            # FIXME(emepetres): contemplate failed states
+            if state == 'BOOT_FAIL' or \
+                    state == 'CANCELLED' or \
+                    state == 'COMPLETED' or \
+                    state == 'FAILED' or \
+                    state == 'PREEMPTED' or \
+                    state == 'REVOKED' or \
+                    state == 'TIMEOUT':
+                state = 'FINISHED'
+
+            self.job_instances_map[inst_name].update_status(state)
+
+    def _get_states(self, instances_map):
+        states = {}
+
+        # We wait to not sature the monitors
         seconds_to_wait = 15 - (time.time() - self.timestamp)
         if seconds_to_wait > 0:
             sys.stdout.flush()  # necessary to output work properly wiht sleep
             time.sleep(seconds_to_wait)
 
-        payload = requests.get(query)
-
         self.timestamp = time.time()
 
-        response = payload.json()
-        states = {}
-        for item in response["data"]["result"]:
-            states[item["metric"]["name"]] = JOBSTATES[int(item["value"][1])]
+        for url, instances in instances_map:
+            if len(instances) == 1:
+                query = ('http://' + url + '/api/v1/query?query=job_status'
+                         '%7Bjob%3D%22FT2%22%2Cname%3D%22')
+            else:
+                query = ('http://' + url + '/api/v1/query?query=job_status'
+                         '%7Bjob%3D%22FT2%22%2Cname%3D~%22')
+            query += '|'.join(instances) + '%22%7D'
+
+            payload = requests.get(query)
+
+            response = payload.json()
+
+            for item in response["data"]["result"]:
+                states[item["metric"]["name"]
+                       ] = JOBSTATES[int(item["value"][1])]
         return states
 
     def get_executions_iterator(self):
@@ -317,14 +330,11 @@ class Monitor(object):
 
 
 @workflow
-def run_jobs(monitor_config,
-             jobname_prefix,
-             simulate,
-             **kwargs):  # pylint: disable=W0613
+def run_jobs(**kwargs):  # pylint: disable=W0613
     """ Workflow to execute long running batch operations """
 
-    root_nodes = build_graph(ctx.nodes, jobname_prefix)
-    monitor = Monitor(monitor_config, simulate)
+    root_nodes, job_instances_map = build_graph(ctx.nodes)
+    monitor = Monitor(job_instances_map)
 
     # Execution of first job instances
     for root in root_nodes:

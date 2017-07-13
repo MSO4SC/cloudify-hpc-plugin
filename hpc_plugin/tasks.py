@@ -44,15 +44,19 @@ def login_connection(config, simulate, **kwargs):  # pylint: disable=W0613
 
 @operation
 def monitor_hpc(config,
+                monitor_entrypoint,
+                monitor_port,
+                monitor_orchestrator_port,
                 simulate,
                 **kwargs):  # pylint: disable=W0613
     """ TODO(emepetres) """
-    ctx.logger.info('Connecting to login node..')
-    credentials = config['credentials']
-    workload_manager = config['workload_manager']
-    country_tz = config['country_tz']
+    ctx.logger.info('Starting infrastructure monitor..')
 
     if not simulate:
+        credentials = config['credentials']
+        workload_manager = config['workload_manager']
+        country_tz = config['country_tz']
+
         # TODO(emepetres)
         pass
     else:
@@ -61,15 +65,26 @@ def monitor_hpc(config,
 
 @operation
 def preconfigure_job(config,
+                     monitor_entrypoint,
+                     monitor_port,
+                     monitor_orchestrator_port,
+                     job_prefix,
                      simulate,
                      **kwargs):  # pylint: disable=W0613
     """ Set the job with the HPC credentials """
     ctx.logger.info('Preconfiguring HPC job..')
 
-    ctx.source.instance.runtime_properties['credentials'] = config['credentials']
+    ctx.source.instance.runtime_properties['credentials'] = \
+        config['credentials']
+    ctx.source.instance.runtime_properties['monitor_entrypoint'] = \
+        monitor_entrypoint
+    ctx.source.instance.runtime_properties['monitor_port'] = monitor_port
+    ctx.source.instance.runtime_properties['monitor_orchestrator_port'] = \
+        monitor_orchestrator_port
     ctx.source.instance.runtime_properties['workload_manager'] = \
         config['workload_manager']
     ctx.source.instance.runtime_properties['simulate'] = simulate
+    ctx.source.instance.runtime_properties['job_prefix'] = job_prefix
 
 
 @operation

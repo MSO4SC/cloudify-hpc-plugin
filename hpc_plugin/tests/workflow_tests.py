@@ -51,16 +51,9 @@ class TestPlugin(unittest.TestCase):
                    inputs='set_inputs')
     def test_install(self, cfy_local):
         """ Install & Run workflows. """
-        cfy_local.execute('install', task_retries=10)
+        cfy_local.execute('install', task_retries=0)
 
-        cfy_local.execute('run_jobs',
-                          # MODIFY to test against a real HPC
-                          parameters={'monitor_config': {'host': '192.168.56.22:9090',
-                                                         'user': '[USER]',
-                                                         'passwd': '[PASS]'},
-                                      'jobname_prefix': 'mso4sc',
-                                      'simulate': True},
-                          task_retries=0)
+        cfy_local.execute('run_jobs', task_retries=0)
 
         # extract single node instance
         instance = cfy_local.storage.get_node_instances()[0]

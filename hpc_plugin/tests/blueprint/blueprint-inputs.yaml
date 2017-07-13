@@ -2,6 +2,12 @@
 # Provider specific Inputs
 #############################
 
+# Monitor
+monitor_entrypoint: "127.0.0.1"
+
+# Job prefix name
+job_prefix: "cfyhpc"
+
 # CESGA FTII credentials
 ft2_config:
     credentials:

@@ -22,6 +22,18 @@ imports:
     - hpc_plugin/test_plugin.yaml
 
 inputs:
+    # Monitor
+    monitor_entrypoint:
+        description: Monitor entrypoint IP
+        default: "127.0.0.1"
+        type: string
+
+    # Job prefix name
+    job_prefix:
+        description: Job name prefix in HPCs
+        default: "cfyhpc"
+        type: string
+
     # CESGA FTII parameters
     ft2_config:
         description: FTII connection credentials
@@ -37,6 +49,8 @@ node_templates:
         type: hpc.nodes.Compute
         properties:
             config: { get_input: ft2_config }
+            monitor_entrypoint: { get_input: monitor_entrypoint }
+            job_prefix: { get_input: job_prefix }
             simulate: True  # MODIFY to test against a real HPC
     
     first_job:
