@@ -89,10 +89,9 @@ def start_monitoring_hpc(config,
         payload = ("{\n\t\"host\": \"" + credentials['host'] +
                    "\",\n\t\"type\": \"" + workload_manager +
                    "\",\n\t\"persistent\": false,\n\t\"args\": {\n\t\t\""
-                   "listen-port\": \":8080\",\n\t\t\""
-                   "user\": \"" + credentials['user'] +
-                   "\",\n\t\t\"pass\": \"" + credentials['password'] +
-                   "\",\n\t\t\"tz\": \"" + country_tz + "\",\n\t\t\""
+                   "user\": \"" + credentials['user'] + "\",\n\t\t\""
+                   "pass\": \"" + credentials['password'] + "\",\n\t\t\""
+                   "tz\": \"" + country_tz + "\",\n\t\t\""
                    "log\": \"debug\"\n\t}\n}")
         headers = {
             'content-type': "application/json",
@@ -129,10 +128,9 @@ def stop_monitoring_hpc(config,
         payload = ("{\n\t\"host\": \"" + credentials['host'] +
                    "\",\n\t\"type\": \"" + workload_manager +
                    "\",\n\t\"persistent\": false,\n\t\"args\": {\n\t\t\""
-                   "listen-port\": \":8080\",\n\t\t\""
-                   "user\": \"" + credentials['user'] +
-                   "\",\n\t\t\"pass\": \"" + credentials['password'] +
-                   "\",\n\t\t\"tz\": \"" + country_tz + "\",\n\t\t\""
+                   "user\": \"" + credentials['user'] + "\",\n\t\t\""
+                   "pass\": \"" + credentials['password'] + "\",\n\t\t\""
+                   "tz\": \"" + country_tz + "\",\n\t\t\""
                    "log\": \"debug\"\n\t}\n}")
         headers = {
             'content-type': "application/json",
