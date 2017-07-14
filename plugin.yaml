@@ -56,7 +56,20 @@ node_types:
                             default: { get_property: [SELF, simulate] }
             cloudify.interfaces.monitoring:
                 start:
-                    implementation: hpc.hpc_plugin.tasks.monitor_hpc
+                    implementation: hpc.hpc_plugin.tasks.start_monitoring_hpc
+                    inputs:
+                        config:
+                            default: { get_property: [SELF, config] }
+                        monitor_entrypoint: 
+                            default: { get_property: [SELF, monitor_entrypoint] }
+                        monitor_port: 
+                            default: { get_property: [SELF, monitor_port] }
+                        monitor_orchestrator_port: 
+                            default: { get_property: [SELF, monitor_orchestrator_port] }
+                        simulate:
+                            default: { get_property: [SELF, simulate] }
+                stop:
+                    implementation: hpc.hpc_plugin.tasks.stop_monitoring_hpc
                     inputs:
                         config:
                             default: { get_property: [SELF, config] }

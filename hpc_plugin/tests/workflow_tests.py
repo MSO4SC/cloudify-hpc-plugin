@@ -32,7 +32,7 @@ class TestPlugin(unittest.TestCase):
                                'tests',
                                'blueprint',
                                # MODIFY to test against a real HPC
-                               'local-blueprint-inputs.yaml'),
+                               'blueprint-inputs.yaml'),
                   'r') as stream:
             try:
                 inputs = yaml.load(stream)
@@ -52,8 +52,8 @@ class TestPlugin(unittest.TestCase):
     def test_install(self, cfy_local):
         """ Install & Run workflows. """
         cfy_local.execute('install', task_retries=0)
-
         cfy_local.execute('run_jobs', task_retries=0)
+        cfy_local.execute('uninstall', task_retries=0)
 
         # extract single node instance
         instance = cfy_local.storage.get_node_instances()[0]

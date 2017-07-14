@@ -15,8 +15,10 @@
 """ Holds the plugin tasks """
 
 import os
+import requests
 from cloudify import ctx
 from cloudify.decorators import operation
+from cloudify.exceptions import NonRecoverableError
 
 from hpc_plugin.ssh import SshClient
 from hpc_plugin import slurm
@@ -43,27 +45,6 @@ def login_connection(config, simulate, **kwargs):  # pylint: disable=W0613
 
 
 @operation
-def monitor_hpc(config,
-                monitor_entrypoint,
-                monitor_port,
-                monitor_orchestrator_port,
-                simulate,
-                **kwargs):  # pylint: disable=W0613
-    """ TODO(emepetres) """
-    ctx.logger.info('Starting infrastructure monitor..')
-
-    if not simulate:
-        credentials = config['credentials']
-        workload_manager = config['workload_manager']
-        country_tz = config['country_tz']
-
-        # TODO(emepetres)
-        pass
-    else:
-        ctx.logger.warning('HPC monitor simulated')
-
-
-@operation
 def preconfigure_job(config,
                      monitor_entrypoint,
                      monitor_port,
@@ -85,6 +66,86 @@ def preconfigure_job(config,
         config['workload_manager']
     ctx.source.instance.runtime_properties['simulate'] = simulate
     ctx.source.instance.runtime_properties['job_prefix'] = job_prefix
+
+
+@operation
+def start_monitoring_hpc(config,
+                         monitor_entrypoint,
+                         monitor_port,
+                         monitor_orchestrator_port,
+                         simulate,
+                         **kwargs):  # pylint: disable=W0613
+    """ blah """
+    ctx.logger.info('Starting infrastructure monitor..')
+
+    if not simulate:
+        credentials = config['credentials']
+        workload_manager = config['workload_manager']
+        country_tz = config['country_tz']
+
+        url = 'http://' + monitor_entrypoint + \
+            monitor_orchestrator_port + '/exporters/add'
+
+        payload = ("{\n\t\"host\": \"" + credentials['host'] +
+                   "\",\n\t\"type\": \"" + workload_manager +
+                   "\",\n\t\"persistent\": false,\n\t\"args\": {\n\t\t\""
+                   "listen-port\": \":8080\",\n\t\t\""
+                   "user\": \"" + credentials['user'] +
+                   "\",\n\t\t\"pass\": \"" + credentials['password'] +
+                   "\",\n\t\t\"tz\": \"" + country_tz + "\",\n\t\t\""
+                   "log\": \"debug\"\n\t}\n}")
+        headers = {
+            'content-type': "application/json",
+            'cache-control': "no-cache",
+        }
+
+        response = requests.request("POST", url, data=payload, headers=headers)
+
+        if response.status_code != 201:
+            raise NonRecoverableError(
+                "failed to start node monitor: " + str(response.status_code))
+    else:
+        ctx.logger.warning('HPC monitor simulated')
+
+
+@operation
+def stop_monitoring_hpc(config,
+                        monitor_entrypoint,
+                        monitor_port,
+                        monitor_orchestrator_port,
+                        simulate,
+                        **kwargs):  # pylint: disable=W0613
+    """ blah """
+    ctx.logger.info('Stoping infrastructure monitor..')
+
+    if not simulate:
+        credentials = config['credentials']
+        workload_manager = config['workload_manager']
+        country_tz = config['country_tz']
+
+        url = 'http://' + monitor_entrypoint + \
+            monitor_orchestrator_port + '/exporters/remove'
+
+        payload = ("{\n\t\"host\": \"" + credentials['host'] +
+                   "\",\n\t\"type\": \"" + workload_manager +
+                   "\",\n\t\"persistent\": false,\n\t\"args\": {\n\t\t\""
+                   "listen-port\": \":8080\",\n\t\t\""
+                   "user\": \"" + credentials['user'] +
+                   "\",\n\t\t\"pass\": \"" + credentials['password'] +
+                   "\",\n\t\t\"tz\": \"" + country_tz + "\",\n\t\t\""
+                   "log\": \"debug\"\n\t}\n}")
+        headers = {
+            'content-type': "application/json",
+            'cache-control': "no-cache",
+        }
+
+        response = requests.request("POST", url, data=payload, headers=headers)
+
+        if response.status_code != 200:
+            raise NonRecoverableError(
+                "failed to stop node monitor: " + str(response.status_code))
+    else:
+        ctx.logger.warning('HPC monitor simulated')
 
 
 @operation

@@ -71,10 +71,15 @@ class JobGraphInstance(object):
             prefix = (instance._node_instance.  # pylint: disable=W0212
                       runtime_properties["job_prefix"])
 
-            self.monitor_url = (instance._node_instance.  # pylint: disable=W0212
-                                runtime_properties["monitor_entrypoint"] +
-                                instance._node_instance.  # pylint: disable=W0212
-                                runtime_properties["monitor_port"])
+            self.host = (instance.  # pylint: disable=W0212
+                         _node_instance.runtime_properties[
+                             "credentials"]["host"])
+            self.monitor_url = ('http://' + instance.  # pylint: disable=W0212
+                                _node_instance.runtime_properties[
+                                    "monitor_entrypoint"] +
+                                instance.  # pylint: disable=W0212
+                                _node_instance.runtime_properties[
+                                    "monitor_port"])
 
             self.simulate = (instance._node_instance.  # pylint: disable=W0212
                              runtime_properties["simulate"])
@@ -250,26 +255,29 @@ class Monitor(object):
         """ blah """
 
         # first get the instances we need to check
-        instances_map = {}
+        url_names_map = {}
+        url_host_map = {}
         for _, job_node in self.get_executions_iterator():
             if job_node.is_job:
                 for job_instance in job_node.instances:
                     if not job_instance.simulate:
-                        if job_instance.monitor_url in instances_map:
-                            instances_map[job_instance.monitor_url].append(
-                                job_instance)
+                        if job_instance.monitor_url in url_names_map:
+                            url_names_map[job_instance.monitor_url].append(
+                                job_instance.name)
                         else:
-                            instances_map[job_instance.monitor_url] = [
-                                job_instance]
+                            url_names_map[job_instance.monitor_url] = [
+                                job_instance.name]
+                            url_host_map[job_instance.monitor_url] = \
+                                job_instance.host
                     else:
                         job_instance.update_status('FINISHED')
 
         # nothing to do if we don't have nothing to monitor
-        if not instances_map:
+        if not url_names_map:
             return
 
         # then look for the status of the instances through its name
-        states = self._get_states(instances_map)
+        states = self._get_states(url_names_map, url_host_map)
         for inst_name, state in states.iteritems():
             # FIXME(emepetres): contemplate failed states
             if state == 'BOOT_FAIL' or \
@@ -283,7 +291,7 @@ class Monitor(object):
 
             self.job_instances_map[inst_name].update_status(state)
 
-    def _get_states(self, instances_map):
+    def _get_states(self, url_instances_map, url_host_map):
         states = {}
 
         # We wait to not sature the monitors
@@ -294,14 +302,16 @@ class Monitor(object):
 
         self.timestamp = time.time()
 
-        for url, instances in instances_map:
-            if len(instances) == 1:
-                query = ('http://' + url + '/api/v1/query?query=job_status'
-                         '%7Bjob%3D%22FT2%22%2Cname%3D%22')
+        for url, names in url_instances_map.iteritems():
+            if len(names) == 1:
+                query = (url + '/api/v1/query?query=job_status'
+                         '%7Bjob%3D%22' + url_host_map[url] +
+                         '%22%2Cname%3D%22')
             else:
-                query = ('http://' + url + '/api/v1/query?query=job_status'
-                         '%7Bjob%3D%22FT2%22%2Cname%3D~%22')
-            query += '|'.join(instances) + '%22%7D'
+                query = (url + '/api/v1/query?query=job_status'
+                         '%7Bjob%3D%22' + url_host_map[url] +
+                         '%22%2Cname%3D~%22')
+            query += '|'.join(names) + '%22%7D'
 
             payload = requests.get(query)
 

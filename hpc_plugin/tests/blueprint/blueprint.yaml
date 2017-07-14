@@ -51,7 +51,7 @@ node_templates:
             config: { get_input: ft2_config }
             monitor_entrypoint: { get_input: monitor_entrypoint }
             job_prefix: { get_input: job_prefix }
-            simulate: True  # MODIFY to test against a real HPC
+            simulate: True  # COMMENT to test against a real HPC
     
     first_job:
         type: hpc.nodes.job
