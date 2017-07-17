@@ -58,7 +58,7 @@ JOBSTATES = [
 
 
 class JobGraphInstance(object):
-    """ blah """
+    """ Wrap to add job functionalities to node instances """
 
     def __init__(self, parent, instance):
         self._status = 'WAITING'
@@ -93,7 +93,7 @@ class JobGraphInstance(object):
             self.monitor_url = ""
 
     def queue(self):
-        """ blah """
+        """ Send the instance to the HPC queue if it is a Job """
         if not self.parent_node.is_job:
             return
 
@@ -108,21 +108,21 @@ class JobGraphInstance(object):
         # print result.task.dump()
 
     def is_finished(self):
-        """ blah """
+        """ True if the job is finished or it is not a job """
         if not self.parent_node.is_job:
             return True
 
         return self._status == 'FINISHED'
 
     def update_status(self, status):
-        """ blah """
+        """ Update the instance state """
         if not status == self._status:
             self._status = status
             self.winstance.send_event('State changed to ' + self._status)
 
 
 class JobGraphNode(object):
-    """ blah """
+    """ Wrap to add job functionalities to nodes """
 
     def __init__(self, node, job_instances_map):
         self.name = node.id
@@ -148,16 +148,16 @@ class JobGraphNode(object):
         self.parent_depencencies_left = 0
 
     def add_parent(self, node):
-        """ blah """
+        """ Adds a parent node """
         self.parents.append(node)
         self.parent_depencencies_left += 1
 
     def add_child(self, node):
-        """ blah """
+        """ Adds a child node """
         self.children.append(node)
 
     def queue_all_instances(self):
-        """ blah """
+        """ Send all instances to the HPC queue if it represents a Job """
         if not self.is_job:
             return
 
@@ -166,11 +166,11 @@ class JobGraphNode(object):
         self.status = 'QUEUED'
 
     def is_ready(self):
-        """ blah """
+        """ True if it has no more dependencies to satisfy """
         return self.parent_depencencies_left == 0
 
     def _remove_children_dependency(self):
-        """ blah """
+        """ Removes a dependency of the Node already satisfied """
         for child in self.children:
             child.parent_depencencies_left -= 1
 
@@ -199,7 +199,7 @@ class JobGraphNode(object):
         return self.status == 'FINISHED'
 
     def get_children_ready(self):
-        """ blah """
+        """ Get all children nodes that are ready to start """
         readys = []
         for child in self.children:
             if child.is_ready():
@@ -216,7 +216,7 @@ class JobGraphNode(object):
 
 
 def build_graph(nodes):
-    """ blah """
+    """ Creates a new graph of nodes and instances with the job wrapper """
 
     job_instances_map = {}
 
@@ -243,7 +243,7 @@ def build_graph(nodes):
 
 
 class Monitor(object):
-    """ blah """
+    """ Monitor the instances talking with prometheus """
 
     def __init__(self, job_instances_map):
         self.job_ids = {}
@@ -252,7 +252,7 @@ class Monitor(object):
         self.job_instances_map = job_instances_map
 
     def check_status(self):
-        """ blah """
+        """ Gets all executing instances and check their state """
 
         # first get the instances we need to check
         url_names_map = {}
@@ -323,19 +323,19 @@ class Monitor(object):
         return states
 
     def get_executions_iterator(self):
-        """ blah """
+        """ Executing nodes iterator """
         return self._execution_pool.iteritems()
 
     def add_node(self, node):
-        """ blah """
+        """ Adds a node to the execution pool """
         self._execution_pool[node.name] = node
 
     def finish_node(self, node_name):
-        """ blah """
+        """ Delete a node from the execution pool """
         del self._execution_pool[node_name]
 
     def is_something_executing(self):
-        """ blah """
+        """ True if there are nodes executing """
         return self._execution_pool
 
 

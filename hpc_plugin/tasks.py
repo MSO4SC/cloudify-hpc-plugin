@@ -26,10 +26,7 @@ from hpc_plugin import slurm
 
 @operation
 def login_connection(config, simulate, **kwargs):  # pylint: disable=W0613
-    """ Tries to connect to a login node
-    TODO Generate an error if connection is not possible
-    TODO Error Handling
-    """
+    """ Tries to connect to a login node """
     ctx.logger.info('Connecting to login node..')
     credentials = config['credentials']
     if not simulate:
@@ -37,6 +34,10 @@ def login_connection(config, simulate, **kwargs):  # pylint: disable=W0613
                            credentials['user'],
                            credentials['password'])
         _, exit_code = client.send_command('uname', want_output=True)
+
+        if exit_code is not 0:
+            raise NonRecoverableError(
+                "failed to connect to HPC: exit code " + str(exit_code))
 
         ctx.instance.runtime_properties['login'] = exit_code is 0
     else:
@@ -170,7 +171,6 @@ def deploy_job(deployment,
         for dinput in deployment['inputs']:
             call += ' ' + dinput
 
-    print call
     # Execute and print output
     output = os.popen(call).read()
     ctx.logger.info(output)
@@ -208,9 +208,9 @@ def send_job(job_options, **kwargs):  # pylint: disable=W0613
     if is_submitted:
         ctx.logger.info('Job ' + name + ' (' + ctx.instance.id + ') sent.')
     else:
-        # TODO(empetres): Raise error
         ctx.logger.error('Job ' + name + ' (' + ctx.instance.id +
                          ') not sent.')
-        return
+        raise NonRecoverableError('Job ' + name + ' (' + ctx.instance.id +
+                                  ') not sent.')
 
     ctx.instance.runtime_properties['job_name'] = name
