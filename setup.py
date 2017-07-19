@@ -23,7 +23,7 @@ setup(
     # Do not use underscores in the plugin name.
     name='hpc',
 
-    version='0.1',
+    version='0.5',
     author='Javier Carnero',
     author_email='javier.carnero@atos.net',
     description='Plugin to use HPC resources in Cloudify',
