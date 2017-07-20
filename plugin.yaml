@@ -30,6 +30,14 @@ node_types:
                 description: "Monitor entrypoint, port and orchestrator port"
                 default: ":9090"
                 type: string
+            monitor_type:
+                description: "Monitor type, e.g PROMETHEUS"
+                default: "PROMETHEUS"
+                type: string
+            monitor_orchestrator_available:
+                description: "True to use an monitor orchestrator"
+                default: false
+                type: boolean
             monitor_orchestrator_port:
                 description: "Monitor entrypoint, port and orchestrator port"
                 default: ":8079"
@@ -64,6 +72,8 @@ node_types:
                             default: { get_property: [SELF, monitor_entrypoint] }
                         monitor_port: 
                             default: { get_property: [SELF, monitor_port] }
+                        monitor_orchestrator_available: 
+                            default: { get_property: [SELF, monitor_orchestrator_available] }
                         monitor_orchestrator_port: 
                             default: { get_property: [SELF, monitor_orchestrator_port] }
                         simulate:
@@ -77,6 +87,8 @@ node_types:
                             default: { get_property: [SELF, monitor_entrypoint] }
                         monitor_port: 
                             default: { get_property: [SELF, monitor_port] }
+                        monitor_orchestrator_available: 
+                            default: { get_property: [SELF, monitor_orchestrator_available] }
                         monitor_orchestrator_port: 
                             default: { get_property: [SELF, monitor_orchestrator_port] }
                         simulate:
@@ -119,6 +131,10 @@ relationships:
                             default: { get_property: [TARGET, monitor_entrypoint] }
                         monitor_port: 
                             default: { get_property: [TARGET, monitor_port] }
+                        monitor_type: 
+                            default: { get_property: [TARGET, monitor_type] }
+                        monitor_orchestrator_available: 
+                            default: { get_property: [TARGET, monitor_orchestrator_available] }
                         monitor_orchestrator_port: 
                             default: { get_property: [TARGET, monitor_orchestrator_port] }
                         job_prefix: 

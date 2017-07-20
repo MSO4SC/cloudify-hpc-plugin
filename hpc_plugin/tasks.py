@@ -49,6 +49,8 @@ def login_connection(config, simulate, **kwargs):  # pylint: disable=W0613
 def preconfigure_job(config,
                      monitor_entrypoint,
                      monitor_port,
+                     monitor_type,
+                     monitor_orchestrator_available,
                      monitor_orchestrator_port,
                      job_prefix,
                      simulate,
@@ -61,6 +63,9 @@ def preconfigure_job(config,
     ctx.source.instance.runtime_properties['monitor_entrypoint'] = \
         monitor_entrypoint
     ctx.source.instance.runtime_properties['monitor_port'] = monitor_port
+    ctx.source.instance.runtime_properties['monitor_type'] = monitor_type
+    ctx.source.instance.runtime_properties['monitor_orchestrator_available'] =\
+        monitor_orchestrator_available
     ctx.source.instance.runtime_properties['monitor_orchestrator_port'] = \
         monitor_orchestrator_port
     ctx.source.instance.runtime_properties['workload_manager'] = \
@@ -73,78 +78,86 @@ def preconfigure_job(config,
 def start_monitoring_hpc(config,
                          monitor_entrypoint,
                          monitor_port,
+                         monitor_orchestrator_available,
                          monitor_orchestrator_port,
                          simulate,
                          **kwargs):  # pylint: disable=W0613
-    """ blah """
-    ctx.logger.info('Starting infrastructure monitor..')
+    """ Starts monitoring using the Monitor orchestrator """
+    if monitor_orchestrator_available:
+        ctx.logger.info('Starting infrastructure monitor..')
 
-    if not simulate:
-        credentials = config['credentials']
-        workload_manager = config['workload_manager']
-        country_tz = config['country_tz']
+        if not simulate:
+            credentials = config['credentials']
+            workload_manager = config['workload_manager']
+            country_tz = config['country_tz']
 
-        url = 'http://' + monitor_entrypoint + \
-            monitor_orchestrator_port + '/exporters/add'
+            url = 'http://' + monitor_entrypoint + \
+                monitor_orchestrator_port + '/exporters/add'
 
-        payload = ("{\n\t\"host\": \"" + credentials['host'] +
-                   "\",\n\t\"type\": \"" + workload_manager +
-                   "\",\n\t\"persistent\": false,\n\t\"args\": {\n\t\t\""
-                   "user\": \"" + credentials['user'] + "\",\n\t\t\""
-                   "pass\": \"" + credentials['password'] + "\",\n\t\t\""
-                   "tz\": \"" + country_tz + "\",\n\t\t\""
-                   "log\": \"debug\"\n\t}\n}")
-        headers = {
-            'content-type': "application/json",
-            'cache-control': "no-cache",
-        }
+            payload = ("{\n\t\"host\": \"" + credentials['host'] +
+                       "\",\n\t\"type\": \"" + workload_manager +
+                       "\",\n\t\"persistent\": false,\n\t\"args\": {\n\t\t\""
+                       "user\": \"" + credentials['user'] + "\",\n\t\t\""
+                       "pass\": \"" + credentials['password'] + "\",\n\t\t\""
+                       "tz\": \"" + country_tz + "\",\n\t\t\""
+                       "log\": \"debug\"\n\t}\n}")
+            headers = {
+                'content-type': "application/json",
+                'cache-control': "no-cache",
+            }
 
-        response = requests.request("POST", url, data=payload, headers=headers)
+            response = requests.request(
+                "POST", url, data=payload, headers=headers)
 
-        if response.status_code != 201:
-            raise NonRecoverableError(
-                "failed to start node monitor: " + str(response.status_code))
-    else:
-        ctx.logger.warning('HPC monitor simulated')
+            if response.status_code != 201:
+                raise NonRecoverableError(
+                    "failed to start node monitor: " + str(response
+                                                           .status_code))
+        else:
+            ctx.logger.warning('HPC monitor simulated')
 
 
 @operation
 def stop_monitoring_hpc(config,
                         monitor_entrypoint,
                         monitor_port,
+                        monitor_orchestrator_available,
                         monitor_orchestrator_port,
                         simulate,
                         **kwargs):  # pylint: disable=W0613
-    """ blah """
-    ctx.logger.info('Stoping infrastructure monitor..')
+    """ Stops monitoring using the Monitor Orchestrator """
+    if monitor_orchestrator_available:
+        ctx.logger.info('Stoping infrastructure monitor..')
 
-    if not simulate:
-        credentials = config['credentials']
-        workload_manager = config['workload_manager']
-        country_tz = config['country_tz']
+        if not simulate:
+            credentials = config['credentials']
+            workload_manager = config['workload_manager']
+            country_tz = config['country_tz']
 
-        url = 'http://' + monitor_entrypoint + \
-            monitor_orchestrator_port + '/exporters/remove'
+            url = 'http://' + monitor_entrypoint + \
+                monitor_orchestrator_port + '/exporters/remove'
 
-        payload = ("{\n\t\"host\": \"" + credentials['host'] +
-                   "\",\n\t\"type\": \"" + workload_manager +
-                   "\",\n\t\"persistent\": false,\n\t\"args\": {\n\t\t\""
-                   "user\": \"" + credentials['user'] + "\",\n\t\t\""
-                   "pass\": \"" + credentials['password'] + "\",\n\t\t\""
-                   "tz\": \"" + country_tz + "\",\n\t\t\""
-                   "log\": \"debug\"\n\t}\n}")
-        headers = {
-            'content-type': "application/json",
-            'cache-control': "no-cache",
-        }
+            payload = ("{\n\t\"host\": \"" + credentials['host'] +
+                       "\",\n\t\"type\": \"" + workload_manager +
+                       "\",\n\t\"persistent\": false,\n\t\"args\": {\n\t\t\""
+                       "user\": \"" + credentials['user'] + "\",\n\t\t\""
+                       "pass\": \"" + credentials['password'] + "\",\n\t\t\""
+                       "tz\": \"" + country_tz + "\",\n\t\t\""
+                       "log\": \"debug\"\n\t}\n}")
+            headers = {
+                'content-type': "application/json",
+                'cache-control': "no-cache",
+            }
 
-        response = requests.request("POST", url, data=payload, headers=headers)
+            response = requests.request(
+                "POST", url, data=payload, headers=headers)
 
-        if response.status_code != 200:
-            raise NonRecoverableError(
-                "failed to stop node monitor: " + str(response.status_code))
-    else:
-        ctx.logger.warning('HPC monitor simulated')
+            if response.status_code != 200:
+                raise NonRecoverableError(
+                    "failed to stop node monitor: " + str(response
+                                                          .status_code))
+        else:
+            ctx.logger.warning('HPC monitor simulated')
 
 
 @operation

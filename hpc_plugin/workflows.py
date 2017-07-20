@@ -16,10 +16,10 @@
 
 import sys
 import time
-import requests
 
 from cloudify.decorators import workflow
 from cloudify.workflows import ctx
+from hpc_plugin import monitors
 
 
 BOOTFAIL = 0
@@ -38,24 +38,6 @@ STOPPED = 12
 SUSPENDED = 13
 TIMEOUT = 14
 
-JOBSTATES = [
-    "BOOT_FAIL",
-    "CANCELLED",
-    "COMPLETED",
-    "CONFIGURING",
-    "COMPLETING",
-    "FAILED",
-    "NODE_FAIL",
-    "PENDING",
-    "PREEMPTED",
-    "REVOKED",
-    "RUNNING",
-    "SPECIAL_EXIT",
-    "STOPPED",
-    "SUSPENDED",
-    "TIMEOUT",
-]
-
 
 class JobGraphInstance(object):
     """ Wrap to add job functionalities to node instances """
@@ -71,6 +53,9 @@ class JobGraphInstance(object):
             prefix = (instance._node_instance.  # pylint: disable=W0212
                       runtime_properties["job_prefix"])
 
+            self.monitor_type = (instance.  # pylint: disable=W0212
+                                 _node_instance.runtime_properties[
+                                     "monitor_type"])
             self.host = (instance.  # pylint: disable=W0212
                          _node_instance.runtime_properties[
                              "credentials"]["host"])
@@ -257,6 +242,7 @@ class Monitor(object):
         # first get the instances we need to check
         url_names_map = {}
         url_host_map = {}
+        url_mtype_map = {}
         for _, job_node in self.get_executions_iterator():
             if job_node.is_job:
                 for job_instance in job_node.instances:
@@ -269,6 +255,8 @@ class Monitor(object):
                                 job_instance.name]
                             url_host_map[job_instance.monitor_url] = \
                                 job_instance.host
+                            url_mtype_map[job_instance.monitor_url] = \
+                                job_instance.monitor_type
                     else:
                         job_instance.update_status('FINISHED')
 
@@ -276,8 +264,19 @@ class Monitor(object):
         if not url_names_map:
             return
 
+        # We wait to not sature the monitors
+        seconds_to_wait = 15 - (time.time() - self.timestamp)
+        if seconds_to_wait > 0:
+            sys.stdout.flush()  # necessary to output work properly wiht sleep
+            time.sleep(seconds_to_wait)
+
+        self.timestamp = time.time()
+
         # then look for the status of the instances through its name
-        states = self._get_states(url_names_map, url_host_map)
+        states = monitors.get_states(
+            url_names_map, url_mtype_map, url_host_map)
+
+        # finally set job status
         for inst_name, state in states.iteritems():
             # FIXME(emepetres): contemplate failed states
             if state == 'BOOT_FAIL' or \
@@ -290,37 +289,6 @@ class Monitor(object):
                 state = 'FINISHED'
 
             self.job_instances_map[inst_name].update_status(state)
-
-    def _get_states(self, url_instances_map, url_host_map):
-        states = {}
-
-        # We wait to not sature the monitors
-        seconds_to_wait = 15 - (time.time() - self.timestamp)
-        if seconds_to_wait > 0:
-            sys.stdout.flush()  # necessary to output work properly wiht sleep
-            time.sleep(seconds_to_wait)
-
-        self.timestamp = time.time()
-
-        for url, names in url_instances_map.iteritems():
-            if len(names) == 1:
-                query = (url + '/api/v1/query?query=job_status'
-                         '%7Bjob%3D%22' + url_host_map[url] +
-                         '%22%2Cname%3D%22')
-            else:
-                query = (url + '/api/v1/query?query=job_status'
-                         '%7Bjob%3D%22' + url_host_map[url] +
-                         '%22%2Cname%3D~%22')
-            query += '|'.join(names) + '%22%7D'
-
-            payload = requests.get(query)
-
-            response = payload.json()
-
-            for item in response["data"]["result"]:
-                states[item["metric"]["name"]
-                       ] = JOBSTATES[int(item["value"][1])]
-        return states
 
     def get_executions_iterator(self):
         """ Executing nodes iterator """

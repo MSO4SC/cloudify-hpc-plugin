@@ -51,6 +51,7 @@ node_templates:
         properties:
             config: { get_input: ft2_config }
             monitor_entrypoint: { get_input: monitor_entrypoint }
+#            monitor_orchestrator_available: True
             job_prefix: { get_input: job_prefix }
             simulate: True  # COMMENT to test against a real HPC
     
@@ -74,6 +75,7 @@ node_templates:
             job_options: 
                 type: 'SRUN'
                 command: 'touch cfy2.test'
+                partition: 'cola-corta'
                 max_time: '00:01'
         relationships:
             - type: job_contained_in_hpc
@@ -87,6 +89,7 @@ node_templates:
             job_options:
                 type: 'SRUN'
                 command: 'touch cfy3.test'
+                partition: 'cola-corta'
                 max_time: '00:01'
         relationships:
             - type: job_contained_in_hpc
