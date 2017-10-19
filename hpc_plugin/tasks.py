@@ -227,3 +227,40 @@ def send_job(job_options, **kwargs):  # pylint: disable=W0613
                                   ') not sent.')
 
     ctx.instance.runtime_properties['job_name'] = name
+
+
+@operation
+def stop_job(job_options, **kwargs):  # pylint: disable=W0613
+    """ Sends a job to the HPC """
+    simulate = ctx.instance.runtime_properties['simulate']
+    ctx.logger.info('Connecting to login node using workload manager: {0}.'
+                    .format(ctx.instance.
+                            runtime_properties['workload_manager']))
+
+    credentials = ctx.instance.runtime_properties['credentials']
+    name = kwargs['name']
+
+    if not simulate:
+        client = SshClient(credentials['host'],
+                           credentials['user'],
+                           credentials['password'])
+
+        # TODO(emepetres): use workload manager type
+        is_stopped = slurm.stop_job(client,
+                                    name,
+                                    job_options)
+
+        client.close_connection()
+    else:
+        ctx.logger.warning('Instance ' + ctx.instance.id + ' simulated')
+        is_stopped = True
+
+    if is_stopped:
+        ctx.logger.info('Job ' + name + ' (' + ctx.instance.id + ') stopped.')
+    else:
+        ctx.logger.error('Job ' + name + ' (' + ctx.instance.id +
+                         ') not stopped.')
+        raise NonRecoverableError('Job ' + name + ' (' + ctx.instance.id +
+                                  ') not stopped.')
+
+    ctx.instance.runtime_properties['job_name'] = name

@@ -25,8 +25,8 @@ def submit_job(ssh_client, name, job_settings):
 
     @type ssh_client: SshClient
     @param ssh_client: ssh client connected to an HPC login node
-    @type base_name: string
-    @param base_name: base name of the job in slurm
+    @type name: string
+    @param name: name of the job in slurm
     @type job_settings: dictionary
     @param job_settings: dictionary with the job options
     @rtype string
@@ -57,6 +57,34 @@ def submit_job(ssh_client, name, job_settings):
     # return is_submitted, job_id
 
     return ssh_client.send_command(call)
+
+
+def stop_job(ssh_client, name, job_settings):
+    """
+    Stops a job from the HPC using Slurm
+
+    @type ssh_client: SshClient
+    @param ssh_client: ssh client connected to an HPC login node
+    @type name: string
+    @param name: name of the job in slurm
+    @type job_settings: dictionary
+    @param job_settings: dictionary with the job options
+    @rtype string
+    @return Slurm's job name stopped. None if an error arise.
+    """
+    if not isinstance(ssh_client, SshClient) or not ssh_client.is_open():
+        # TODO(emepetres): Raise error
+        return False
+
+    # TODO(emepetres): mount slurm stop call
+    # call = ""
+
+    # if call is None:
+    #     # TODO(emepetres): Raise error
+    #     return False
+
+    # return ssh_client.send_command(call)
+    return True
 
 
 def get_jobids_by_name(ssh_client, job_names):

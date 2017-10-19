@@ -129,6 +129,11 @@ node_types:
                     inputs:
                         job_options:
                             default: { get_property: [SELF, job_options] }
+                cancel:
+                    implementation: hpc.hpc_plugin.tasks.stop_job
+                    inputs:
+                        job_options:
+                            default: { get_property: [SELF, job_options] }
 
 relationships:
     job_contained_in_hpc:
