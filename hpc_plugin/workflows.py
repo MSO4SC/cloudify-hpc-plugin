@@ -18,7 +18,7 @@ import sys
 import time
 
 from cloudify.decorators import workflow
-from cloudify.workflows import ctx
+from cloudify.workflows import ctx, api
 from hpc_plugin import monitors
 
 
@@ -104,6 +104,20 @@ class JobGraphInstance(object):
         if not status == self._status:
             self._status = status
             self.winstance.send_event('State changed to ' + self._status)
+
+    def cancel(self):
+        """ Cancel the instance of the HPC if it is a Job """
+        if not self.parent_node.is_job:
+            return
+
+        self.winstance.send_event('Cancelling HPC job..')
+        result = self.winstance.execute_operation('hpc.interfaces.'
+                                                  'lifecycle.cancel',
+                                                  kwargs={"name": self.name})
+        self.winstance.send_event('..HPC job canceled')
+        result.task.wait_for_terminated()
+
+        self._status = 'CANCELLED'
 
 
 class JobGraphNode(object):
@@ -199,6 +213,15 @@ class JobGraphNode(object):
             to_print += '    ' + child.name + '\n'
         return to_print
 
+    def cancel_all_instances(self):
+        """ Cancel all instances of the HPC if it represents a Job """
+        if not self.is_job:
+            return
+
+        for job_instance in self.instances:
+            job_instance.cancel()
+        self.status = 'CANCELED'
+
 
 def build_graph(nodes):
     """ Creates a new graph of nodes and instances with the job wrapper """
@@ -264,10 +287,10 @@ class Monitor(object):
         if not url_names_map:
             return
 
-        # We wait to not sature the monitors
+        # We wait to not sature the monitor
         seconds_to_wait = 15 - (time.time() - self.timestamp)
         if seconds_to_wait > 0:
-            sys.stdout.flush()  # necessary to output work properly wiht sleep
+            sys.stdout.flush()  # necessary to output work properly with sleep
             time.sleep(seconds_to_wait)
 
         self.timestamp = time.time()
@@ -320,7 +343,7 @@ def run_jobs(**kwargs):  # pylint: disable=W0613
         monitor.add_node(root)
 
     # Monitoring and next executions loop
-    while monitor.is_something_executing():
+    while monitor.is_something_executing() and not api.has_cancel_request():
         # Monitor the infrastructure
         monitor.check_status()
         exec_nodes_finished = []
@@ -339,5 +362,10 @@ def run_jobs(**kwargs):  # pylint: disable=W0613
         for new_node in new_exec_nodes:
             new_node.queue_all_instances()
             monitor.add_node(new_node)
+
+    if monitor.is_something_executing():
+        for node_name, exec_node in monitor.get_executions_iterator():
+            exec_node.cancel_all_instances()
+        raise api.ExecutionCancelled()
 
     return
