@@ -153,9 +153,13 @@ def stop_monitoring_hpc(config,
                 "POST", url, data=payload, headers=headers)
 
             if response.status_code != 200:
-                raise NonRecoverableError(
-                    "failed to stop node monitor: " + str(response
-                                                          .status_code))
+                if response.status_code == 409:
+                    ctx.logger.warning(
+                        'Already removed on the exporter orchestrator.')
+                else:
+                    raise NonRecoverableError(
+                        "failed to stop node monitor: " + str(response
+                                                              .status_code))
         else:
             ctx.logger.warning('HPC monitor simulated')
 
