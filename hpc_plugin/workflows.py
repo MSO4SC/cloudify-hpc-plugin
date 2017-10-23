@@ -368,5 +368,6 @@ def run_jobs(**kwargs):  # pylint: disable=W0613
             exec_node.cancel_all_instances()
         raise api.ExecutionCancelled()
 
-    print "------------------Workflow Finished-----------------------"
+    ctx.logger.info(
+        "------------------Workflow Finished-----------------------")
     return
