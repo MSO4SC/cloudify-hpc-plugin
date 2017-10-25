@@ -105,11 +105,8 @@ node_types:
         derived_from: cloudify.nodes.Root
         properties:
             deployment:
-                description: Deployment file (as path)
-                default: ''
-            deployment_inputs:
-                description: Parameters need for deployment
-                default: []
+                description: Deployment script and inputs
+                default: {}
             job_options:
                 description: Job main command and options
         interfaces:
@@ -118,11 +115,8 @@ node_types:
                     implementation: hpc.hpc_plugin.tasks.deploy_job
                     inputs:
                         deployment:
-                            description: 'Deployment script path'
+                            description: Deployment script and inputs
                             default: { get_property: [SELF, deployment] }
-                        deploy_inputs:
-                            description: 'Deployment inputs'
-                            default: { get_property: [SELF, deployment_inputs] }
             hpc.interfaces.lifecycle:
                 queue:
                     implementation: hpc.hpc_plugin.tasks.send_job
@@ -134,6 +128,9 @@ node_types:
                     inputs:
                         job_options:
                             default: { get_property: [SELF, job_options] }
+    
+    hpc.nodes.singularity_job:
+        derived_from: hpc.nodes.job
 
 relationships:
     job_contained_in_hpc:

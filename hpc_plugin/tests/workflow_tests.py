@@ -27,12 +27,18 @@ class TestPlugin(unittest.TestCase):
 
     def set_inputs(self, *args, **kwargs):  # pylint: disable=W0613
         """ Parse inputs yaml file """
+        # Chech whether a local inputs file is available
+        inputs_file = 'blueprint-inputs.yaml'
+        if os.path.isfile(os.path.join('hpc_plugin',
+                                       'tests',
+                                       'blueprint',
+                                       'local-blueprint-inputs.yaml')):
+            inputs_file = 'local-blueprint-inputs.yaml'
         inputs = {}
         with open(os.path.join('hpc_plugin',
                                'tests',
                                'blueprint',
-                               # MODIFY to test against a real HPC
-                               'blueprint-inputs.yaml'),
+                               inputs_file),
                   'r') as stream:
             try:
                 inputs = yaml.load(stream)

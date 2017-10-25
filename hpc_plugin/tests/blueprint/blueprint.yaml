@@ -56,11 +56,22 @@ node_templates:
             simulate: True  # COMMENT to test against a real HPC
     
     first_job:
-        type: hpc.nodes.job
+        type: hpc.nodes.singularity_job
         properties:
             job_options:
-                type: 'SBATCH'
-                command: 'touch.script cfy1.test'
+                modules:
+                    - gcc/5.3.0
+                    - openmpi/1.10.2
+                    - singularity/2.3.1
+                partition: 'thin-shared'
+                image: '$LUSTRE/ring_slurm.img'
+                volumes:
+                    - '/scratch'
+                command: 'ring > ring1.test'
+                nodes: 1
+                tasks: 1
+                tasks_per_node: 1
+                max_time: '00:01'
             deployment:
                 file: 'scripts/deploy.sh'
                 inputs:
@@ -74,8 +85,13 @@ node_templates:
         properties:
             job_options: 
                 type: 'SRUN'
+                modules:
+                    - gcc/5.3.0
+                partition: 'thin-shared'
                 command: 'touch cfy2.test'
-                partition: 'cola-corta'
+                nodes: 1
+                tasks: 1
+                tasks_per_node: 1
                 max_time: '00:01'
         relationships:
             - type: job_contained_in_hpc
@@ -89,7 +105,10 @@ node_templates:
             job_options:
                 type: 'SRUN'
                 command: 'touch cfy3.test'
-                partition: 'cola-corta'
+                partition: 'thin-shared'
+                nodes: 1
+                tasks: 1
+                tasks_per_node: 1
                 max_time: '00:01'
         relationships:
             - type: job_contained_in_hpc
@@ -102,7 +121,7 @@ node_templates:
         properties:
             job_options:
                 type: 'SBATCH'
-                command: 'touch.script cfy1.test'
+                command: 'touch.script cfy4.test'
         relationships:
             - type: job_contained_in_hpc
               target: ft2_node

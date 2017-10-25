@@ -206,6 +206,8 @@ def send_job(job_options, **kwargs):  # pylint: disable=W0613
 
     credentials = ctx.instance.runtime_properties['credentials']
     name = kwargs['name']
+    is_singularity = 'hpc.nodes.singularity_job' in ctx.node.\
+        type_hierarchy
 
     if not simulate:
         client = SshClient(credentials['host'],
@@ -215,7 +217,8 @@ def send_job(job_options, **kwargs):  # pylint: disable=W0613
         # TODO(emepetres): use workload manager type
         is_submitted = slurm.submit_job(client,
                                         name,
-                                        job_options)
+                                        job_options,
+                                        is_singularity)
 
         client.close_connection()
     else:

@@ -121,6 +121,9 @@ node_types:
                     inputs:
                         job_options:
                             default: { get_property: [SELF, job_options] }
+    
+    hpc.nodes.singularity_job:
+        derived_from: hpc.nodes.job
 
 relationships:
     job_contained_in_hpc:

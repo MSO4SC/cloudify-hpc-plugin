@@ -19,7 +19,7 @@ import random
 from hpc_plugin.ssh import SshClient
 
 
-def submit_job(ssh_client, name, job_settings):
+def submit_job(ssh_client, name, job_settings, is_singularity):
     """
     Sends a job to the HPC using Slurm
 
@@ -29,6 +29,8 @@ def submit_job(ssh_client, name, job_settings):
     @param name: name of the job in slurm
     @type job_settings: dictionary
     @param job_settings: dictionary with the job options
+    @type is_singularity: bool
+    @param is_singularity: True if the job is in a container
     @rtype string
     @return Slurm's job name sent. None if an error arise.
     """
@@ -36,25 +38,34 @@ def submit_job(ssh_client, name, job_settings):
         # TODO(emepetres): Raise error
         return False
 
-    call = get_slurm_call(name, job_settings)
+    if is_singularity:
+        script = get_container_script(name, job_settings)
+        if script is None:
+            # TODO(emepetres): Raise error
+            return False
+        print "----------------------"
+        print script
+        print "----------------------"
+        print "echo '" + script + "' > " + name + ".script"
+        print "----------------------"
+        if not ssh_client.send_command("echo '" + script + "' > " + name +
+                                       ".script"):
+            # TODO(emepetres): Raise error
+            return False
+        settings = {
+            "type": "SBATCH",
+            "command": name + ".script"
+        }
+    else:
+        settings = job_settings
 
+    call = get_call(name, settings)
+    print "----------------------"
+    print call
+    print "----------------------"
     if call is None:
         # TODO(emepetres): Raise error
         return False
-
-    # is_submitted = False
-    # job_id = None
-    # # if we execute srun we don't want output (it can take long)
-    # if job_settings['type'] == 'SRUN':
-    #     is_submitted = ssh_client.send_command(call)
-
-    # else:
-    #     output, exit_code = ssh_client.send_command(call, want_output=True)
-    #     if exit_code == 0:
-    #         is_submitted = True
-    #         job_id = parse_sbatch_jobid('-------->'+output)
-
-    # return is_submitted, job_id
 
     return ssh_client.send_command(call)
 
@@ -145,7 +156,75 @@ def parse_sacct(sacct_output):
     return parsed
 
 
-def get_slurm_call(name, job_settings):
+def get_container_script(name, job_settings):
+    """
+    Creates an SBATCH script to run Singularity
+
+    @type name: string
+    @param name: name of the job in slurm
+    @type job_settings: dictionary
+    @param job_settings: dictionary with the container job options
+    @rtype string
+    @return string to with the sbatch script. None if an error arise.
+    """
+    # check input information correctness
+    if not isinstance(job_settings, dict) or not isinstance(name,
+                                                            basestring):
+        # TODO(emepetres): Raise error
+        return None
+
+    if 'image' not in job_settings or 'command' not in job_settings or\
+            'max_time' not in job_settings:
+        # TODO(emepetres): Raise error
+        return None
+
+    script = '#!/bin/bash -l\n\n'
+    # script += '#SBATCH --parsable\n'
+    # script += '#SBATCH -J "' + name + '"\n'
+
+    # Slurm settings
+    if 'partition' in job_settings:
+        script += '#SBATCH -p ' + job_settings['partition'] + '\n'
+
+    if 'nodes' in job_settings:
+        script += '#SBATCH -N ' + str(job_settings['nodes']) + '\n'
+
+    if 'tasks' in job_settings:
+        script += '#SBATCH -n ' + str(job_settings['tasks']) + '\n'
+
+    if 'tasks_per_node' in job_settings:
+        script += '#SBATCH --ntasks-per-node=' + \
+            str(job_settings['tasks_per_node']) + '\n'
+
+    if 'max_time' in job_settings:
+        script += '#SBATCH -t ' + job_settings['max_time'] + '\n'
+
+    script += '\n'
+
+    # first set modules
+    if 'modules' in job_settings:
+        script += 'module load'
+        for module in job_settings['modules']:
+            script += ' ' + module
+        script += '\n'
+
+    script += '\nmpirun singularity exec '
+
+    if 'volumes' in job_settings:
+        for volume in job_settings['volumes']:
+            script += '-B ' + volume
+        script += ' '
+
+    # add executable and arguments
+    script += job_settings['image'] + ' ' + job_settings['command'] + '\n'
+
+    # disable output
+    # script += ' >/dev/null 2>&1';
+
+    return script
+
+
+def get_call(name, job_settings):
     """
     Generates slurm command line as a string
 
@@ -156,7 +235,6 @@ def get_slurm_call(name, job_settings):
     @rtype string
     @return string to call slurm with its parameters. None if an error arise.
     """
-
     # check input information correctness
     if not isinstance(job_settings, dict) or not isinstance(name,
                                                             basestring):

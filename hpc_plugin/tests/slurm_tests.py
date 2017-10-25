@@ -23,59 +23,59 @@ class TestSlurm(unittest.TestCase):
 
     def test_bad_type_name(self):
         """ Bad name type """
-        call = slurm.get_slurm_call(42, {'command': 'cmd',
-                                         'type': 'SBATCH'})
+        call = slurm.get_call(42, {'command': 'cmd',
+                                   'type': 'SBATCH'})
         self.assertIsNone(call)
 
     def test_bad_type_settings(self):
         """ Bad type settings """
-        call = slurm.get_slurm_call('test', 'bad type')
+        call = slurm.get_call('test', 'bad type')
         self.assertIsNone(call)
 
     def test_bad_settings_command_type(self):
         """ Bad type settings """
-        call = slurm.get_slurm_call('test', 'bad type')
+        call = slurm.get_call('test', 'bad type')
         self.assertIsNone(call)
 
     def test_empty_settings(self):
         """ Empty job settings """
-        call = slurm.get_slurm_call('test', {})
+        call = slurm.get_call('test', {})
         self.assertIsNone(call)
 
     def test_only_type_settings(self):
         """ Type only as job settings """
-        call = slurm.get_slurm_call('test', {'command': 'cmd',
-                                             'type': 'BAD'})
+        call = slurm.get_call('test', {'command': 'cmd',
+                                       'type': 'BAD'})
         self.assertIsNone(call)
 
     def test_only_command_settings(self):
         """ Command only as job settings. """
-        call = slurm.get_slurm_call('test', {'command': 'cmd'})
+        call = slurm.get_call('test', {'command': 'cmd'})
         self.assertIsNone(call)
 
     def test_notime_srun_call(self):
         """ srun command without max time set. """
-        call = slurm.get_slurm_call('test', {'command': 'cmd',
-                                             'type': 'SRUN'})
+        call = slurm.get_call('test', {'command': 'cmd',
+                                       'type': 'SRUN'})
         self.assertIsNone(call)
 
     def test_basic_srun_call(self):
         """ Basic srun command. """
-        call = slurm.get_slurm_call('test', {'command': 'cmd',
-                                             'type': 'SRUN',
-                                             'max_time': '05:00'})
+        call = slurm.get_call('test', {'command': 'cmd',
+                                       'type': 'SRUN',
+                                       'max_time': '05:00'})
         self.assertEqual(call, "nohup srun -J 'test' -t 05:00 cmd &")
 
     def test_complete_srun_call(self):
         """ Complete srun command. """
-        call = slurm.get_slurm_call('test', {'modules': ['mod1', 'mod2'],
-                                             'type': 'SRUN',
-                                             'command': 'cmd',
-                                             'partition': 'thinnodes',
-                                             'nodes': 4,
-                                             'tasks': 96,
-                                             'tasks_per_node': 24,
-                                             'max_time': '05:00'})
+        call = slurm.get_call('test', {'modules': ['mod1', 'mod2'],
+                                       'type': 'SRUN',
+                                       'command': 'cmd',
+                                       'partition': 'thinnodes',
+                                       'nodes': 4,
+                                       'tasks': 96,
+                                       'tasks_per_node': 24,
+                                       'max_time': '05:00'})
         self.assertEqual(call, "module load mod1 mod2; "
                                "nohup srun -J 'test'"
                                " -p thinnodes"
@@ -87,20 +87,20 @@ class TestSlurm(unittest.TestCase):
 
     def test_basic_sbatch_call(self):
         """ Basic sbatch command. """
-        call = slurm.get_slurm_call('test', {'command': 'cmd',
-                                             'type': 'SBATCH'})
+        call = slurm.get_call('test', {'command': 'cmd',
+                                       'type': 'SBATCH'})
         self.assertEqual(call, "sbatch --parsable -J 'test' cmd")
 
     def test_complete_sbatch_call(self):
         """ Complete sbatch command. """
-        call = slurm.get_slurm_call('test', {'modules': ['mod1', 'mod2'],
-                                             'type': 'SBATCH',
-                                             'command': 'cmd',
-                                             'partition': 'thinnodes',
-                                             'nodes': 4,
-                                             'tasks': 96,
-                                             'tasks_per_node': 24,
-                                             'max_time': '05:00'})
+        call = slurm.get_call('test', {'modules': ['mod1', 'mod2'],
+                                       'type': 'SBATCH',
+                                       'command': 'cmd',
+                                       'partition': 'thinnodes',
+                                       'nodes': 4,
+                                       'tasks': 96,
+                                       'tasks_per_node': 24,
+                                       'max_time': '05:00'})
         self.assertEqual(call, "module load mod1 mod2; "
                                "sbatch --parsable -J 'test'"
                                " -p thinnodes"

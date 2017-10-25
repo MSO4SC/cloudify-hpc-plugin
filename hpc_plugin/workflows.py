@@ -181,7 +181,7 @@ class JobGraphNode(object):
         """
         Check if all instances has finished
 
-        If all of them have finished, changes node status as well
+        If all of them have finished, change node status as well
         """
         if not self.status == 'FINISHED':
             if self.status == 'NONE':
