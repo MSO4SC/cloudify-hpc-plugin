@@ -87,10 +87,11 @@ class JobGraphInstance(object):
                                                   'lifecycle.queue',
                                                   kwargs={"name": self.name})
         self.winstance.send_event('..HPC job queued')
-        result.task.wait_for_terminated()
+        # result.task.wait_for_terminated()
 
         self._status = 'PENDING'
         # print result.task.dump()
+        return result.task
 
     def is_finished(self):
         """ True if the job is finished or it is not a job """
@@ -158,11 +159,14 @@ class JobGraphNode(object):
     def queue_all_instances(self):
         """ Send all instances to the HPC queue if it represents a Job """
         if not self.is_job:
-            return
+            return []
 
+        tasks = []
         for job_instance in self.instances:
-            job_instance.queue()
+            tasks.append(job_instance.queue())
+
         self.status = 'QUEUED'
+        return tasks
 
     def is_ready(self):
         """ True if it has no more dependencies to satisfy """
@@ -338,9 +342,11 @@ def run_jobs(**kwargs):  # pylint: disable=W0613
     monitor = Monitor(job_instances_map)
 
     # Execution of first job instances
+    tasks = []
     for root in root_nodes:
-        root.queue_all_instances()
+        tasks += root.queue_all_instances()
         monitor.add_node(root)
+    wait_tasks_to_finish(tasks)
 
     # Monitoring and next executions loop
     while monitor.is_something_executing() and not api.has_cancel_request():
@@ -359,9 +365,11 @@ def run_jobs(**kwargs):  # pylint: disable=W0613
         for node_name in exec_nodes_finished:
             monitor.finish_node(node_name)
         # perform new executions
+        tasks = []
         for new_node in new_exec_nodes:
-            new_node.queue_all_instances()
+            tasks += new_node.queue_all_instances()
             monitor.add_node(new_node)
+        wait_tasks_to_finish(tasks)
 
     if monitor.is_something_executing():
         for node_name, exec_node in monitor.get_executions_iterator():
@@ -371,3 +379,9 @@ def run_jobs(**kwargs):  # pylint: disable=W0613
     ctx.logger.info(
         "------------------Workflow Finished-----------------------")
     return
+
+
+def wait_tasks_to_finish(tasks):
+    """Blocks until all tasks have finished"""
+    for task in tasks:
+        task.wait_for_terminated()
