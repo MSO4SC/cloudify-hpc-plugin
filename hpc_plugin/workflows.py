@@ -106,10 +106,28 @@ class JobGraphInstance(object):
             self._status = status
             self.winstance.send_event('State changed to ' + self._status)
 
+    def clean(self):
+        """ clean aux files if it is a Job """
+        if not self.parent_node.is_job:
+            return
+
+        self.winstance.send_event('Cleaning HPC job..')
+        result = self.winstance.execute_operation('hpc.interfaces.'
+                                                  'lifecycle.cleanup',
+                                                  kwargs={"name": self.name})
+        self.winstance.send_event('..HPC job cleaned')
+        # result.task.wait_for_terminated()
+
+        # print result.task.dump()
+        return result.task
+
     def cancel(self):
         """ Cancel the instance of the HPC if it is a Job """
         if not self.parent_node.is_job:
             return
+
+        # First perform clean operation
+        self.clean()
 
         self.winstance.send_event('Cancelling HPC job..')
         result = self.winstance.execute_operation('hpc.interfaces.'
@@ -216,6 +234,15 @@ class JobGraphNode(object):
         for child in self.children:
             to_print += '    ' + child.name + '\n'
         return to_print
+
+    def clean_all_instances(self):
+        """ Clean all files instances of the HPC if it represents a Job """
+        if not self.is_job:
+            return
+
+        for job_instance in self.instances:
+            job_instance.clean()
+        self.status = 'CANCELED'
 
     def cancel_all_instances(self):
         """ Cancel all instances of the HPC if it represents a Job """
@@ -357,6 +384,7 @@ def run_jobs(**kwargs):  # pylint: disable=W0613
         for node_name, exec_node in monitor.get_executions_iterator():
             # TODO(emepetres): support different states
             if exec_node.check_finished():
+                exec_node.clean_all_instances()
                 exec_nodes_finished.append(node_name)
                 new_nodes_to_execute = exec_node.get_children_ready()
                 for new_node in new_nodes_to_execute:

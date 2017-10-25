@@ -116,6 +116,11 @@ node_types:
                     inputs:
                         job_options:
                             default: { get_property: [SELF, job_options] }
+                cleanup:
+                    implementation: hpc.hpc_plugin.tasks.clean_job_aux_files
+                    inputs:
+                        job_options:
+                            default: { get_property: [SELF, job_options] }
                 cancel:
                     implementation: hpc.hpc_plugin.tasks.stop_job
                     inputs:

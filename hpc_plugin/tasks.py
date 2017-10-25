@@ -237,8 +237,8 @@ def send_job(job_options, **kwargs):  # pylint: disable=W0613
 
 
 @operation
-def stop_job(job_options, **kwargs):  # pylint: disable=W0613
-    """ Sends a job to the HPC """
+def clean_job_aux_files(job_options, **kwargs):  # pylint: disable=W0613
+    """Clean the aux files of the job in the HPC"""
     simulate = ctx.instance.runtime_properties['simulate']
     ctx.logger.info('Connecting to login node using workload manager: {0}.'
                     .format(ctx.instance.
@@ -246,6 +246,44 @@ def stop_job(job_options, **kwargs):  # pylint: disable=W0613
 
     credentials = ctx.instance.runtime_properties['credentials']
     name = kwargs['name']
+    is_singularity = 'hpc.nodes.singularity_job' in ctx.node.\
+        type_hierarchy
+
+    if not simulate:
+        client = SshClient(credentials['host'],
+                           credentials['user'],
+                           credentials['password'])
+
+        # TODO(emepetres): use workload manager type
+        is_clean = slurm.clean_job_aux_files(client,
+                                             name,
+                                             job_options,
+                                             is_singularity)
+
+        client.close_connection()
+    else:
+        ctx.logger.warning('Instance ' + ctx.instance.id + ' simulated')
+        is_clean = True
+
+    if is_clean:
+        ctx.logger.info('Job ' + name + ' (' + ctx.instance.id + ') cleaned.')
+    else:
+        ctx.logger.error('Job ' + name + ' (' + ctx.instance.id +
+                         ') not cleaned.')
+
+
+@operation
+def stop_job(job_options, **kwargs):  # pylint: disable=W0613
+    """ Stops a job in the HPC """
+    simulate = ctx.instance.runtime_properties['simulate']
+    ctx.logger.info('Connecting to login node using workload manager: {0}.'
+                    .format(ctx.instance.
+                            runtime_properties['workload_manager']))
+
+    credentials = ctx.instance.runtime_properties['credentials']
+    name = kwargs['name']
+    is_singularity = 'hpc.nodes.singularity_job' in ctx.node.\
+        type_hierarchy
 
     if not simulate:
         client = SshClient(credentials['host'],
@@ -255,7 +293,8 @@ def stop_job(job_options, **kwargs):  # pylint: disable=W0613
         # TODO(emepetres): use workload manager type
         is_stopped = slurm.stop_job(client,
                                     name,
-                                    job_options)
+                                    job_options,
+                                    is_singularity)
 
         client.close_connection()
     else:
@@ -269,5 +308,3 @@ def stop_job(job_options, **kwargs):  # pylint: disable=W0613
                          ') not stopped.')
         raise NonRecoverableError('Job ' + name + ' (' + ctx.instance.id +
                                   ') not stopped.')
-
-    ctx.instance.runtime_properties['job_name'] = name

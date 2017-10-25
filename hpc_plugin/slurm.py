@@ -43,11 +43,7 @@ def submit_job(ssh_client, name, job_settings, is_singularity):
         if script is None:
             # TODO(emepetres): Raise error
             return False
-        print "----------------------"
-        print script
-        print "----------------------"
-        print "echo '" + script + "' > " + name + ".script"
-        print "----------------------"
+
         if not ssh_client.send_command("echo '" + script + "' > " + name +
                                        ".script"):
             # TODO(emepetres): Raise error
@@ -60,9 +56,6 @@ def submit_job(ssh_client, name, job_settings, is_singularity):
         settings = job_settings
 
     call = get_call(name, settings)
-    print "----------------------"
-    print call
-    print "----------------------"
     if call is None:
         # TODO(emepetres): Raise error
         return False
@@ -70,7 +63,31 @@ def submit_job(ssh_client, name, job_settings, is_singularity):
     return ssh_client.send_command(call)
 
 
-def stop_job(ssh_client, name, job_settings):
+def clean_job_aux_files(ssh_client, name, job_settings, is_singularity):
+    """
+    Cleans no more needed job files in the HPC
+
+    @type ssh_client: SshClient
+    @param ssh_client: ssh client connected to an HPC login node
+    @type name: string
+    @param name: name of the job in slurm
+    @type job_settings: dictionary
+    @param job_settings: dictionary with the job options
+    @type is_singularity: bool
+    @param is_singularity: True if the job is in a container
+    @rtype string
+    @return Slurm's job name stopped. None if an error arise.
+    """
+    if not isinstance(ssh_client, SshClient) or not ssh_client.is_open():
+        # TODO(emepetres): Raise error
+        return False
+
+    if is_singularity:
+        return ssh_client.send_command("rm " + name + ".script")
+    return True
+
+
+def stop_job(ssh_client, name, job_settings, is_singularity):
     """
     Stops a job from the HPC using Slurm
 
@@ -80,6 +97,8 @@ def stop_job(ssh_client, name, job_settings):
     @param name: name of the job in slurm
     @type job_settings: dictionary
     @param job_settings: dictionary with the job options
+    @type is_singularity: bool
+    @param is_singularity: True if the job is in a container
     @rtype string
     @return Slurm's job name stopped. None if an error arise.
     """
