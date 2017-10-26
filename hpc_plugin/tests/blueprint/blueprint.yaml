@@ -73,7 +73,8 @@ node_templates:
                 tasks_per_node: 1
                 max_time: '00:01'
             deployment:
-                file: 'scripts/deploy.sh'
+                bootstrap: 'scripts/deploy.sh'
+                revert: 'scripts/deploy.sh'
                 inputs:
                     - 'first_job'
         relationships:

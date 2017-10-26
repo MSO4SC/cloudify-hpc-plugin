@@ -104,11 +104,17 @@ node_types:
                 description: Job main command and options
         interfaces:
             cloudify.interfaces.lifecycle:
-                start:
-                    implementation: hpc.hpc_plugin.tasks.deploy_job
+                start: # needs to be start to have the hpc credentials
+                    implementation: hpc.hpc_plugin.tasks.bootstrap_job
                     inputs:
                         deployment:
-                            description: Deployment script and inputs
+                            description: Deployment scripts and inputs
+                            default: { get_property: [SELF, deployment] }
+                stop:
+                    implementation: hpc.hpc_plugin.tasks.revert_job
+                    inputs:
+                        deployment:
+                            description: Deployment scripts and inputs
                             default: { get_property: [SELF, deployment] }
             hpc.interfaces.lifecycle:
                 queue:

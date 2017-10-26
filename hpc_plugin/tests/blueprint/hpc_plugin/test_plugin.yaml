@@ -112,10 +112,16 @@ node_types:
         interfaces:
             cloudify.interfaces.lifecycle:
                 start:
-                    implementation: hpc.hpc_plugin.tasks.deploy_job
+                    implementation: hpc.hpc_plugin.tasks.bootstrap_job
                     inputs:
                         deployment:
                             description: Deployment script and inputs
+                            default: { get_property: [SELF, deployment] }
+                stop:
+                    implementation: hpc.hpc_plugin.tasks.revert_job
+                    inputs:
+                        deployment:
+                            description: Undeployment script and inputs
                             default: { get_property: [SELF, deployment] }
             hpc.interfaces.lifecycle:
                 queue:

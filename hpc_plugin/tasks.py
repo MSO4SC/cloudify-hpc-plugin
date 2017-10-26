@@ -165,35 +165,77 @@ def stop_monitoring_hpc(config,
 
 
 @operation
-def deploy_job(deployment,
-               **kwarsgs):  # pylint: disable=W0613
-    """ Deploy a job using a script that receives SSH credentials as imput """
+def bootstrap_job(deployment, **kwarsgs):  # pylint: disable=W0613
+    """Bootstrap a job with a script that receives SSH credentials as imput"""
     if not deployment:
         return
 
-    ctx.logger.info('Deploying job..')
-
+    ctx.logger.info('Bootstraping job..')
     simulate = ctx.instance.runtime_properties['simulate']
-    if simulate:
-        ctx.logger.warning('HPC Deployment simulated')
+    print "BOOSTRAP simulation: " + str(simulate)
+
+    if not simulate and 'bootstrap' in deployment:
+        inputs = deployment['inputs'] if 'inputs' in deployment else []
+        credentials = ctx.instance.runtime_properties['credentials']
+
+        is_bootstraped = deploy_job(
+            deployment['bootstrap'], inputs, credentials, simulate)
+    else:
+        is_bootstraped = True
+
+    if is_bootstraped:
+        ctx.logger.info('..job bootstraped')
+    else:
+        ctx.logger.error('Job not bootstraped.')
+
+    # TODO(emepetres): Handle errors
+    ctx.logger.info('..job bootstraped')
+
+
+@operation
+def revert_job(deployment, **kwarsgs):  # pylint: disable=W0613
+    """Revert a job using a script that receives SSH credentials as input"""
+    if not deployment:
         return
 
+    ctx.logger.info('Reverting job..')
+    simulate = ctx.instance.runtime_properties['simulate']
+
+    if not simulate and 'revert' in deployment:
+        inputs = deployment['inputs'] if 'inputs' in deployment else []
+        credentials = ctx.instance.runtime_properties['credentials']
+
+        is_reverted = deploy_job(
+            deployment['revert'], inputs, credentials, simulate)
+    else:
+        is_reverted = True
+
+    if is_reverted:
+        ctx.logger.info('..job reverted')
+    else:
+        ctx.logger.error('Job not reverted.')
+
+
+def deploy_job(script, inputs, credentials, simulate):  # pylint: disable=W0613
+    """ Exec a eployment job script that receives SSH credentials as input """
+    if simulate:
+        ctx.logger.warning('HPC Deployment simulated')
+        return True
+
     # Build the execution call
-    call = os.path.normcase(deployment['file'])
-    credentials = ctx.instance.runtime_properties['credentials']
+    call = os.path.normcase(script)
     call += ' ' + credentials['host'] + ' ' + \
         credentials['user'] + ' ' + \
         credentials['password']
-    if 'inputs' in deployment:
-        for dinput in deployment['inputs']:
-            call += ' ' + dinput
+    for dinput in inputs:
+        call += ' ' + dinput
 
     # Execute and print output
     output = os.popen(call).read()
     ctx.logger.info(output)
 
     # TODO(emepetres): Handle errors
-    ctx.logger.info('..job deployed')
+    return True
 
 
 @operation
