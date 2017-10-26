@@ -47,6 +47,9 @@ class JobGraphInstance(object):
         self.parent_node = parent
         self.winstance = instance
 
+        self.completed = not self.parent_node.is_job  # True if is not a job
+        self.failed = False
+
         if parent.is_job:
             self._status = 'WAITING'
 
@@ -93,18 +96,24 @@ class JobGraphInstance(object):
         # print result.task.dump()
         return result.task
 
-    def is_finished(self):
-        """ True if the job is finished or it is not a job """
-        if not self.parent_node.is_job:
-            return True
-
-        return self._status == 'FINISHED'
-
-    def update_status(self, status):
+    def set_status(self, status):
         """ Update the instance state """
         if not status == self._status:
             self._status = status
             self.winstance.send_event('State changed to ' + self._status)
+
+            self.completed = not self.parent_node.is_job or \
+                self._status == 'COMPLETED'
+
+            if not self.parent_node.is_job:
+                self.failed = False
+            else:
+                self.failed = self.parent_node.is_job and \
+                    (self._status == 'BOOT_FAIL' or
+                     self._status == 'CANCELLED' or
+                     self._status == 'FAILED' or
+                     self._status == 'REVOKED' or
+                     self._status == 'TIMEOUT')
 
     def clean(self):
         """ clean aux files if it is a Job """
@@ -165,6 +174,9 @@ class JobGraphNode(object):
         self.children = []
         self.parent_depencencies_left = 0
 
+        self.completed = False
+        self.failed = False
+
     def add_parent(self, node):
         """ Adds a parent node """
         self.parents.append(node)
@@ -195,29 +207,41 @@ class JobGraphNode(object):
         for child in self.children:
             child.parent_depencencies_left -= 1
 
-    def check_finished(self):
+    def check_status(self):
         """
-        Check if all instances has finished
+        Check if all instances status
 
         If all of them have finished, change node status as well
+        Returns True if there is no errors (no job has failed)
         """
-        if not self.status == 'FINISHED':
-            if self.status == 'NONE':
+        if not self.completed and not self.failed:
+            if not self.is_job:
                 self._remove_children_dependency()
-                self.status = 'FINISHED'
+                self.status = 'COMPLETED'
+                self.completed = True
             else:
-                all_finished = True
+                completed = True
+                failed = False
                 for job_instance in self.instances:
-                    if not job_instance.is_finished():
-                        all_finished = False
+                    if job_instance.failed:
+                        failed = True
                         break
+                    elif not job_instance.completed:
+                        completed = False
 
-                if all_finished:
+                if failed:
+                    self.status = 'FAILED'
+                    self.failed = True
+                    self.completed = False
+                    return False
+
+                if completed:
                     # The job node just finished, remove this dependency
-                    self.status = 'FINISHED'
+                    self.status = 'COMPLETED'
                     self._remove_children_dependency()
+                    self.completed = True
 
-        return self.status == 'FINISHED'
+        return not self.failed
 
     def get_children_ready(self):
         """ Get all children nodes that are ready to start """
@@ -282,7 +306,7 @@ def build_graph(nodes):
 
 
 class Monitor(object):
-    """ Monitor the instances talking with prometheus """
+    """Monitor the instances talking with prometheus"""
 
     def __init__(self, job_instances_map):
         self.job_ids = {}
@@ -290,8 +314,8 @@ class Monitor(object):
         self.timestamp = 0
         self.job_instances_map = job_instances_map
 
-    def check_status(self):
-        """ Gets all executing instances and check their state """
+    def update_status(self):
+        """Gets all executing instances and update their state"""
 
         # first get the instances we need to check
         url_names_map = {}
@@ -312,7 +336,7 @@ class Monitor(object):
                             url_mtype_map[job_instance.monitor_url] = \
                                 job_instance.monitor_type
                     else:
-                        job_instance.update_status('FINISHED')
+                        job_instance.set_status('COMPLETED')
 
         # nothing to do if we don't have nothing to monitor
         if not url_names_map:
@@ -332,17 +356,7 @@ class Monitor(object):
 
         # finally set job status
         for inst_name, state in states.iteritems():
-            # FIXME(emepetres): contemplate failed states
-            if state == 'BOOT_FAIL' or \
-                    state == 'CANCELLED' or \
-                    state == 'COMPLETED' or \
-                    state == 'FAILED' or \
-                    state == 'PREEMPTED' or \
-                    state == 'REVOKED' or \
-                    state == 'TIMEOUT':
-                state = 'FINISHED'
-
-            self.job_instances_map[inst_name].update_status(state)
+            self.job_instances_map[inst_name].set_status(state)
 
     def get_executions_iterator(self):
         """ Executing nodes iterator """
@@ -378,17 +392,22 @@ def run_jobs(**kwargs):  # pylint: disable=W0613
     # Monitoring and next executions loop
     while monitor.is_something_executing() and not api.has_cancel_request():
         # Monitor the infrastructure
-        monitor.check_status()
+        monitor.update_status()
         exec_nodes_finished = []
         new_exec_nodes = []
         for node_name, exec_node in monitor.get_executions_iterator():
-            # TODO(emepetres): support different states
-            if exec_node.check_finished():
-                exec_node.clean_all_instances()
-                exec_nodes_finished.append(node_name)
-                new_nodes_to_execute = exec_node.get_children_ready()
-                for new_node in new_nodes_to_execute:
-                    new_exec_nodes.append(new_node)
+            if exec_node.check_status():
+                if exec_node.completed:
+                    exec_node.clean_all_instances()
+                    exec_nodes_finished.append(node_name)
+                    new_nodes_to_execute = exec_node.get_children_ready()
+                    for new_node in new_nodes_to_execute:
+                        new_exec_nodes.append(new_node)
+            else:
+                # Something went wrong in the node, cancel execution
+                cancel_all(monitor.get_executions_iterator())
+                return
+
         # remove finished nodes
         for node_name in exec_nodes_finished:
             monitor.finish_node(node_name)
@@ -400,13 +419,18 @@ def run_jobs(**kwargs):  # pylint: disable=W0613
         wait_tasks_to_finish(tasks)
 
     if monitor.is_something_executing():
-        for node_name, exec_node in monitor.get_executions_iterator():
-            exec_node.cancel_all_instances()
-        raise api.ExecutionCancelled()
+        cancel_all(monitor.get_executions_iterator())
 
     ctx.logger.info(
         "------------------Workflow Finished-----------------------")
     return
+
+
+def cancel_all(executions):
+    """Cancel all pending or running jobs"""
+    for node_name, exec_node in executions:
+        exec_node.cancel_all_instances()
+    raise api.ExecutionCancelled()
 
 
 def wait_tasks_to_finish(tasks):

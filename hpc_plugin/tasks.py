@@ -172,14 +172,13 @@ def bootstrap_job(deployment, **kwarsgs):  # pylint: disable=W0613
 
     ctx.logger.info('Bootstraping job..')
     simulate = ctx.instance.runtime_properties['simulate']
-    print "BOOSTRAP simulation: " + str(simulate)
 
     if not simulate and 'bootstrap' in deployment:
         inputs = deployment['inputs'] if 'inputs' in deployment else []
         credentials = ctx.instance.runtime_properties['credentials']
 
         is_bootstraped = deploy_job(
-            deployment['bootstrap'], inputs, credentials, simulate)
+            deployment['bootstrap'], inputs, credentials)
     else:
         is_bootstraped = True
 
@@ -187,9 +186,6 @@ def bootstrap_job(deployment, **kwarsgs):  # pylint: disable=W0613
         ctx.logger.info('..job bootstraped')
     else:
         ctx.logger.error('Job not bootstraped.')
-
-    # TODO(emepetres): Handle errors
-    ctx.logger.info('..job bootstraped')
 
 
 @operation
@@ -206,7 +202,7 @@ def revert_job(deployment, **kwarsgs):  # pylint: disable=W0613
         credentials = ctx.instance.runtime_properties['credentials']
 
         is_reverted = deploy_job(
-            deployment['revert'], inputs, credentials, simulate)
+            deployment['revert'], inputs, credentials)
     else:
         is_reverted = True
 
@@ -216,12 +212,8 @@ def revert_job(deployment, **kwarsgs):  # pylint: disable=W0613
         ctx.logger.error('Job not reverted.')
 
 
-def deploy_job(script, inputs, credentials, simulate):  # pylint: disable=W0613
+def deploy_job(script, inputs, credentials):  # pylint: disable=W0613
     """ Exec a eployment job script that receives SSH credentials as input """
-    if simulate:
-        ctx.logger.warning('HPC Deployment simulated')
-        return True
-
     # Build the execution call
     call = os.path.normcase(script)
     call += ' ' + credentials['host'] + ' ' + \
