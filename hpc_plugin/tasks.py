@@ -14,7 +14,6 @@
 # limitations under the License.
 """ Holds the plugin tasks """
 
-import os
 import requests
 from cloudify import ctx
 from cloudify.decorators import operation
