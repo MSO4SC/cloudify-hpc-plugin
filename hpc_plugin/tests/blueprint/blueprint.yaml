@@ -64,17 +64,17 @@ node_templates:
                     - openmpi/1.10.2
                     - singularity/2.3.1
                 partition: 'thin-shared'
-                image: '$LUSTRE/ring_slurm.img'
+                image: '$LUSTRE/openmpi_1.10.7_ring.img'
                 volumes:
                     - '/scratch'
-                command: 'ring > ring1.test'
+                command: 'ring > fourth_example_1.test'
                 nodes: 1
                 tasks: 1
                 tasks_per_node: 1
                 max_time: '00:01'
             deployment:
-                bootstrap: 'scripts/deploy.sh'
-                revert: 'scripts/deploy.sh'
+                bootstrap: 'scripts/singularity_bootstrap_example.sh'
+#                 revert: 'scripts/singularity_revert_example.sh'
                 inputs:
                     - 'first_job'
         relationships:
@@ -89,11 +89,16 @@ node_templates:
                 modules:
                     - gcc/5.3.0
                 partition: 'thin-shared'
-                command: 'touch cfy2.test'
+                command: 'touch fourth_example_2.test'
                 nodes: 1
                 tasks: 1
                 tasks_per_node: 1
                 max_time: '00:01'
+            deployment:
+                bootstrap: 'scripts/bootstrap_example.sh'
+                revert: 'scripts/revert_example.sh'
+                inputs:
+                    - 'second_job'
         relationships:
             - type: job_contained_in_hpc
               target: ft2_node
@@ -101,16 +106,27 @@ node_templates:
               target: first_job
     
     third_parallel_job:
-        type: hpc.nodes.job
+        type: hpc.nodes.singularity_job
         properties:
             job_options:
-                type: 'SRUN'
-                command: 'touch cfy3.test'
+                modules:
+                    - gcc/5.3.0
+                    - openmpi/1.10.2
+                    - singularity/2.3.1
                 partition: 'thin-shared'
+                image: '$LUSTRE/openmpi_1.10.7_ring.img'
+                volumes:
+                    - '/scratch'
+                command: 'ring > fourth_example_3.test'
                 nodes: 1
                 tasks: 1
                 tasks_per_node: 1
                 max_time: '00:01'
+            deployment:
+                bootstrap: 'scripts/singularity_bootstrap_example.sh'
+#                revert: 'scripts/singularity_revert_example.sh'
+                inputs:
+                    - 'third_job'
         relationships:
             - type: job_contained_in_hpc
               target: ft2_node
@@ -122,7 +138,12 @@ node_templates:
         properties:
             job_options:
                 type: 'SBATCH'
-                command: 'touch.script cfy4.test'
+                command: "touch.script fourth_example_4.test"
+            deployment:
+                bootstrap: 'scripts/bootstrap_example.sh'
+                revert: 'scripts/revert_example.sh'
+                inputs:
+                    - 'fourth_job'
         relationships:
             - type: job_contained_in_hpc
               target: ft2_node

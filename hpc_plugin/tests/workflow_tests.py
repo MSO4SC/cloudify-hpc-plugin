@@ -52,7 +52,18 @@ class TestPlugin(unittest.TestCase):
                                                     'test_plugin.yaml'),
                                        'hpc_plugin'),
                                       (os.path.join('blueprint', 'scripts',
-                                                    'deploy.sh'),
+                                                    'bootstrap_example.sh'),
+                                       'scripts'),
+                                      (os.path.join('blueprint', 'scripts',
+                                                    'revert_example.sh'),
+                                       'scripts'),
+                                      (os.path.join('blueprint', 'scripts',
+                                                    'singularity_' +
+                                                    'bootstrap_example.sh'),
+                                       'scripts'),
+                                      (os.path.join('blueprint', 'scripts',
+                                                    'singularity_' +
+                                                    'revert_example.sh'),
                                        'scripts')],
                    inputs='set_inputs')
     def test_install(self, cfy_local):

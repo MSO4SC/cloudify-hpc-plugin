@@ -169,16 +169,15 @@ def bootstrap_job(deployment, **kwarsgs):  # pylint: disable=W0613
     """Bootstrap a job with a script that receives SSH credentials as imput"""
     if not deployment:
         return
-
-    ctx.logger.info('Bootstraping job..')
     simulate = ctx.instance.runtime_properties['simulate']
 
     if not simulate and 'bootstrap' in deployment:
         inputs = deployment['inputs'] if 'inputs' in deployment else []
         credentials = ctx.instance.runtime_properties['credentials']
+        name = "bootstrap_" + ctx.instance.id + ".sh"
 
         is_bootstraped = deploy_job(
-            deployment['bootstrap'], inputs, credentials)
+            deployment['bootstrap'], inputs, credentials, name)
     else:
         is_bootstraped = True
 
@@ -200,9 +199,10 @@ def revert_job(deployment, **kwarsgs):  # pylint: disable=W0613
     if not simulate and 'revert' in deployment:
         inputs = deployment['inputs'] if 'inputs' in deployment else []
         credentials = ctx.instance.runtime_properties['credentials']
+        name = "revert_" + ctx.instance.id + ".sh"
 
         is_reverted = deploy_job(
-            deployment['revert'], inputs, credentials)
+            deployment['revert'], inputs, credentials, name)
     else:
         is_reverted = True
 
@@ -212,22 +212,41 @@ def revert_job(deployment, **kwarsgs):  # pylint: disable=W0613
         ctx.logger.error('Job not reverted.')
 
 
-def deploy_job(script, inputs, credentials):  # pylint: disable=W0613
+def deploy_job(script, inputs, credentials, name):  # pylint: disable=W0613
     """ Exec a eployment job script that receives SSH credentials as input """
+    ctx.logger.info('Bootstraping job..')
+
     # Build the execution call
-    call = os.path.normcase(script)
-    call += ' ' + credentials['host'] + ' ' + \
-        credentials['user'] + ' ' + \
-        credentials['password']
-    for dinput in inputs:
-        call += ' ' + dinput
+    script_data = ctx.get_resource(script).replace("$", "\\$")
 
     # Execute and print output
-    output = os.popen(call).read()
-    ctx.logger.info(output)
+    client = SshClient(credentials['host'],
+                       credentials['user'],
+                       credentials['password'])
 
-    # TODO(emepetres): Handle errors
-    return True
+    create_call = "echo \"" + script_data + "\" >> " + name + \
+        "; chmod +x " + name
+    _, exit_code = client.send_command(create_call, want_output=True)
+    if exit_code is not 0:
+        raise NonRecoverableError(
+            "failed to create deploy script: call '" + create_call +
+            "', exit code " + str(exit_code))
+
+    call = "./" + name
+    for dinput in inputs:
+        call += ' ' + dinput
+    _, exit_code = client.send_command(call, want_output=True)
+    if exit_code is not 0:
+        raise NonRecoverableError(
+            "failed to deploy job: call '" + call + "', exit code " +
+            str(exit_code))
+
+    if not client.send_command("rm " + name):
+        ctx.logger.warning("failed removing bootstrap script")
+
+    client.close_connection()
+
+    return exit_code is 0
 
 
 @operation
