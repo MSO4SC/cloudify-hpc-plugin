@@ -32,7 +32,7 @@ def login_connection(config, simulate, **kwargs):  # pylint: disable=W0613
         client = SshClient(credentials['host'],
                            credentials['user'],
                            credentials['password'])
-        _, exit_code = client.send_command('uname', want_output=True)
+        _, exit_code = client.send_command('uname', wait_result=True)
 
         if exit_code is not 0:
             raise NonRecoverableError(
@@ -225,7 +225,7 @@ def deploy_job(script, inputs, credentials, name):  # pylint: disable=W0613
 
     create_call = "echo \"" + script_data + "\" >> " + name + \
         "; chmod +x " + name
-    _, exit_code = client.send_command(create_call, want_output=True)
+    _, exit_code = client.send_command(create_call, wait_result=True)
     if exit_code is not 0:
         raise NonRecoverableError(
             "failed to create deploy script: call '" + create_call +
@@ -234,7 +234,7 @@ def deploy_job(script, inputs, credentials, name):  # pylint: disable=W0613
     call = "./" + name
     for dinput in inputs:
         call += ' ' + dinput
-    _, exit_code = client.send_command(call, want_output=True)
+    _, exit_code = client.send_command(call, wait_result=True)
     if exit_code is not 0:
         raise NonRecoverableError(
             "failed to deploy job: call '" + call + "', exit code " +
@@ -270,7 +270,8 @@ def send_job(job_options, **kwargs):  # pylint: disable=W0613
         is_submitted = slurm.submit_job(client,
                                         name,
                                         job_options,
-                                        is_singularity)
+                                        is_singularity,
+                                        ctx.logger)
 
         client.close_connection()
     else:
@@ -310,7 +311,8 @@ def clean_job_aux_files(job_options, **kwargs):  # pylint: disable=W0613
         is_clean = slurm.clean_job_aux_files(client,
                                              name,
                                              job_options,
-                                             is_singularity)
+                                             is_singularity,
+                                             ctx.logger)
 
         client.close_connection()
     else:
@@ -346,7 +348,8 @@ def stop_job(job_options, **kwargs):  # pylint: disable=W0613
         is_stopped = slurm.stop_job(client,
                                     name,
                                     job_options,
-                                    is_singularity)
+                                    is_singularity,
+                                    ctx.logger)
 
         client.close_connection()
     else:

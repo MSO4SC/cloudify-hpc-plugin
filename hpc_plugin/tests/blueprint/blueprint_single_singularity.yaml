@@ -1,0 +1,86 @@
+########
+# Copyright (c) 2017 MSO4SC - javier.carnero@atos.net
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#        http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+tosca_definitions_version: cloudify_dsl_1_3
+
+imports:
+    # to speed things up, it is possible to download this file,
+    - http://www.getcloudify.org/spec/cloudify/4.1/types.yaml
+    # HPC pluging
+    - http://raw.githubusercontent.com/MSO4SC/cloudify-hpc-plugin/master/plugin.yaml
+
+inputs:
+    # Monitor
+    monitor_entrypoint:
+        description: Monitor entrypoint IP
+        default: "127.0.0.1"
+        type: string
+
+    # Job prefix name
+    job_prefix:
+        description: Job name prefix in HPCs
+        default: "mso4sc"
+        type: string
+
+    # CESGA FTII parameters
+    ft2_config:
+        description: FTII connection credentials
+        default: {}
+    
+    # SZE test infrastructure parameters
+    sze_config:
+        description: SZE test infrastructure credentials
+        default: {}
+
+node_templates:
+    ft2_node:
+        type: hpc.nodes.Compute
+        properties:
+            config: { get_input: ft2_config }
+            monitor_entrypoint: { get_input: monitor_entrypoint }
+#            monitor_orchestrator_available: True
+            job_prefix: { get_input: job_prefix }
+            simulate: True  # COMMENT to test against a real HPC
+
+    single_job:
+        type: hpc.nodes.job
+        properties:
+            job_options: 
+                modules:
+                    - gcc/5.3.0
+                    - openmpi/1.10.2
+                    - singularity/2.3.1
+                partition: 'thin-shared'
+                image: '$LUSTRE/openmpi_1.10.7_ring.img'
+                volumes:
+                    - '/scratch'
+                command: 'ring > single.test'
+                nodes: 1
+                tasks: 1
+                tasks_per_node: 1
+                max_time: '00:01'
+            deployment:
+                bootstrap: 'scripts/singularity_bootstrap_example.sh'
+#                revert: 'scripts/singularity_revert_example.sh'
+                inputs:
+                    - single
+        relationships:
+            - type: job_contained_in_hpc
+              target: ft2_node
+
+outputs:
+    single_job_name:
+        description: single job name in the HPC
+        value: { get_attribute: [single_job, job_name] }

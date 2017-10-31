@@ -52,7 +52,7 @@ class SshClient(object):
                      command,
                      exec_timeout=3000,
                      read_chunk_timeout=500,
-                     want_output=False):
+                     wait_result=False):
         """Sends a command and returns stdout, stderr and exitcode"""
 
         # Check if connection is made previously
@@ -62,7 +62,7 @@ class SshClient(object):
                 command,
                 timeout=exec_timeout)
 
-            if want_output:
+            if wait_result:
                 # get the shared channel for stdout/stderr/stdin
                 channel = stdout.channel
 
@@ -120,15 +120,18 @@ class SshClient(object):
             stdout.close()
             stderr.close()
 
-            if want_output:
+            if wait_result:
                 # exit code is always ready at this point
-                return (''.join(stdout_chunks),
-                        stdout.channel.recv_exit_status())
+                exit_code = stdout.channel.recv_exit_status()
+                if exit_code is 0:
+                    output = ''.join(stdout_chunks)
+                else:
+                    output = ''.join(stdout_chunks)  # TODO stderr
+                return (output, exit_code)
             else:
                 return True
         else:
-            if want_output:
-                # exit code is always ready at this point
+            if wait_result:
                 return (None, None)
             else:
                 return False

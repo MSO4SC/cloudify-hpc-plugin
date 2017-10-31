@@ -74,7 +74,7 @@ node_templates:
                 max_time: '00:01'
             deployment:
                 bootstrap: 'scripts/singularity_bootstrap_example.sh'
-#                 revert: 'scripts/singularity_revert_example.sh'
+#                revert: 'scripts/singularity_revert_example.sh'
                 inputs:
                     - 'first_job'
         relationships:

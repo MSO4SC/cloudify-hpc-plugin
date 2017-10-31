@@ -19,7 +19,7 @@ import random
 from hpc_plugin.ssh import SshClient
 
 
-def submit_job(ssh_client, name, job_settings, is_singularity):
+def submit_job(ssh_client, name, job_settings, is_singularity, logger):
     """
     Sends a job to the HPC using Slurm
 
@@ -35,18 +35,23 @@ def submit_job(ssh_client, name, job_settings, is_singularity):
     @return Slurm's job name sent. None if an error arise.
     """
     if not isinstance(ssh_client, SshClient) or not ssh_client.is_open():
-        # TODO(emepetres): Raise error
+        logger.error("SSH Client can't be used")
         return False
 
     if is_singularity:
         script = get_container_script(name, job_settings)
         if script is None:
-            # TODO(emepetres): Raise error
+            logger.error("Singularity Script malformed")
             return False
 
-        if not ssh_client.send_command("echo '" + script + "' > " + name +
-                                       ".script"):
-            # TODO(emepetres): Raise error
+        output, exit_code = ssh_client.send_command("echo '" + script +
+                                                    "' > " + name +
+                                                    ".script",
+                                                    wait_result=True)
+        if exit_code is not 0:
+            logger.error(
+                "Singularity script couldn't be created, exited with code " +
+                str(exit_code) + ": " + output)
             return False
         settings = {
             "type": "SBATCH",
@@ -57,13 +62,21 @@ def submit_job(ssh_client, name, job_settings, is_singularity):
 
     call = get_call(name, settings)
     if call is None:
-        # TODO(emepetres): Raise error
+        logger.error("Couldn't send the job, call malformed")
         return False
 
-    return ssh_client.send_command(call)
+    output, exit_code = ssh_client.send_command(call, wait_result=True)
+    if exit_code is not 0:
+        logger.error("Call '" + call + "' exited with code " +
+                     str(exit_code) + ": " + output)
+        return False
+    return True
 
 
-def clean_job_aux_files(ssh_client, name, job_settings, is_singularity):
+def clean_job_aux_files(ssh_client, name,
+                        job_settings,
+                        is_singularity,
+                        logger):
     """
     Cleans no more needed job files in the HPC
 
@@ -79,7 +92,7 @@ def clean_job_aux_files(ssh_client, name, job_settings, is_singularity):
     @return Slurm's job name stopped. None if an error arise.
     """
     if not isinstance(ssh_client, SshClient) or not ssh_client.is_open():
-        # TODO(emepetres): Raise error
+        logger.error("SSH Client can't be used")
         return False
 
     if is_singularity:
@@ -87,7 +100,7 @@ def clean_job_aux_files(ssh_client, name, job_settings, is_singularity):
     return True
 
 
-def stop_job(ssh_client, name, job_settings, is_singularity):
+def stop_job(ssh_client, name, job_settings, is_singularity, logger):
     """
     Stops a job from the HPC using Slurm
 
@@ -103,14 +116,10 @@ def stop_job(ssh_client, name, job_settings, is_singularity):
     @return Slurm's job name stopped. None if an error arise.
     """
     if not isinstance(ssh_client, SshClient) or not ssh_client.is_open():
-        # TODO(emepetres): Raise error
+        logger.error("SSH Client can't be used")
         return False
 
     call = "scancel --name " + name
-
-    if call is None:
-        # TODO(emepetres): Raise error
-        return False
 
     return ssh_client.send_command(call)
 
@@ -129,7 +138,7 @@ def get_jobids_by_name(ssh_client, job_names):
     """
     # TODO(emepetres) set first day of consulting(sacct only check current day)
     call = "sacct -n -o jobname%32,jobid -X --name=" + ','.join(job_names)
-    output, exit_code = ssh_client.send_command(call, want_output=True)
+    output, exit_code = ssh_client.send_command(call, wait_result=True)
 
     ids = {}
     if exit_code == 0:
@@ -152,7 +161,7 @@ def get_status(ssh_client, job_ids):
     """
     # TODO(emepetres) set first day of consulting(sacct only check current day)
     call = "sacct -n -o jobid,state -X --jobs=" + ','.join(job_ids)
-    output, exit_code = ssh_client.send_command(call, want_output=True)
+    output, exit_code = ssh_client.send_command(call, wait_result=True)
 
     states = {}
     if exit_code == 0:

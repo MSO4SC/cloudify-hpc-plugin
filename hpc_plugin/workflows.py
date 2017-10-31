@@ -18,7 +18,7 @@ import sys
 import time
 
 from cloudify.decorators import workflow
-from cloudify.workflows import ctx, api
+from cloudify.workflows import ctx, api, tasks
 from hpc_plugin import monitors
 
 
@@ -89,10 +89,13 @@ class JobGraphInstance(object):
         result = self.winstance.execute_operation('hpc.interfaces.'
                                                   'lifecycle.queue',
                                                   kwargs={"name": self.name})
-        self.winstance.send_event('..HPC job queued')
-        # result.task.wait_for_terminated()
-
-        self._status = 'PENDING'
+        result.task.wait_for_terminated()
+        if result.task.get_state() == tasks.TASK_FAILED:
+            init_state = 'FAILED'
+        else:
+            self.winstance.send_event('..HPC job queued')
+            init_state = 'PENDING'
+        self.set_status(init_state)
         # print result.task.dump()
         return result.task
 
@@ -124,8 +127,8 @@ class JobGraphInstance(object):
         result = self.winstance.execute_operation('hpc.interfaces.'
                                                   'lifecycle.cleanup',
                                                   kwargs={"name": self.name})
-        self.winstance.send_event('..HPC job cleaned')
         # result.task.wait_for_terminated()
+        self.winstance.send_event('..HPC job cleaned')
 
         # print result.task.dump()
         return result.task
@@ -308,11 +311,12 @@ def build_graph(nodes):
 class Monitor(object):
     """Monitor the instances talking with prometheus"""
 
-    def __init__(self, job_instances_map):
+    def __init__(self, job_instances_map, logger):
         self.job_ids = {}
         self._execution_pool = {}
         self.timestamp = 0
         self.job_instances_map = job_instances_map
+        self.logger = logger
 
     def update_status(self):
         """Gets all executing instances and update their state"""
@@ -347,6 +351,7 @@ class Monitor(object):
         if seconds_to_wait > 0:
             sys.stdout.flush()  # necessary to output work properly with sleep
             time.sleep(seconds_to_wait)
+        self.logger.debug("Reading job status..")
 
         self.timestamp = time.time()
 
@@ -380,7 +385,7 @@ def run_jobs(**kwargs):  # pylint: disable=W0613
     """ Workflow to execute long running batch operations """
 
     root_nodes, job_instances_map = build_graph(ctx.nodes)
-    monitor = Monitor(job_instances_map)
+    monitor = Monitor(job_instances_map, ctx.logger)
 
     # Execution of first job instances
     tasks = []
