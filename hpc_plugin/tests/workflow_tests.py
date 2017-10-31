@@ -47,7 +47,7 @@ class TestPlugin(unittest.TestCase):
 
         return inputs
 
-    @workflow_test(os.path.join('blueprint', 'blueprint_single_batch.yaml'),
+    @workflow_test(os.path.join('blueprint', 'blueprint_four.yaml'),
                    resources_to_copy=[(os.path.join('blueprint', 'hpc_plugin',
                                                     'test_plugin.yaml'),
                                        'hpc_plugin'),
@@ -64,6 +64,14 @@ class TestPlugin(unittest.TestCase):
                                       (os.path.join('blueprint', 'scripts',
                                                     'singularity_' +
                                                     'revert_example.sh'),
+                                       'scripts'),
+                                      (os.path.join('blueprint', 'scripts',
+                                                    'bootstrap_' +
+                                                    'sbatch_example.sh'),
+                                       'scripts'),
+                                      (os.path.join('blueprint', 'scripts',
+                                                    'revert_' +
+                                                    'sbatch_example.sh'),
                                        'scripts')],
                    inputs='set_inputs')
     def test_install(self, cfy_local):

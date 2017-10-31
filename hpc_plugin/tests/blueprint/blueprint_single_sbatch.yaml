@@ -59,12 +59,12 @@ node_templates:
         properties:
             job_options:
                 type: 'SBATCH'
-                command: "touch.script single.test"
+                command: "touch.script fourth_example_4.test"
             deployment:
-                bootstrap: 'scripts/bootstrap_example.sh'
-                revert: 'scripts/revert_example.sh'
+                bootstrap: 'scripts/bootstrap_sbatch_example.sh'
+                revert: 'scripts/revert_sbatch_example.sh'
                 inputs:
-                    - 'single'
+                    - 'fourth_job'
         relationships:
             - type: job_contained_in_hpc
               target: ft2_node

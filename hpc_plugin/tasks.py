@@ -168,6 +168,8 @@ def bootstrap_job(deployment, **kwarsgs):  # pylint: disable=W0613
     """Bootstrap a job with a script that receives SSH credentials as imput"""
     if not deployment:
         return
+
+    ctx.logger.info('Bootstraping job..')
     simulate = ctx.instance.runtime_properties['simulate']
 
     if not simulate and 'bootstrap' in deployment:
@@ -213,7 +215,6 @@ def revert_job(deployment, **kwarsgs):  # pylint: disable=W0613
 
 def deploy_job(script, inputs, credentials, name):  # pylint: disable=W0613
     """ Exec a eployment job script that receives SSH credentials as input """
-    ctx.logger.info('Bootstraping job..')
 
     # Build the execution call
     script_data = ctx.get_resource(script).replace("$", "\\$")
@@ -252,9 +253,6 @@ def deploy_job(script, inputs, credentials, name):  # pylint: disable=W0613
 def send_job(job_options, **kwargs):  # pylint: disable=W0613
     """ Sends a job to the HPC """
     simulate = ctx.instance.runtime_properties['simulate']
-    ctx.logger.info('Connecting to login node using workload manager: {0}.'
-                    .format(ctx.instance.
-                            runtime_properties['workload_manager']))
 
     credentials = ctx.instance.runtime_properties['credentials']
     name = kwargs['name']
@@ -262,6 +260,7 @@ def send_job(job_options, **kwargs):  # pylint: disable=W0613
         type_hierarchy
 
     if not simulate:
+
         client = SshClient(credentials['host'],
                            credentials['user'],
                            credentials['password'])
@@ -272,7 +271,6 @@ def send_job(job_options, **kwargs):  # pylint: disable=W0613
                                         job_options,
                                         is_singularity,
                                         ctx.logger)
-
         client.close_connection()
     else:
         ctx.logger.warning('Instance ' + ctx.instance.id + ' simulated')
@@ -293,9 +291,6 @@ def send_job(job_options, **kwargs):  # pylint: disable=W0613
 def clean_job_aux_files(job_options, **kwargs):  # pylint: disable=W0613
     """Clean the aux files of the job in the HPC"""
     simulate = ctx.instance.runtime_properties['simulate']
-    ctx.logger.info('Connecting to login node using workload manager: {0}.'
-                    .format(ctx.instance.
-                            runtime_properties['workload_manager']))
 
     credentials = ctx.instance.runtime_properties['credentials']
     name = kwargs['name']
@@ -330,9 +325,6 @@ def clean_job_aux_files(job_options, **kwargs):  # pylint: disable=W0613
 def stop_job(job_options, **kwargs):  # pylint: disable=W0613
     """ Stops a job in the HPC """
     simulate = ctx.instance.runtime_properties['simulate']
-    ctx.logger.info('Connecting to login node using workload manager: {0}.'
-                    .format(ctx.instance.
-                            runtime_properties['workload_manager']))
 
     credentials = ctx.instance.runtime_properties['credentials']
     name = kwargs['name']
