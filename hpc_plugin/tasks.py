@@ -178,7 +178,7 @@ def bootstrap_job(deployment, **kwarsgs):  # pylint: disable=W0613
         name = "bootstrap_" + ctx.instance.id + ".sh"
 
         is_bootstraped = deploy_job(
-            deployment['bootstrap'], inputs, credentials, name)
+            deployment['bootstrap'], inputs, credentials, name, ctx.logger)
     else:
         is_bootstraped = True
 
@@ -186,6 +186,7 @@ def bootstrap_job(deployment, **kwarsgs):  # pylint: disable=W0613
         ctx.logger.info('..job bootstraped')
     else:
         ctx.logger.error('Job not bootstraped.')
+        raise NonRecoverableError("Bootstrap failed")
 
 
 @operation
@@ -203,7 +204,7 @@ def revert_job(deployment, **kwarsgs):  # pylint: disable=W0613
         name = "revert_" + ctx.instance.id + ".sh"
 
         is_reverted = deploy_job(
-            deployment['revert'], inputs, credentials, name)
+            deployment['revert'], inputs, credentials, name, ctx.logger)
     else:
         is_reverted = True
 
@@ -213,7 +214,11 @@ def revert_job(deployment, **kwarsgs):  # pylint: disable=W0613
         ctx.logger.error('Job not reverted.')
 
 
-def deploy_job(script, inputs, credentials, name):  # pylint: disable=W0613
+def deploy_job(script,
+               inputs,
+               credentials,
+               name,
+               logger):  # pylint: disable=W0613
     """ Exec a eployment job script that receives SSH credentials as input """
 
     # Build the execution call
@@ -228,21 +233,21 @@ def deploy_job(script, inputs, credentials, name):  # pylint: disable=W0613
         "; chmod +x " + name
     _, exit_code = client.send_command(create_call, wait_result=True)
     if exit_code is not 0:
-        raise NonRecoverableError(
+        logger.error(
             "failed to create deploy script: call '" + create_call +
             "', exit code " + str(exit_code))
+    else:
+        call = "./" + name
+        for dinput in inputs:
+            call += ' ' + dinput
+        _, exit_code = client.send_command(call, wait_result=True)
+        if exit_code is not 0:
+            logger.warning(
+                "failed to deploy job: call '" + call + "', exit code " +
+                str(exit_code))
 
-    call = "./" + name
-    for dinput in inputs:
-        call += ' ' + dinput
-    _, exit_code = client.send_command(call, wait_result=True)
-    if exit_code is not 0:
-        raise NonRecoverableError(
-            "failed to deploy job: call '" + call + "', exit code " +
-            str(exit_code))
-
-    if not client.send_command("rm " + name):
-        ctx.logger.warning("failed removing bootstrap script")
+        if not client.send_command("rm " + name):
+            logger.warning("failed removing bootstrap script")
 
     client.close_connection()
 
