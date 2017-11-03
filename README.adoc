@@ -1,0 +1,329 @@
+= Cloudify HPC Plugin
+// Settings
+:idprefix:
+:idseparator: -
+ifndef::env-github[:icons: font]
+ifdef::env-github,env-browser[]
+:toc: macro
+:toclevels: 1
+endif::[]
+ifdef::env-github[]
+:branch: master
+:status:
+:outfilesuffix: .adoc
+:!toc-title:
+:caution-caption: :fire:
+:important-caption: :exclamation:
+:note-caption: :paperclip:
+:tip-caption: :bulb:
+:warning-caption: :warning:
+endif::[]
+:icons:
+// URIs
+:uri-vagrant: https://www.vagrantup.com/
+:uri-docker: https://www.docker.com/
+:uri-ci-travis: https://travis-ci.org/MSO4SC/cloudify-hpc-plugin
+:uri-cloudify: http://cloudify.co/
+:uri-cloudify-docs: http://docs.getcloudify.org/4.1.0/intro/what-is-cloudify/
+:uri-cloudify-use-plugin: http://docs.getcloudify.org/4.1.0/plugins/using-plugins/
+:uri-cloudify-types: http://docs.getcloudify.org/4.1.0/blueprints/spec-node-types/
+:uri-cloudify-builtin-types: http://docs.getcloudify.org/4.1.0/blueprints/built-in-types/
+:uri-cloudify-relationships: http://docs.getcloudify.org/4.1.0/blueprints/spec-relationships/
+:uri-mso4sc: http://www.mso4sc.eu/
+:uri-mso4sc-dockerhub: https://hub.docker.com/u/mso4sc/dashboard/
+:uri-blueprint-examples: https://github.com/MSO4SC/resources/tree/master/blueprint-examples
+:uri-monitor-orchestrator: https://github.com/MSO4SC/exporter_orchestrator
+:uri-msoorchestrator-cli: https://github.com/MSO4SC/msoorchestrator-cli
+:uri-slurm-exporter: https://github.com/MSO4SC/slurm_exporter
+:uri-prometheus: https://prometheus.io/
+:uri-singularity: http://singularity.lbl.gov/
+:uri-slurm: https://slurm.schedmd.com/
+:uri-grafana: https://grafana.com/
+:uri-grafana-mso4sc-dashboard: https://github.com/MSO4SC/MSOMonitor/blob/master/grafana/MSO4SC.json
+:uri-monitor-compose: https://github.com/MSO4SC/MSOMonitor/blob/master/docker-compose.yml
+
+
+
+ifdef::status[]
+image:https://img.shields.io/travis/MSO4SC/cloudify-hpc-plugin/master.svg[Build Status (Travis CI), link={uri-ci-travis}]
+endif::[]
+
+A HPC plugin for {uri-cloudify}[Cloudify] that enables it to manage HPC resources in one or more infrastructures. The currently supported resource types are described below.
+
+This plugin is part of the {uri-mso4sc}[MSO4SC H2020 European Project].
+
+TIP: Example blueprints can be found at the {uri-blueprint-examples}[MSO4SC resources repository].
+
+toc::[]
+
+
+== Overview
+
+The plugin aims to enable {uri-cloudify}[Cloudify] to manage HPC resources, so at the end, combined with other plugins, it can orchestrate a hybrid cloud+hpc environment, with one or more cloud and hpc providerds at the same time.
+
+It adds a new resource type, <<hpc.nodes.Compute>>, that represents a HPC infrastructure, and <<hpc.nodes.job>> and <<hpc.nodes.singularity_job>>, that represents a job in the HPC and a job using a {uri-singularity}[Singularity] container respectively.
+
+In order to Cloudify orchestrates properly the HPC resources, the help of an external monitor system is needed, from which the job status is retrieved. In the next release the plugin will also use the monitor to predict the overall state of the HPC and take best decisions about which partition and infrastructure to use for each job.
+
+IMPORTANT: Only {uri-slurm}[Slurm] based HPCs are supported for now as well as only {uri-prometheus}[Prometheus] is supported as monitoring system.
+
+
+
+== Plugin Requirements
+
+* Python version 2.7.x
+* Access to at least a {uri-slurm}[Slurm] based HPC by ssh user & password.
+* {uri-prometheus}[Prometheus] monitoring the infrastructures to be used ({uri-slurm-exporter}[Slurm exporter] has been developed for this purpose)
+
+=== Optional:
+
+* The {uri-monitor-orchestrator}[Monitor Orchestrator] can be deployed in the same host as the monitor to allow the plugin to dynamically use new HPC infrastructures defined in TOSCA.
+* {uri-grafana}[Grafana] can be used to visualize the status of the HPCs.
+
+
+== Installation & Usage
+
+The plugin is installed as any other plugin. Check {uri-cloudify-docs}[Cloudify Docs] for general information about how to install and use Cloudify, and {uri-cloudify-use-plugin}[this section] for concrete information about using plugins.
+
+Additionally {uri-mso4sc}[MSO4SC] provide {uri-vagrant}[Vagrant] and {uri-docker}[Docker] images at {uri-mso4sc-dockerhub}[Docker Hub] to install everything. *Check {uri-msoorchestrator-cli}[MSOOrchestrator-CLI] to start using Cloudify CLI and bootstrap the Cloudify Manager. Use {uri-monitor-compose}[docker compose file] to deploy all the external components. A {uri-grafana}[Grafana] dashboard can be found {uri-grafana-mso4sc-dashboard}[here].*
+
+== HPC Plugin Configuration
+
+The HPC plugin requires credentials, endpoint and other setup information in order to authenticate and interact with them.
+
+=== Providing Credentials as Secrets
+
+WARNING: Not yet implemented
+
+[[hpc-config-properties]]
+=== Providing Credentials as Environment Variables that are not Stored as Secrets
+
+If you do not use secret storage, you must provide the following credentials as properties (in the blueprint or as input):
+
+[source,yaml]
+----
+
+HPC_config:
+    credentials:
+        host: "[HPC-HOST]"
+        user: "[HPC-SSH-USER]"
+        password: "[HPC-SSH-PASS]"
+    country_tz: "Europe/Madrid"
+    workload_manager: "SLURM"
+
+----
+
+This configuration properties are passed then to <<hpc.nodes.Compute>> config properties.
+
+. _credentials_: HPC and ssh credentials
+. _country_tz_: Country Time Zone configured in the the HPC.
+. _workload_manager_: Workload manager used by the HPC.
+
+WARNING: Only Slurm is currently accepted as workload manager.
+
+== Types
+
+This section describes the {uri-cloudify-types}[node type] definitions. Nodes describe resources in your HPC infrastructures. For more information, see {uri-cloudify-types}[node type].
+
+=== hpc.nodes.Compute
+
+**Derived From:** {uri-cloudify-builtin-types}[cloudify.nodes.Compute]
+
+Use this type to describe a HPC infrastructure.
+
+**Properties:**
+
+* `config`: HPC configuration, as described in <<hpc-config-properties>>.
+* `monitor_entrypoint`: Entrypoint of the monitor that will use Cloudify to check the status of the jobs in every HPC.
+* `monitor_port`: Port of the monitor, :9090 by default.
+* `monitor_type`: Specific monitor tool, {uri-prometheus}[PROMETHEUS] by default.
+* `monitor_orchestrator_available` - _true/false_: In order to be able to declare new HPC infrastructures dynamically in the TOSCA file, {uri-mso4sc}[MSO4SC] provides an {uri-monitor-orchestrator}[monitor orchestrator] that, running in the same host as the monitor, start/stop new {uri-prometheus}[Prometheus] exporters to monitor new HPC infrastructures. If it is false, configuration to pull metrics from the HPC have be done manually before executing the TOSCA file (see {uri-slurm-exporter}[MSO4SC Slurm exporter]). False by default.
+* `monitor_orchestrator_port`: Monitor orchestrator port, :8079 by default.
+* `job_prefix`: Job name prefix for the jobs created in this HPC, cfyhpc by default.
+* `simulate`: If true, don't send the jobs to the HPC and simulate that they finish inmediately. Useful for test new TOSCA files. false by default. 
+
+*Example*
+
+This example demonstrates how to add a new HPC.
+
+[source,yaml]
+----
+
+    hpc_node:
+        type: hpc.nodes.Compute
+        properties:
+            config:
+                credentials:
+                    host: "[HPC-HOST]"
+                    user: "[HPC-SSH-USER]"
+                    password: "[HPC-SSH-PASS]"
+                country_tz: "Europe/Madrid"
+                workload_manager: "SLURM"
+            monitor_entrypoint: 192.168.0.200
+            monitor_orchestrator_available: True
+            job_prefix: hpc_
+...
+
+----
+
+*Mapped Operations:*
+
+* `cloudify.interfaces.lifecycle.start` Checks that there is connection between Cloudify and the HPC.
+* `cloudify.interfaces.monitoring.start` If the monitor orchestrator is available, sends a notification to start monitoring the HPC.
+* `cloudify.interfaces.monitoring.stop` If the monitor orchestrator is available, sends a notification to end monitoring the HPC.
+
+=== hpc.nodes.job
+
+**Derived From:** {uri-cloudify-builtin-type}[cloudify.nodes.Root]
+
+Use this tipe to describe a HPC job.
+
+**Properties:**
+
+* `job_options`: Job parameters and needed resources.
+** `type`: SRUN or SBATCH (job executed using a command or using a script).
+** `modules`: List of modules that will be load before executing the job. Optional.
+** `partition`: Partition in which the job will be executed. If not provided, the HPC default will be used.
+** `command`: Job executable command with arguments if necessary. Mandatory.
+** `nodes`: Necessary nodes of the job. 1 by default.
+** `tasks`: Number of tasks of the job. 1 by default.
+** `tasks_per_node`: Number of tasks per node. 1 by default.
+** `max_time`: Set a limit on the total run time of the job allocation. Mandatory if SRUN type.
+* `deployment`: Optional scripts to perform deployment operations (bootstrap and revert).
+** `bootstrap`: Relative path to blueprint to the script that will be executed in the HPC at the install workflow to bootstrap the job (like data movements, binary download, etc.)
+** `revert`: Relative path to blueprint to the script that will be executed in the HPC at the uninstall workflow, reverting the bootstrap or other clean up operations.
+** `inputs`: List of inputs that will be passed to the scripts when executed in the HPC
+
+*Example*
+
+This example demonstrates how to describe a new job.
+
+[source,yaml]
+----
+    hpc_job:
+        type: hpc.nodes.job
+        properties:
+            job_options: 
+                type: 'SRUN'
+                modules:
+                    - gcc/5.3.0
+                partition: 'thin-shared'
+                command: 'touch example.test'
+                nodes: 1
+                tasks: 1
+                tasks_per_node: 1
+                max_time: '00:01'
+            deployment:
+                bootstrap: 'scripts/bootstrap_example.sh'
+                revert: 'scripts/revert_example.sh'
+                inputs:
+                    - 'example_job'
+...
+
+----
+
+*Mapped Operations:*
+
+* `cloudify.interfaces.lifecycle.start` Send and execute the bootstrap script.
+* `cloudify.interfaces.lifecycle.stop` Send and execute the revert script.
+* `hpc.interfaces.lifecycle.queue` Queues the job in the HPC.
+* `hpc.interfaces.lifecycle.cleanup` Clean up operations after job is finished.
+* `hpc.interfaces.lifecycle.cancel` Cancels a queued job.
+
+
+
+=== hpc.nodes.singularity_job
+
+**Derived From:** <<hpc.nodes.job>>
+
+Use this tipe to describe a HPC job executed from a {uri-singularity}[Singularity] image.
+
+**Properties:**
+
+* `job_options`: Job parameters and needed resources.
+** `modules`: List of modules that will be load before executing the job. Optional.
+** `image`: {uri-singularity}[Singularity] image file.
+** `volumes`: List of volumes that will be bind with the image instance.
+** `partition`: Partition in which the job will be executed. If not provided, the HPC default will be used.
+** `nodes`: Necessary nodes of the job. 1 by default.
+** `tasks`: Number of tasks of the job. 1 by default.
+** `tasks_per_node`: Number of tasks per node. 1 by default.
+** `max_time`: Set a limit on the total run time of the job allocation. Mandatory if SRUN type.
+* `deployment`: Optional scripts to perform deployment operations (bootstrap and revert).
+** `bootstrap`: Relative path to blueprint to the script that will be executed in the HPC at the install workflow to bootstrap the job (like image download, data movements, etc.)
+** `revert`: Relative path to blueprint to the script that will be executed in the HPC at the uninstall workflow, reverting the bootstrap or other clean up operations (like removing the image).
+** `inputs`: List of inputs that will be passed to the scripts when executed in the HPC
+
+*Example*
+
+This example demonstrates how to describe a new job executed in a {uri-singularity}[Singularity] instance.
+
+[source,yaml]
+----
+    singularity_job:
+        type: hpc.nodes.singularity_job
+        properties:
+            job_options:
+                modules:
+                    - gcc/5.3.0
+                    - openmpi/1.10.2
+                    - singularity/2.3.1
+                partition: 'thin-shared'
+                image: '$LUSTRE/openmpi_1.10.7_ring.img'
+                volumes:
+                    - '/scratch'
+                command: 'ring > fourth_example_3.test'
+                nodes: 1
+                tasks: 1
+                tasks_per_node: 1
+                max_time: '00:01'
+            deployment:
+                bootstrap: 'scripts/singularity_bootstrap_example.sh'
+                revert: 'scripts/singularity_revert_example.sh'
+                inputs:
+                    - 'singularity_job'
+...
+
+----
+
+*Mapped Operations:*
+
+* `cloudify.interfaces.lifecycle.start` Send and execute the bootstrap script.
+* `cloudify.interfaces.lifecycle.stop` Send and execute the revert script.
+* `hpc.interfaces.lifecycle.queue` Queues the job in the HPC.
+* `hpc.interfaces.lifecycle.cleanup` Clean up operations after job is finished.
+* `hpc.interfaces.lifecycle.cancel` Cancels a queued job.
+
+
+
+== Relationships
+
+See the {uri-cloudify-relationships}[relationships] section.
+
+The following plugin relationship operations are defined in the HPC plugin:
+
+* `job_contained_in_hpc` Sets a <<hpc.nodes.Compute>> to be executed inside the target HPC.
+
+* `job_depends_on` Sets a <<hpc.nodes.Compute>> as a dependency of the target, so the target job needs to finish before the source can start.
+
+
+== Tests
+
+To run the tests Cloudify CLI has to be installed locally. Example blueprints can be found at _tests/blueprint_ folder and have the `simulate` option active by default. Blueprint to be tested can be changed at _workflows_tests.py_ in the _tests_ folder.
+
+To run the tests against a real HPC / Monitor system, copy the file _blueprint-inputs.yaml_ to _local-blueprint-inputs.yaml_ and edit with your credentials. Then edit the blueprint commenting the simulate option (if apply also uncomment the `monitor_orchestrator_available`), and other parameters as you wish (e.g change the name ft2_node for your own hpc name).
+
+[NOTE]
+==========================
+_dev-requirements.txt_ needs to be installed (_windev-requirements.txt_ for windows):
+[source,bash]
+----
+pip install -r dev-requirements.txt
+----
+
+To run the tests, run tox on the root folder
+[source,bash]
+----
+tox -e flake8,py27
+----
+==========================
