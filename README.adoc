@@ -32,7 +32,6 @@ endif::[]
 :uri-mso4sc: http://www.mso4sc.eu/
 :uri-mso4sc-dockerhub: https://hub.docker.com/u/mso4sc/dashboard/
 :uri-blueprint-examples: https://github.com/MSO4SC/resources/tree/master/blueprint-examples
-:uri-blueprint-examples-doc: https://github.com/MSO4SC/resources/blob/master/blueprint-examples/README.adoc
 :uri-monitor-orchestrator: https://github.com/MSO4SC/exporter_orchestrator
 :uri-msoorchestrator-cli: https://github.com/MSO4SC/msoorchestrator-cli
 :uri-slurm-exporter: https://github.com/MSO4SC/slurm_exporter
@@ -53,7 +52,7 @@ A HPC plugin for {uri-cloudify}[Cloudify] that enables it to manage HPC resource
 
 This plugin is part of the {uri-mso4sc}[MSO4SC H2020 European Project].
 
-TIP: Example blueprints can be found at the {uri-blueprint-examples}[MSO4SC resources repository]. Chec {uri-blueprint-examples-doc}[the docs] for more information.
+TIP: Example blueprints can be found at the {uri-blueprint-examples}[MSO4SC resources repository].
 
 toc::[]
 
