@@ -102,7 +102,6 @@ If you do not use secret storage, you must provide the following credentials as 
 
 [source,yaml]
 ----
-
 HPC_config:
     credentials:
         host: "[HPC-HOST]"
@@ -110,7 +109,6 @@ HPC_config:
         password: "[HPC-SSH-PASS]"
     country_tz: "Europe/Madrid"
     workload_manager: "SLURM"
-
 ----
 
 This configuration properties are passed then to <<hpc.nodes.Compute>> config properties.

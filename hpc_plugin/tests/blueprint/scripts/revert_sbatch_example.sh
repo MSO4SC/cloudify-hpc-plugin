@@ -2,4 +2,6 @@
 
 FILE="touch.script"
 
-rm $FILE
+if [ -f $FILE ]; then
+    rm $FILE
+fi

@@ -1,3 +1,5 @@
 #!/bin/bash
 
-rm deploy_$1.test
+if [ -f deploy_$1.test ]; then
+    rm deploy_$1.test
+fi

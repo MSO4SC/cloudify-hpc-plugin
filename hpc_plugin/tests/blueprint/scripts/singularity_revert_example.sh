@@ -1,3 +1,5 @@
-#!/bin/bash
+#!/bin/bash -l
 
-rm $LUSTRE/openmpi_1.10.7_ring.img
+if [ -f $1/$2 ]; then
+    rm $1/$2
+fi

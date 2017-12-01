@@ -238,8 +238,7 @@ def get_container_script(name, job_settings):
 
     if 'volumes' in job_settings:
         for volume in job_settings['volumes']:
-            script += '-B ' + volume
-        script += ' '
+            script += '-B ' + volume + ' '
 
     # add executable and arguments
     script += job_settings['image'] + ' ' + job_settings['command'] + '\n'

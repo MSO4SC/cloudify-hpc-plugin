@@ -56,6 +56,28 @@ node_templates:
             simulate: True  # COMMENT to test against a real HPC
     
     first_job:
+        type: hpc.nodes.job
+        properties:
+            job_options: 
+                type: 'SRUN'
+                modules:
+                    - gcc/5.3.0
+                partition: 'thin-shared'
+                command: 'touch fourth_example_1.test'
+                nodes: 1
+                tasks: 1
+                tasks_per_node: 1
+                max_time: '00:01'
+            deployment:
+                bootstrap: 'scripts/bootstrap_example.sh'
+                revert: 'scripts/revert_example.sh'
+                inputs:
+                    - 'first_job'
+        relationships:
+            - type: job_contained_in_hpc
+              target: ft2_node
+
+    second_parallel_job:
         type: hpc.nodes.singularity_job
         properties:
             job_options:
@@ -67,38 +89,17 @@ node_templates:
                 image: '$LUSTRE/openmpi_1.10.7_ring.img'
                 volumes:
                     - '/scratch'
-                command: 'ring > fourth_example_1.test'
+                command: 'ring > fourth_example_2.test'
                 nodes: 1
                 tasks: 1
                 tasks_per_node: 1
                 max_time: '00:01'
             deployment:
                 bootstrap: 'scripts/singularity_bootstrap_example.sh'
-#                revert: 'scripts/singularity_revert_example.sh'
+                revert: 'scripts/singularity_revert_example.sh'
                 inputs:
-                    - 'first_job'
-        relationships:
-            - type: job_contained_in_hpc
-              target: ft2_node
-
-    second_parallel_job:
-        type: hpc.nodes.job
-        properties:
-            job_options: 
-                type: 'SRUN'
-                modules:
-                    - gcc/5.3.0
-                partition: 'thin-shared'
-                command: 'touch fourth_example_2.test'
-                nodes: 1
-                tasks: 1
-                tasks_per_node: 1
-                max_time: '00:01'
-            deployment:
-                bootstrap: 'scripts/bootstrap_example.sh'
-                revert: 'scripts/revert_example.sh'
-                inputs:
-                    - 'second_job'
+                    - '$LUSTRE'
+                    - 'openmpi_1.10.7_ring.img'
         relationships:
             - type: job_contained_in_hpc
               target: ft2_node
@@ -124,9 +125,10 @@ node_templates:
                 max_time: '00:01'
             deployment:
                 bootstrap: 'scripts/singularity_bootstrap_example.sh'
-#                revert: 'scripts/singularity_revert_example.sh'
+                revert: 'scripts/singularity_revert_example.sh'
                 inputs:
-                    - 'third_job'
+                    - '$LUSTRE'
+                    - 'openmpi_1.10.7_ring.img'
         relationships:
             - type: job_contained_in_hpc
               target: ft2_node
