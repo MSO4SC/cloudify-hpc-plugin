@@ -49,7 +49,7 @@ node_types:
             simulate:
                 description: Set to true to simulate job without sending it
                 type: boolean
-                default: false
+                default: False
             agent_config:
                 default:
                     install_method: none
@@ -102,6 +102,10 @@ node_types:
                 default: {}
             job_options:
                 description: Job main command and options
+            avoid_cleanup:
+                description: True to not clean after execution (debug purposes)
+                type: boolean
+                default: False
         interfaces:
             cloudify.interfaces.lifecycle:
                 start: # needs to be start to have the hpc credentials
@@ -127,6 +131,8 @@ node_types:
                     inputs:
                         job_options:
                             default: { get_property: [SELF, job_options] }
+                        avoid:
+                            default: { get_property: [SELF, avoid_cleanup] }
                 cancel:
                     implementation: hpc.hpc_plugin.tasks.stop_job
                     inputs:

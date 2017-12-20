@@ -16,10 +16,11 @@
 tosca_definitions_version: cloudify_dsl_1_3
 
 imports:
-    # to speed things up, it is possible to download this file,
+    # to speed things up, it is possible downloading this file,
+    # - http://www.getcloudify.org/spec/cloudify/4.0.1/types.yaml
     - http://www.getcloudify.org/spec/cloudify/4.1/types.yaml
-    # HPC pluging
-    - http://raw.githubusercontent.com/MSO4SC/cloudify-hpc-plugin/master/plugin.yaml
+    # relative import of plugin.yaml that resides in the blueprint directory
+    - hpc_plugin/test_plugin.yaml
 
 inputs:
     # Monitor
@@ -50,9 +51,9 @@ node_templates:
         properties:
             config: { get_input: ft2_config }
             monitor_entrypoint: { get_input: monitor_entrypoint }
-#            monitor_orchestrator_available: True
+            monitor_orchestrator_available: True
             job_prefix: { get_input: job_prefix }
-            simulate: True  # COMMENT to test against a real HPC
+#            simulate: True  # COMMENT to test against a real HPC
 
     single_job:
         type: hpc.nodes.job
@@ -66,12 +67,13 @@ node_templates:
                 nodes: 1
                 tasks: 1
                 tasks_per_node: 1
-                max_time: '00:01'
+                max_time: '00:05'
             deployment:
                 bootstrap: 'scripts/bootstrap_example.sh'
                 revert: 'scripts/revert_example.sh'
                 inputs:
                     - 'single'
+            avoid_cleanup: True
         relationships:
             - type: job_contained_in_hpc
               target: ft2_node

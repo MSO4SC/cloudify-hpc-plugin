@@ -94,7 +94,7 @@ class JobGraphInstance(object):
             init_state = 'FAILED'
         else:
             self.winstance.send_event('..HPC job queued')
-            init_state = 'PENDING'
+            init_state = 'NONE'
         self.set_status(init_state)
         # print result.task.dump()
         return result.task

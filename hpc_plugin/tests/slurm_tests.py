@@ -23,59 +23,67 @@ class TestSlurm(unittest.TestCase):
 
     def test_bad_type_name(self):
         """ Bad name type """
-        call = slurm.get_call(42, {'command': 'cmd',
-                                   'type': 'SBATCH'})
-        self.assertIsNone(call)
+        response = slurm.get_call(42, {'command': 'cmd',
+                                       'type': 'SBATCH'})
+        self.assertIn('error', response)
 
     def test_bad_type_settings(self):
         """ Bad type settings """
-        call = slurm.get_call('test', 'bad type')
-        self.assertIsNone(call)
+        response = slurm.get_call('test', 'bad type')
+        self.assertIn('error', response)
 
     def test_bad_settings_command_type(self):
         """ Bad type settings """
-        call = slurm.get_call('test', 'bad type')
-        self.assertIsNone(call)
+        response = slurm.get_call('test', 'bad type')
+        self.assertIn('error', response)
 
     def test_empty_settings(self):
         """ Empty job settings """
-        call = slurm.get_call('test', {})
-        self.assertIsNone(call)
+        response = slurm.get_call('test', {})
+        self.assertIn('error', response)
 
     def test_only_type_settings(self):
         """ Type only as job settings """
-        call = slurm.get_call('test', {'command': 'cmd',
-                                       'type': 'BAD'})
-        self.assertIsNone(call)
+        response = slurm.get_call('test', {'command': 'cmd',
+                                           'type': 'BAD'})
+        self.assertIn('error', response)
 
     def test_only_command_settings(self):
         """ Command only as job settings. """
-        call = slurm.get_call('test', {'command': 'cmd'})
-        self.assertIsNone(call)
+        response = slurm.get_call('test', {'command': 'cmd'})
+        self.assertIn('error', response)
 
     def test_notime_srun_call(self):
         """ srun command without max time set. """
-        call = slurm.get_call('test', {'command': 'cmd',
-                                       'type': 'SRUN'})
-        self.assertIsNone(call)
+        response = slurm.get_call('test', {'command': 'cmd',
+                                           'type': 'SRUN'})
+        self.assertIn('error', response)
 
     def test_basic_srun_call(self):
         """ Basic srun command. """
-        call = slurm.get_call('test', {'command': 'cmd',
-                                       'type': 'SRUN',
-                                       'max_time': '05:00'})
+        response = slurm.get_call('test', {'command': 'cmd',
+                                           'type': 'SRUN',
+                                           'max_time': '05:00'})
+        self.assertNotIn('error', response)
+        self.assertIn('call', response)
+
+        call = response['call']
         self.assertEqual(call, "nohup srun -J 'test' -t 05:00 cmd &")
 
     def test_complete_srun_call(self):
         """ Complete srun command. """
-        call = slurm.get_call('test', {'modules': ['mod1', 'mod2'],
-                                       'type': 'SRUN',
-                                       'command': 'cmd',
-                                       'partition': 'thinnodes',
-                                       'nodes': 4,
-                                       'tasks': 96,
-                                       'tasks_per_node': 24,
-                                       'max_time': '05:00'})
+        response = slurm.get_call('test', {'modules': ['mod1', 'mod2'],
+                                           'type': 'SRUN',
+                                           'command': 'cmd',
+                                           'partition': 'thinnodes',
+                                           'nodes': 4,
+                                           'tasks': 96,
+                                           'tasks_per_node': 24,
+                                           'max_time': '05:00'})
+        self.assertNotIn('error', response)
+        self.assertIn('call', response)
+
+        call = response['call']
         self.assertEqual(call, "module load mod1 mod2; "
                                "nohup srun -J 'test'"
                                " -p thinnodes"
@@ -87,20 +95,28 @@ class TestSlurm(unittest.TestCase):
 
     def test_basic_sbatch_call(self):
         """ Basic sbatch command. """
-        call = slurm.get_call('test', {'command': 'cmd',
-                                       'type': 'SBATCH'})
+        response = slurm.get_call('test', {'command': 'cmd',
+                                           'type': 'SBATCH'})
+        self.assertNotIn('error', response)
+        self.assertIn('call', response)
+
+        call = response['call']
         self.assertEqual(call, "sbatch --parsable -J 'test' cmd")
 
     def test_complete_sbatch_call(self):
         """ Complete sbatch command. """
-        call = slurm.get_call('test', {'modules': ['mod1', 'mod2'],
-                                       'type': 'SBATCH',
-                                       'command': 'cmd',
-                                       'partition': 'thinnodes',
-                                       'nodes': 4,
-                                       'tasks': 96,
-                                       'tasks_per_node': 24,
-                                       'max_time': '05:00'})
+        response = slurm.get_call('test', {'modules': ['mod1', 'mod2'],
+                                           'type': 'SBATCH',
+                                           'command': 'cmd',
+                                           'partition': 'thinnodes',
+                                           'nodes': 4,
+                                           'tasks': 96,
+                                           'tasks_per_node': 24,
+                                           'max_time': '05:00'})
+        self.assertNotIn('error', response)
+        self.assertIn('call', response)
+
+        call = response['call']
         self.assertEqual(call, "module load mod1 mod2; "
                                "sbatch --parsable -J 'test'"
                                " -p thinnodes"

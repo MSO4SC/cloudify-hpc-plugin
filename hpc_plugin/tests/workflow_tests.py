@@ -47,7 +47,7 @@ class TestPlugin(unittest.TestCase):
 
         return inputs
 
-    @workflow_test(os.path.join('blueprint', 'blueprint_four.yaml'),
+    @workflow_test(os.path.join('blueprint', 'blueprint_single_srun.yaml'),
                    resources_to_copy=[(os.path.join('blueprint', 'hpc_plugin',
                                                     'test_plugin.yaml'),
                                        'hpc_plugin'),

@@ -293,16 +293,18 @@ def send_job(job_options, **kwargs):  # pylint: disable=W0613
 
 
 @operation
-def clean_job_aux_files(job_options, **kwargs):  # pylint: disable=W0613
+def clean_job_aux_files(job_options, avoid, **kwargs):  # pylint: disable=W0613
     """Clean the aux files of the job in the HPC"""
+    if avoid:
+        return
+
     simulate = ctx.instance.runtime_properties['simulate']
-
-    credentials = ctx.instance.runtime_properties['credentials']
     name = kwargs['name']
-    is_singularity = 'hpc.nodes.singularity_job' in ctx.node.\
-        type_hierarchy
-
     if not simulate:
+        is_singularity = 'hpc.nodes.singularity_job' in ctx.node.\
+            type_hierarchy
+        credentials = ctx.instance.runtime_properties['credentials']
+
         client = SshClient(credentials['host'],
                            credentials['user'],
                            credentials['password'])

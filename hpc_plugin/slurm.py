@@ -60,11 +60,13 @@ def submit_job(ssh_client, name, job_settings, is_singularity, logger):
     else:
         settings = job_settings
 
-    call = get_call(name, settings)
-    if call is None:
-        logger.error("Couldn't send the job, call malformed")
+    response = get_call(name, settings)
+    if 'error' in response:
+        logger.error(
+            "Couldn't create the call to send the job: " + response['error'])
         return False
 
+    call = response['call']
     output, exit_code = ssh_client.send_command(call, wait_result=True)
     if exit_code is not 0:
         logger.error("Call '" + call + "' exited with code " +
@@ -222,8 +224,7 @@ def get_container_script(name, job_settings):
         script += '#SBATCH --ntasks-per-node=' + \
             str(job_settings['tasks_per_node']) + '\n'
 
-    if 'max_time' in job_settings:
-        script += '#SBATCH -t ' + job_settings['max_time'] + '\n'
+    script += '#SBATCH -t ' + job_settings['max_time'] + '\n'
 
     script += '\n'
 
@@ -263,12 +264,10 @@ def get_call(name, job_settings):
     # check input information correctness
     if not isinstance(job_settings, dict) or not isinstance(name,
                                                             basestring):
-        # TODO(emepetres): Raise error
-        return None
+        return {'error': "Incorrect inputs"}
 
     if 'type' not in job_settings or 'command' not in job_settings:
-        # TODO(emepetres): Raise error
-        return None
+        return {'error': "'type' and 'command' must be defined in job settings"}
 
     # first set modules
     slurm_call = ''
@@ -284,8 +283,7 @@ def get_call(name, job_settings):
     elif job_settings['type'] == 'SRUN':
         slurm_call += "nohup srun -J '" + name + "'"
     else:
-        # TODO(empetres): Raise error
-        return None
+        return {'error': "Job type '" + job_settings['type'] + "'not supported"}
 
     # Slurm settings
     if 'partition' in job_settings:
@@ -304,8 +302,7 @@ def get_call(name, job_settings):
     if 'max_time' in job_settings:
         slurm_call += ' -t ' + job_settings['max_time']
     elif job_settings['type'] == 'SRUN':
-        # TODO(empetres): Raise error
-        return None
+        return {'error': "'SRUN' jobs must define the 'max_time' property"}
 
     # add executable and arguments
     slurm_call += ' ' + job_settings['command']
@@ -316,7 +313,7 @@ def get_call(name, job_settings):
     if job_settings['type'] == 'SRUN':
         slurm_call += ' &'
 
-    return slurm_call
+    return {'call': slurm_call}
 
 
 def get_random_name(base_name):
