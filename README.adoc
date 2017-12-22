@@ -191,6 +191,7 @@ Use this tipe to describe a HPC job.
 ** `bootstrap`: Relative path to blueprint to the script that will be executed in the HPC at the install workflow to bootstrap the job (like data movements, binary download, etc.)
 ** `revert`: Relative path to blueprint to the script that will be executed in the HPC at the uninstall workflow, reverting the bootstrap or other clean up operations.
 ** `inputs`: List of inputs that will be passed to the scripts when executed in the HPC
+* `avoid_cleanup`: Optional set to true to not clean up auxiliar files (for debug purposes).
 
 *Example*
 
@@ -210,7 +211,7 @@ This example demonstrates how to describe a new job.
                 nodes: 1
                 tasks: 1
                 tasks_per_node: 1
-                max_time: '00:01'
+                max_time: '00:01:00'
             deployment:
                 bootstrap: 'scripts/bootstrap_example.sh'
                 revert: 'scripts/revert_example.sh'
@@ -241,6 +242,7 @@ Use this tipe to describe a HPC job executed from a {uri-singularity}[Singularit
 * `job_options`: Job parameters and needed resources.
 ** `modules`: List of modules that will be load before executing the job. Optional.
 ** `image`: {uri-singularity}[Singularity] image file.
+** `home`: Home volume that will be bind with the image instance (Optional).
 ** `volumes`: List of volumes that will be bind with the image instance.
 ** `partition`: Partition in which the job will be executed. If not provided, the HPC default will be used.
 ** `nodes`: Necessary nodes of the job. 1 by default.
@@ -251,6 +253,7 @@ Use this tipe to describe a HPC job executed from a {uri-singularity}[Singularit
 ** `bootstrap`: Relative path to blueprint to the script that will be executed in the HPC at the install workflow to bootstrap the job (like image download, data movements, etc.)
 ** `revert`: Relative path to blueprint to the script that will be executed in the HPC at the uninstall workflow, reverting the bootstrap or other clean up operations (like removing the image).
 ** `inputs`: List of inputs that will be passed to the scripts when executed in the HPC
+* `avoid_cleanup`: Optional set to true to not clean up auxiliar files (for debug purposes).
 
 *Example*
 
@@ -268,13 +271,14 @@ This example demonstrates how to describe a new job executed in a {uri-singulari
                     - singularity/2.3.1
                 partition: 'thin-shared'
                 image: '$LUSTRE/openmpi_1.10.7_ring.img'
+                home: '$HOME:/home/$USER'
                 volumes:
                     - '/scratch'
                 command: 'ring > fourth_example_3.test'
                 nodes: 1
                 tasks: 1
                 tasks_per_node: 1
-                max_time: '00:01'
+                max_time: '00:01:00'
             deployment:
                 bootstrap: 'scripts/singularity_bootstrap_example.sh'
                 revert: 'scripts/singularity_revert_example.sh'

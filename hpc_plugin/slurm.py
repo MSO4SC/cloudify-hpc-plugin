@@ -237,6 +237,9 @@ def get_container_script(name, job_settings):
 
     script += '\nmpirun singularity exec '
 
+    if 'home' in job_settings and job_settings['home'] != '':
+        script += '-H ' + job_settings['home'] + ' '
+
     if 'volumes' in job_settings:
         for volume in job_settings['volumes']:
             script += '-B ' + volume + ' '

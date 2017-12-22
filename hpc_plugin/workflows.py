@@ -94,7 +94,7 @@ class JobGraphInstance(object):
             init_state = 'FAILED'
         else:
             self.winstance.send_event('..HPC job queued')
-            init_state = 'NONE'
+            init_state = 'PENDING'
         self.set_status(init_state)
         # print result.task.dump()
         return result.task
@@ -194,12 +194,12 @@ class JobGraphNode(object):
         if not self.is_job:
             return []
 
-        tasks = []
+        tasks_list = []
         for job_instance in self.instances:
-            tasks.append(job_instance.queue())
+            tasks_list.append(job_instance.queue())
 
         self.status = 'QUEUED'
-        return tasks
+        return tasks_list
 
     def is_ready(self):
         """ True if it has no more dependencies to satisfy """
@@ -388,11 +388,11 @@ def run_jobs(**kwargs):  # pylint: disable=W0613
     monitor = Monitor(job_instances_map, ctx.logger)
 
     # Execution of first job instances
-    tasks = []
+    tasks_list = []
     for root in root_nodes:
-        tasks += root.queue_all_instances()
+        tasks_list += root.queue_all_instances()
         monitor.add_node(root)
-    wait_tasks_to_finish(tasks)
+    wait_tasks_to_finish(tasks_list)
 
     # Monitoring and next executions loop
     while monitor.is_something_executing() and not api.has_cancel_request():
@@ -417,11 +417,11 @@ def run_jobs(**kwargs):  # pylint: disable=W0613
         for node_name in exec_nodes_finished:
             monitor.finish_node(node_name)
         # perform new executions
-        tasks = []
+        tasks_list = []
         for new_node in new_exec_nodes:
-            tasks += new_node.queue_all_instances()
+            tasks_list += new_node.queue_all_instances()
             monitor.add_node(new_node)
-        wait_tasks_to_finish(tasks)
+        wait_tasks_to_finish(tasks_list)
 
     if monitor.is_something_executing():
         cancel_all(monitor.get_executions_iterator())
@@ -433,12 +433,12 @@ def run_jobs(**kwargs):  # pylint: disable=W0613
 
 def cancel_all(executions):
     """Cancel all pending or running jobs"""
-    for node_name, exec_node in executions:
+    for _, exec_node in executions:
         exec_node.cancel_all_instances()
     raise api.ExecutionCancelled()
 
 
-def wait_tasks_to_finish(tasks):
+def wait_tasks_to_finish(tasks_list):
     """Blocks until all tasks have finished"""
-    for task in tasks:
+    for task in tasks_list:
         task.wait_for_terminated()

@@ -51,7 +51,7 @@ node_templates:
         properties:
             config: { get_input: ft2_config }
             monitor_entrypoint: { get_input: monitor_entrypoint }
-            monitor_orchestrator_available: True
+#            monitor_orchestrator_available: True
             job_prefix: { get_input: job_prefix }
             simulate: True  # COMMENT to test against a real HPC
 
@@ -65,13 +65,14 @@ node_templates:
                     - singularity/2.3.1
                 partition: 'thin-shared'
                 image: '$LUSTRE/openmpi_1.10.7_ring.img'
+                home: '$HOME:/home/$USER'
                 volumes:
                     - '/scratch'
                 command: 'ring > single.test'
                 nodes: 1
                 tasks: 1
                 tasks_per_node: 1
-                max_time: '00:05'
+                max_time: '00:01'
             deployment:
                 bootstrap: 'scripts/singularity_bootstrap_example.sh'
                 #revert: 'scripts/singularity_revert_example.sh'
