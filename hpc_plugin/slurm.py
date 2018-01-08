@@ -270,7 +270,8 @@ def get_call(name, job_settings):
         return {'error': "Incorrect inputs"}
 
     if 'type' not in job_settings or 'command' not in job_settings:
-        return {'error': "'type' and 'command' must be defined in job settings"}
+        return {'error': "'type' and 'command' " +
+                "must be defined in job settings"}
 
     # first set modules
     slurm_call = ''
@@ -286,7 +287,8 @@ def get_call(name, job_settings):
     elif job_settings['type'] == 'SRUN':
         slurm_call += "nohup srun -J '" + name + "'"
     else:
-        return {'error': "Job type '" + job_settings['type'] + "'not supported"}
+        return {'error': "Job type '" + job_settings['type'] +
+                "'not supported"}
 
     # Slurm settings
     if 'partition' in job_settings:

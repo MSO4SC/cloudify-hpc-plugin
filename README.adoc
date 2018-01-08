@@ -132,11 +132,10 @@ Use this type to describe a HPC infrastructure.
 **Properties:**
 
 * `config`: HPC configuration, as described in <<hpc-config-properties>>.
-* `monitor_entrypoint`: Entrypoint of the monitor that will use Cloudify to check the status of the jobs in every HPC.
-* `monitor_port`: Port of the monitor, :9090 by default.
-* `monitor_type`: Specific monitor tool, {uri-prometheus}[PROMETHEUS] by default.
-* `monitor_orchestrator_available` - _true/false_: In order to be able to declare new HPC infrastructures dynamically in the TOSCA file, {uri-mso4sc}[MSO4SC] provides an {uri-monitor-orchestrator}[monitor orchestrator] that, running in the same host as the monitor, start/stop new {uri-prometheus}[Prometheus] exporters to monitor new HPC infrastructures. If it is false, configuration to pull metrics from the HPC have be done manually before executing the TOSCA file (see {uri-slurm-exporter}[MSO4SC Slurm exporter]). False by default.
-* `monitor_orchestrator_port`: Monitor orchestrator port, :8079 by default.
+* `external_monitor_entrypoint`: Entrypoint of the external monitor that Cloudify will use instead of the internal one.
+* `external_monitor_port`: Port of the monitor, :9090 by default.
+* `external_monitor_type`: Specific monitor tool, {uri-prometheus}[PROMETHEUS] by default.
+* `external_monitor_orchestrator_port`: Monitor orchestrator port, :8079 by default.
 * `job_prefix`: Job name prefix for the jobs created in this HPC, cfyhpc by default.
 * `simulate`: If true, don't send the jobs to the HPC and simulate that they finish inmediately. Useful for test new TOSCA files. false by default. 
 
@@ -158,7 +157,6 @@ This example demonstrates how to add a new HPC.
                 country_tz: "Europe/Madrid"
                 workload_manager: "SLURM"
             monitor_entrypoint: 192.168.0.200
-            monitor_orchestrator_available: True
             job_prefix: hpc_
 ...
 
@@ -167,8 +165,8 @@ This example demonstrates how to add a new HPC.
 *Mapped Operations:*
 
 * `cloudify.interfaces.lifecycle.start` Checks that there is connection between Cloudify and the HPC.
-* `cloudify.interfaces.monitoring.start` If the monitor orchestrator is available, sends a notification to start monitoring the HPC.
-* `cloudify.interfaces.monitoring.stop` If the monitor orchestrator is available, sends a notification to end monitoring the HPC.
+* `cloudify.interfaces.monitoring.start` If the external monitor orchestrator is available, sends a notification to start monitoring the HPC.
+* `cloudify.interfaces.monitoring.stop` If the external monitor orchestrator is available, sends a notification to end monitoring the HPC.
 
 === hpc.nodes.job
 
@@ -313,7 +311,7 @@ The following plugin relationship operations are defined in the HPC plugin:
 
 To run the tests Cloudify CLI has to be installed locally. Example blueprints can be found at _tests/blueprint_ folder and have the `simulate` option active by default. Blueprint to be tested can be changed at _workflows_tests.py_ in the _tests_ folder.
 
-To run the tests against a real HPC / Monitor system, copy the file _blueprint-inputs.yaml_ to _local-blueprint-inputs.yaml_ and edit with your credentials. Then edit the blueprint commenting the simulate option (if apply also uncomment the `monitor_orchestrator_available`), and other parameters as you wish (e.g change the name ft2_node for your own hpc name).
+To run the tests against a real HPC / Monitor system, copy the file _blueprint-inputs.yaml_ to _local-blueprint-inputs.yaml_ and edit with your credentials. Then edit the blueprint commenting the simulate option, and other parameters as you wish (e.g change the name ft2_node for your own hpc name).
 
 [NOTE]
 ==========================
