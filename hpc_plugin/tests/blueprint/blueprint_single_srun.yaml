@@ -26,31 +26,27 @@ inputs:
     # Monitor
     monitor_entrypoint:
         description: Monitor entrypoint IP
-        default: "193.144.35.146"
+        default: ""
         type: string
 
     # Job prefix name
     job_prefix:
         description: Job name prefix in HPCs
-        default: "mso4sc"
+        default: "cfyhpc"
         type: string
 
-    # CESGA FTII parameters
+    # First HPC configuration
     mso4sc_hpc_primary:
         description: Configuration for the primary HPC to be used
         default: {}
     
-    # SZE test infrastructure parameters
+    # Second HPC configuration
     mso4sc_hpc_secondary:
         description: Configuration for the secondary HPC to be used
         default: {}
 
-    mso4sc_dataset_model:
-        description: Model dataset
-        default: ""
-
 node_templates:
-    ft2_node:
+    first_hpc:
         type: hpc.nodes.Compute
         properties:
             config: { get_input: mso4sc_hpc_primary }
@@ -79,7 +75,7 @@ node_templates:
             avoid_cleanup: True
         relationships:
             - type: job_contained_in_hpc
-              target: ft2_node
+              target: first_hpc
 
 outputs:
     single_job_name:
