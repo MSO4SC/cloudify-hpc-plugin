@@ -27,7 +27,6 @@ from hpc_plugin import slurm
 def login_connection(config, simulate, **kwargs):  # pylint: disable=W0613
     """ Tries to connect to a login node """
     ctx.logger.info('Connecting to login node..')
-    print config
     credentials = config['credentials']
     if not simulate:
         client = SshClient(credentials['host'],

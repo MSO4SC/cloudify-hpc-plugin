@@ -224,6 +224,10 @@ def get_container_script(name, job_settings):
         script += '#SBATCH --ntasks-per-node=' + \
             str(job_settings['tasks_per_node']) + '\n'
 
+    if 'reservation' in job_settings:
+        script += '#SBATCH --reservation=' + \
+            str(job_settings['reservation']) + '\n'
+
     script += '#SBATCH -t ' + job_settings['max_time'] + '\n'
 
     script += '\n'
@@ -303,6 +307,10 @@ def get_call(name, job_settings):
     if 'tasks_per_node' in job_settings:
         slurm_call += ' --ntasks-per-node=' + \
                       str(job_settings['tasks_per_node'])
+
+    if 'reservation' in job_settings:
+        slurm_call += ' --reservation=' + \
+                      str(job_settings['reservation'])
 
     if 'max_time' in job_settings:
         slurm_call += ' -t ' + job_settings['max_time']
