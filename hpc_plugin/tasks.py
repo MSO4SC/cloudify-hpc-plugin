@@ -46,11 +46,10 @@ def login_connection(config, simulate, **kwargs):  # pylint: disable=W0613
 
 @operation
 def preconfigure_job(config,
-                     monitor_entrypoint,
-                     monitor_port,
-                     monitor_type,
-                     monitor_orchestrator_available,
-                     monitor_orchestrator_port,
+                     external_monitor_entrypoint,
+                     external_monitor_port,
+                     external_monitor_type,
+                     external_monitor_orchestrator_port,
                      job_prefix,
                      simulate,
                      **kwargs):  # pylint: disable=W0613
@@ -60,13 +59,13 @@ def preconfigure_job(config,
     ctx.source.instance.runtime_properties['credentials'] = \
         config['credentials']
     ctx.source.instance.runtime_properties['monitor_entrypoint'] = \
-        monitor_entrypoint
-    ctx.source.instance.runtime_properties['monitor_port'] = monitor_port
-    ctx.source.instance.runtime_properties['monitor_type'] = monitor_type
-    ctx.source.instance.runtime_properties['monitor_orchestrator_available'] =\
-        monitor_orchestrator_available
+        external_monitor_entrypoint
+    ctx.source.instance.runtime_properties['monitor_port'] = \
+        external_monitor_port
+    ctx.source.instance.runtime_properties['monitor_type'] = \
+        external_monitor_type
     ctx.source.instance.runtime_properties['monitor_orchestrator_port'] = \
-        monitor_orchestrator_port
+        external_monitor_orchestrator_port
     ctx.source.instance.runtime_properties['workload_manager'] = \
         config['workload_manager']
     ctx.source.instance.runtime_properties['simulate'] = simulate
@@ -75,14 +74,13 @@ def preconfigure_job(config,
 
 @operation
 def start_monitoring_hpc(config,
-                         monitor_entrypoint,
-                         monitor_port,
-                         monitor_orchestrator_available,
-                         monitor_orchestrator_port,
+                         external_monitor_entrypoint,
+                         external_monitor_port,
+                         external_monitor_orchestrator_port,
                          simulate,
                          **kwargs):  # pylint: disable=W0613
     """ Starts monitoring using the Monitor orchestrator """
-    if monitor_orchestrator_available:
+    if external_monitor_entrypoint:
         ctx.logger.info('Starting infrastructure monitor..')
 
         if not simulate:
@@ -90,8 +88,8 @@ def start_monitoring_hpc(config,
             workload_manager = config['workload_manager']
             country_tz = config['country_tz']
 
-            url = 'http://' + monitor_entrypoint + \
-                monitor_orchestrator_port + '/exporters/add'
+            url = 'http://' + external_monitor_entrypoint + \
+                external_monitor_orchestrator_port + '/exporters/add'
 
             payload = ("{\n\t\"host\": \"" + credentials['host'] +
                        "\",\n\t\"type\": \"" + workload_manager +
@@ -118,14 +116,13 @@ def start_monitoring_hpc(config,
 
 @operation
 def stop_monitoring_hpc(config,
-                        monitor_entrypoint,
-                        monitor_port,
-                        monitor_orchestrator_available,
-                        monitor_orchestrator_port,
+                        external_monitor_entrypoint,
+                        external_monitor_port,
+                        external_monitor_orchestrator_port,
                         simulate,
                         **kwargs):  # pylint: disable=W0613
     """ Stops monitoring using the Monitor Orchestrator """
-    if monitor_orchestrator_available:
+    if external_monitor_entrypoint:
         ctx.logger.info('Stoping infrastructure monitor..')
 
         if not simulate:
@@ -133,8 +130,8 @@ def stop_monitoring_hpc(config,
             workload_manager = config['workload_manager']
             country_tz = config['country_tz']
 
-            url = 'http://' + monitor_entrypoint + \
-                monitor_orchestrator_port + '/exporters/remove'
+            url = 'http://' + external_monitor_entrypoint + \
+                external_monitor_orchestrator_port + '/exporters/remove'
 
             payload = ("{\n\t\"host\": \"" + credentials['host'] +
                        "\",\n\t\"type\": \"" + workload_manager +

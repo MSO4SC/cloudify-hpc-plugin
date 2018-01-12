@@ -3,13 +3,13 @@
 #############################
 
 # Monitor
-monitor_entrypoint: "127.0.0.1"
+monitor_entrypoint: ""
 
 # Job prefix name
 job_prefix: "cfyhpc"
 
-# CESGA FTII credentials
-ft2_config:
+# First HPC configuration
+mso4sc_hpc_primary:
     credentials:
         host: "HOST"
         user: "USER"
@@ -17,8 +17,8 @@ ft2_config:
     country_tz: "Europe/Madrid"
     workload_manager: "SLURM"
 
-# SZE test infrastructure credentials
-sze_config:
+# Second HPC configuration
+mso4sc_hpc_secondary:
     credentials:
         host: "HOST"
         user: "USER"

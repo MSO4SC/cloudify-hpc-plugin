@@ -17,8 +17,8 @@ tosca_definitions_version: cloudify_dsl_1_3
 
 imports:
     # to speed things up, it is possible downloading this file,
-    # - http://www.getcloudify.org/spec/cloudify/4.0.1/types.yaml
-    - http://www.getcloudify.org/spec/cloudify/4.1/types.yaml
+    # - http://www.getcloudify.org/spec/cloudify/4.1/types.yaml
+    - https://raw.githubusercontent.com/cloudify-cosmo/cloudify-manager/17.10.19/resources/rest-service/cloudify/types/types.yaml
     # relative import of plugin.yaml that resides in the blueprint directory
     - hpc_plugin/test_plugin.yaml
 
@@ -26,32 +26,31 @@ inputs:
     # Monitor
     monitor_entrypoint:
         description: Monitor entrypoint IP
-        default: "127.0.0.1"
+        default: ""
         type: string
 
     # Job prefix name
     job_prefix:
         description: Job name prefix in HPCs
-        default: "mso4sc"
+        default: "cfyhpc"
         type: string
 
-    # CESGA FTII parameters
-    ft2_config:
-        description: FTII connection credentials
+    # First HPC configuration
+    mso4sc_hpc_primary:
+        description: Configuration for the primary HPC to be used
         default: {}
     
-    # SZE test infrastructure parameters
-    sze_config:
-        description: SZE test infrastructure credentials
+    # Second HPC configuration
+    mso4sc_hpc_secondary:
+        description: Configuration for the secondary HPC to be used
         default: {}
 
 node_templates:
-    ft2_node:
+    first_hpc:
         type: hpc.nodes.Compute
         properties:
-            config: { get_input: ft2_config }
+            config: { get_input: mso4sc_hpc_primary }
             monitor_entrypoint: { get_input: monitor_entrypoint }
-#            monitor_orchestrator_available: True
             job_prefix: { get_input: job_prefix }
             simulate: True  # COMMENT to test against a real HPC
 
@@ -68,7 +67,7 @@ node_templates:
                     - 'single'
         relationships:
             - type: job_contained_in_hpc
-              target: ft2_node
+              target: first_hpc
 
 outputs:
     single_job_name:

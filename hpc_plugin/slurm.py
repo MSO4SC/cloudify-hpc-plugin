@@ -224,6 +224,10 @@ def get_container_script(name, job_settings):
         script += '#SBATCH --ntasks-per-node=' + \
             str(job_settings['tasks_per_node']) + '\n'
 
+    if 'reservation' in job_settings:
+        script += '#SBATCH --reservation=' + \
+            str(job_settings['reservation']) + '\n'
+
     script += '#SBATCH -t ' + job_settings['max_time'] + '\n'
 
     script += '\n'
@@ -270,7 +274,8 @@ def get_call(name, job_settings):
         return {'error': "Incorrect inputs"}
 
     if 'type' not in job_settings or 'command' not in job_settings:
-        return {'error': "'type' and 'command' must be defined in job settings"}
+        return {'error': "'type' and 'command' " +
+                "must be defined in job settings"}
 
     # first set modules
     slurm_call = ''
@@ -286,7 +291,8 @@ def get_call(name, job_settings):
     elif job_settings['type'] == 'SRUN':
         slurm_call += "nohup srun -J '" + name + "'"
     else:
-        return {'error': "Job type '" + job_settings['type'] + "'not supported"}
+        return {'error': "Job type '" + job_settings['type'] +
+                "'not supported"}
 
     # Slurm settings
     if 'partition' in job_settings:
@@ -301,6 +307,10 @@ def get_call(name, job_settings):
     if 'tasks_per_node' in job_settings:
         slurm_call += ' --ntasks-per-node=' + \
                       str(job_settings['tasks_per_node'])
+
+    if 'reservation' in job_settings:
+        slurm_call += ' --reservation=' + \
+                      str(job_settings['reservation'])
 
     if 'max_time' in job_settings:
         slurm_call += ' -t ' + job_settings['max_time']
