@@ -219,7 +219,9 @@ def deploy_job(script,
     """ Exec a eployment job script that receives SSH credentials as input """
 
     # Build the execution call
-    script_data = ctx.get_resource(script).replace("$", "\\$")
+    script_data = ctx.get_resource(script).replace(
+        "$", "\\$").replace(
+        '"', '\\"')
 
     # Execute and print output
     client = SshClient(credentials['host'],
