@@ -106,12 +106,16 @@ node_types:
                         deployment:
                             description: Deployment scripts and inputs
                             default: { get_property: [SELF, deployment] }
+                        avoid:
+                            default: { get_property: [SELF, avoid_cleanup] }
                 stop:
                     implementation: hpc.hpc_plugin.tasks.revert_job
                     inputs:
                         deployment:
-                            description: Deployment scripts and inputs
+                            description: Undeployment script and inputs
                             default: { get_property: [SELF, deployment] }
+                        avoid:
+                            default: { get_property: [SELF, avoid_cleanup] }
             hpc.interfaces.lifecycle:
                 queue:
                     implementation: hpc.hpc_plugin.tasks.send_job
