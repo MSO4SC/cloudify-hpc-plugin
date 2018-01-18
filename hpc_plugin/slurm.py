@@ -15,6 +15,7 @@
 
 """ Holds the slurm functions """
 import string
+import re
 import random
 from hpc_plugin.ssh import SshClient
 
@@ -43,6 +44,7 @@ def submit_job(ssh_client, name, job_settings, is_singularity, logger):
         if script is None:
             logger.error("Singularity Script malformed")
             return False
+        script = re.escape(script)
 
         output, exit_code = ssh_client.send_command("echo '" + script +
                                                     "' > " + name +

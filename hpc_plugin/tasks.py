@@ -15,6 +15,7 @@
 """ Holds the plugin tasks """
 
 import requests
+import re
 from cloudify import ctx
 from cloudify.decorators import operation
 from cloudify.exceptions import NonRecoverableError
@@ -230,9 +231,8 @@ def deploy_job(script,
     """ Exec a eployment job script that receives SSH credentials as input """
 
     # Build the execution call
-    script_data = ctx.get_resource(script).replace(
-        "$", "\\$").replace(
-        '"', '\\"')
+    script_data = ctx.get_resource(script)
+    script_data = re.escape(script_data)
 
     # Execute and print output
     client = SshClient(credentials['host'],
