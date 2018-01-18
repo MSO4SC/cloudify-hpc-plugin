@@ -161,7 +161,7 @@ def stop_monitoring_hpc(config,
 
 
 @operation
-def bootstrap_job(deployment, **kwarsgs):  # pylint: disable=W0613
+def bootstrap_job(deployment, avoid, **kwarsgs):  # pylint: disable=W0613
     """Bootstrap a job with a script that receives SSH credentials as imput"""
     if not deployment:
         return
@@ -175,7 +175,12 @@ def bootstrap_job(deployment, **kwarsgs):  # pylint: disable=W0613
         name = "bootstrap_" + ctx.instance.id + ".sh"
 
         is_bootstraped = deploy_job(
-            deployment['bootstrap'], inputs, credentials, name, ctx.logger)
+            deployment['bootstrap'],
+            inputs,
+            credentials,
+            name,
+            ctx.logger,
+            avoid)
     else:
         is_bootstraped = True
 
@@ -187,7 +192,7 @@ def bootstrap_job(deployment, **kwarsgs):  # pylint: disable=W0613
 
 
 @operation
-def revert_job(deployment, **kwarsgs):  # pylint: disable=W0613
+def revert_job(deployment, avoid, **kwarsgs):  # pylint: disable=W0613
     """Revert a job using a script that receives SSH credentials as input"""
     if not deployment:
         return
@@ -201,7 +206,12 @@ def revert_job(deployment, **kwarsgs):  # pylint: disable=W0613
         name = "revert_" + ctx.instance.id + ".sh"
 
         is_reverted = deploy_job(
-            deployment['revert'], inputs, credentials, name, ctx.logger)
+            deployment['revert'],
+            inputs,
+            credentials,
+            name,
+            ctx.logger,
+            avoid)
     else:
         is_reverted = True
 
@@ -215,7 +225,8 @@ def deploy_job(script,
                inputs,
                credentials,
                name,
-               logger):  # pylint: disable=W0613
+               logger,
+               avoid_cleanup):  # pylint: disable=W0613
     """ Exec a eployment job script that receives SSH credentials as input """
 
     # Build the execution call
@@ -245,8 +256,9 @@ def deploy_job(script,
                 "failed to deploy job: call '" + call + "', exit code " +
                 str(exit_code))
 
-        if not client.send_command("rm " + name):
-            logger.warning("failed removing bootstrap script")
+        if not avoid_cleanup:
+            if not client.send_command("rm " + name):
+                logger.warning("failed removing bootstrap script")
 
     client.close_connection()
 
