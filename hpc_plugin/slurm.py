@@ -39,12 +39,21 @@ def submit_job(ssh_client, name, job_settings, is_singularity, logger):
         return False
 
     if is_singularity:
-        script = get_container_script(name, job_settings)
-        if script is None:
+        # get script data and escape for echo
+        script_data = get_container_script(name, job_settings)
+        # In theory script_data should be escaped to prepare it for echo
+        # but as the script is generated programmatically, we know for sure
+        # that is not necessary. Nevertheless keep commented the code
+        # in case it is needed in the future.
+        #    .replace("\\", "\\\\") \
+        #    .replace("$", "\\$") \
+        #    .replace("`", "\\`") \
+        #    .replace('"', '\\"')
+        if script_data is None:
             logger.error("Singularity Script malformed")
             return False
 
-        output, exit_code = ssh_client.send_command("echo '" + script +
+        output, exit_code = ssh_client.send_command("echo '" + script_data +
                                                     "' > " + name +
                                                     ".script",
                                                     wait_result=True)

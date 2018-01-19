@@ -229,16 +229,17 @@ def deploy_job(script,
                avoid_cleanup):  # pylint: disable=W0613
     """ Exec a eployment job script that receives SSH credentials as input """
 
-    # Build the execution call
-    script_data = ctx.get_resource(script).replace(
-        "$", "\\$").replace(
-        '"', '\\"')
+    # get the script resource and escape for echo command
+    script_data = ctx.get_resource(script) \
+        .replace("\\", "\\\\") \
+        .replace("$", "\\$") \
+        .replace("`", "\\`") \
+        .replace('"', '\\"')
 
-    # Execute and print output
+    # Execute the script and manage the output
     client = SshClient(credentials['host'],
                        credentials['user'],
                        credentials['password'])
-
     create_call = "echo \"" + script_data + "\" >> " + name + \
         "; chmod +x " + name
     _, exit_code = client.send_command(create_call, wait_result=True)
