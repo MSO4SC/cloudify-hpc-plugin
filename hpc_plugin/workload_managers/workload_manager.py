@@ -18,7 +18,8 @@ class WorkloadManager(object):
                    name,
                    job_settings,
                    is_singularity,
-                   logger):
+                   logger,
+                   workdir=None):
         """
         Sends a job to the HPC
 
@@ -70,8 +71,8 @@ class WorkloadManager(object):
         # submit the job
         call = response['call']
         output, exit_code = self._execute_shell_command(ssh_client,
-                                                        ".",
                                                         call,
+                                                        workdir=workdir,
                                                         wait_result=True)
         if exit_code is not 0:
             logger.error("Job submission '" + call + "' exited with code " +
@@ -84,7 +85,8 @@ class WorkloadManager(object):
                             name,
                             job_options,
                             is_singularity,
-                            logger):
+                            logger,
+                            workdir=None):
         """
         Cleans no more needed job files in the HPC
 
@@ -104,8 +106,8 @@ class WorkloadManager(object):
 
         if is_singularity:
             return self._execute_shell_command(ssh_client,
-                                               ".",
-                                               "rm " + name + ".script")
+                                               "rm " + name + ".script",
+                                               workdir=workdir)
         return True
 
     def stop_job(self,
@@ -113,7 +115,8 @@ class WorkloadManager(object):
                  name,
                  job_options,
                  is_singularity,
-                 logger):
+                 logger,
+                 workdir=None):
         """
         Stops a job from the HPC
 
@@ -137,7 +140,21 @@ class WorkloadManager(object):
         if call is None:
             return False
 
-        return self._execute_shell_command(ssh_client, ".", call)
+        return self._execute_shell_command(ssh_client,
+                                           call,
+                                           workdir=workdir)
+
+    def create_new_workdir(self, ssh_client, base_name):
+        workdir = self._get_random_name(base_name)
+
+        # we are sure that the workdir does not exists
+        while self._exists_path(ssh_client, workdir):
+            workdir = self._get_random_name(base_name)
+
+        self._execute_shell_command(ssh_client,
+                                    "mkdir -p " + workdir)
+
+        return workdir
 
     def _build_container_script(self,
                                 name,
@@ -203,7 +220,8 @@ class WorkloadManager(object):
                              ssh_client,
                              name,
                              script_content,
-                             logger):
+                             logger,
+                             workdir=None):
         # escape for echo command
         script_data = script_content \
             .replace("\\", "\\\\") \
@@ -214,8 +232,8 @@ class WorkloadManager(object):
         create_call = "echo \"" + script_data + "\" >> " + name + \
             "; chmod +x " + name
         _, exit_code = self._execute_shell_command(ssh_client,
-                                                   ".",
                                                    create_call,
+                                                   workdir=workdir,
                                                    wait_result=True)
         if exit_code is not 0:
             logger.error(
@@ -227,10 +245,15 @@ class WorkloadManager(object):
 
     def _execute_shell_command(self,
                                ssh_client,
-                               workdir,
                                cmd,
+                               workdir=None,
                                wait_result=False):
-        return ssh_client.send_command(cmd, wait_result=wait_result)
+        if not workdir:
+            return ssh_client.send_command(cmd,
+                                           wait_result=wait_result)
+        else:
+            return ssh_client.send_command("cd " + workdir + " && " + cmd,
+                                           wait_result=wait_result)
 
     def _get_random_name(self, base_name):
         """ Get a random name with a prefix """
@@ -241,3 +264,13 @@ class WorkloadManager(object):
                        chars=string.digits + string.ascii_letters):
         return ''.join(random.SystemRandom().choice(chars)
                        for _ in range(size))
+
+    def _exists_path(self, ssh_client, path):
+        _, exit_code = self._execute_shell_command(ssh_client,
+                                                   '[ -d "' + path + '" ]',
+                                                   wait_result=True)
+
+        if exit_code == 0:
+            return True
+        else:
+            return False
