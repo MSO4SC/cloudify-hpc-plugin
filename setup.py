@@ -29,7 +29,8 @@ setup(
     description='Plugin to use HPC resources in Cloudify',
 
     # This must correspond to the actual packages in the plugin.
-    packages=['hpc_plugin'],
+    packages=['hpc_plugin',
+              'hpc_plugin.workload_managers'],
 
     zip_safe=False,
     install_requires=[

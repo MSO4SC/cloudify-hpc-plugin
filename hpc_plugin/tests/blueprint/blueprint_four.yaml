@@ -50,10 +50,9 @@ node_templates:
         type: hpc.nodes.Compute
         properties:
             config: { get_input: mso4sc_hpc_primary }
-            monitor_entrypoint: { get_input: monitor_entrypoint }
-            monitor_orchestrator_available: True
+            external_monitor_entrypoint: { get_input: monitor_entrypoint }
             job_prefix: { get_input: job_prefix }
-#            simulate: True  # COMMENT to test against a real HPC
+            simulate: True  # COMMENT to test against a real HPC
     
     first_job:
         type: hpc.nodes.job

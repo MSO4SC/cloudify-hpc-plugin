@@ -19,8 +19,8 @@ from cloudify import ctx
 from cloudify.decorators import operation
 from cloudify.exceptions import NonRecoverableError
 
-from hpc_plugin.ssh import SshClient
-from hpc_plugin import slurm
+from ssh import SshClient
+from workload_managers.workload_manager import WorkloadManager
 
 
 @operation
@@ -277,17 +277,18 @@ def send_job(job_options, **kwargs):  # pylint: disable=W0613
         type_hierarchy
 
     if not simulate:
-
+        wm_type = ctx.instance.runtime_properties['workload_manager']
         client = SshClient(credentials['host'],
                            credentials['user'],
                            credentials['password'])
 
-        # TODO(emepetres): use workload manager type
-        is_submitted = slurm.submit_job(client,
-                                        name,
-                                        job_options,
-                                        is_singularity,
-                                        ctx.logger)
+        # TODO(emepetres): manage errors
+        wm = WorkloadManager.factory(wm_type)
+        is_submitted = wm.submit_job(client,
+                                     name,
+                                     job_options,
+                                     is_singularity,
+                                     ctx.logger)
         client.close_connection()
     else:
         ctx.logger.warning('Instance ' + ctx.instance.id + ' simulated')
@@ -316,17 +317,19 @@ def clean_job_aux_files(job_options, avoid, **kwargs):  # pylint: disable=W0613
         is_singularity = 'hpc.nodes.singularity_job' in ctx.node.\
             type_hierarchy
         credentials = ctx.instance.runtime_properties['credentials']
+        wm_type = ctx.instance.runtime_properties['workload_manager']
 
         client = SshClient(credentials['host'],
                            credentials['user'],
                            credentials['password'])
 
-        # TODO(emepetres): use workload manager type
-        is_clean = slurm.clean_job_aux_files(client,
-                                             name,
-                                             job_options,
-                                             is_singularity,
-                                             ctx.logger)
+        # TODO(emepetres): manage errors
+        wm = WorkloadManager.factory(wm_type)
+        is_clean = wm.clean_job_aux_files(client,
+                                          name,
+                                          job_options,
+                                          is_singularity,
+                                          ctx.logger)
 
         client.close_connection()
     else:
@@ -351,16 +354,18 @@ def stop_job(job_options, **kwargs):  # pylint: disable=W0613
         type_hierarchy
 
     if not simulate:
+        wm_type = ctx.instance.runtime_properties['workload_manager']
         client = SshClient(credentials['host'],
                            credentials['user'],
                            credentials['password'])
 
-        # TODO(emepetres): use workload manager type
-        is_stopped = slurm.stop_job(client,
-                                    name,
-                                    job_options,
-                                    is_singularity,
-                                    ctx.logger)
+        # TODO(emepetres): manage errors
+        wm = WorkloadManager.factory(wm_type)
+        is_stopped = wm.stop_job(client,
+                                 name,
+                                 job_options,
+                                 is_singularity,
+                                 ctx.logger)
 
         client.close_connection()
     else:
