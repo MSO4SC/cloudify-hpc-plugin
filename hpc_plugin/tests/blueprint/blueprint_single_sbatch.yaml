@@ -50,8 +50,9 @@ node_templates:
         type: hpc.nodes.Compute
         properties:
             config: { get_input: mso4sc_hpc_primary }
-            monitor_entrypoint: { get_input: monitor_entrypoint }
+            external_monitor_entrypoint: { get_input: monitor_entrypoint }
             job_prefix: { get_input: job_prefix }
+            skip_cleanup: True
             simulate: True  # COMMENT to test against a real HPC
 
     single_job:
@@ -65,6 +66,7 @@ node_templates:
                 revert: 'scripts/revert_sbatch_example.sh'
                 inputs:
                     - 'single'
+            skip_cleanup: True
         relationships:
             - type: job_contained_in_hpc
               target: first_hpc

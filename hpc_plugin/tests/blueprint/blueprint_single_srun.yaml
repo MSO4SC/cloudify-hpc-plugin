@@ -52,6 +52,7 @@ node_templates:
             config: { get_input: mso4sc_hpc_primary }
             external_monitor_entrypoint: { get_input: monitor_entrypoint }
             job_prefix: { get_input: job_prefix }
+            skip_cleanup: True
             simulate: True  # COMMENT to test against a real HPC
 
     single_job:
@@ -72,7 +73,7 @@ node_templates:
                 revert: 'scripts/revert_example.sh'
                 inputs:
                     - 'single'
-            avoid_cleanup: True
+            skip_cleanup: True
         relationships:
             - type: job_contained_in_hpc
               target: first_hpc

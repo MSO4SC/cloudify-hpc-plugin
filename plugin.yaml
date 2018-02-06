@@ -46,16 +46,29 @@ node_types:
                 description: Set to true to simulate job without sending it
                 type: boolean
                 default: False
+            skip_cleanup:
+                description: True to not clean all files at deployment removal
+                type: boolean
+                default: False
             agent_config:
                 default:
                     install_method: none
         interfaces:
             cloudify.interfaces.lifecycle:
                 start:
-                    implementation: hpc.hpc_plugin.tasks.login_connection
+                    implementation: hpc.hpc_plugin.tasks.prepare_hpc
                     inputs:
                         config:
                             default: { get_property: [SELF, config] }
+                        simulate:
+                            default: { get_property: [SELF, simulate] }
+                stop:
+                    implementation: hpc.hpc_plugin.tasks.cleanup_hpc
+                    inputs:
+                        config:
+                            default: { get_property: [SELF, config] }
+                        skip:
+                            default: { get_property: [SELF, skip_cleanup] }
                         simulate:
                             default: { get_property: [SELF, simulate] }
             cloudify.interfaces.monitoring:
@@ -94,7 +107,7 @@ node_types:
                 default: {}
             job_options:
                 description: Job main command and options
-            avoid_cleanup:
+            skip_cleanup:
                 description: True to not clean after execution (debug purposes)
                 type: boolean
                 default: False
@@ -106,16 +119,16 @@ node_types:
                         deployment:
                             description: Deployment scripts and inputs
                             default: { get_property: [SELF, deployment] }
-                        avoid:
-                            default: { get_property: [SELF, avoid_cleanup] }
+                        skip_cleanup:
+                            default: { get_property: [SELF, skip_cleanup] }
                 stop:
                     implementation: hpc.hpc_plugin.tasks.revert_job
                     inputs:
                         deployment:
                             description: Undeployment script and inputs
                             default: { get_property: [SELF, deployment] }
-                        avoid:
-                            default: { get_property: [SELF, avoid_cleanup] }
+                        skip_cleanup:
+                            default: { get_property: [SELF, skip_cleanup] }
             hpc.interfaces.lifecycle:
                 queue:
                     implementation: hpc.hpc_plugin.tasks.send_job
@@ -123,12 +136,12 @@ node_types:
                         job_options:
                             default: { get_property: [SELF, job_options] }
                 cleanup:
-                    implementation: hpc.hpc_plugin.tasks.clean_job_aux_files
+                    implementation: hpc.hpc_plugin.tasks.cleanup_job
                     inputs:
                         job_options:
                             default: { get_property: [SELF, job_options] }
-                        avoid:
-                            default: { get_property: [SELF, avoid_cleanup] }
+                        skip:
+                            default: { get_property: [SELF, skip_cleanup] }
                 cancel:
                     implementation: hpc.hpc_plugin.tasks.stop_job
                     inputs:
