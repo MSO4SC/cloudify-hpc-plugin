@@ -254,7 +254,10 @@ class WorkloadManager(object):
             return ssh_client.send_command(cmd,
                                            wait_result=wait_result)
         else:
-            return ssh_client.send_command("cd " + workdir + " && " + cmd,
+            call = "export CURRENT_WORKDIR=" + workdir + " && "
+            call += "cd " + workdir + " && "
+            call += cmd
+            return ssh_client.send_command(call,
                                            wait_result=wait_result)
 
     def _get_random_name(self, base_name):

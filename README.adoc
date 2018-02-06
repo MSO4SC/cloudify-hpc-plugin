@@ -2,7 +2,7 @@
 // Settings
 :idprefix:
 :idseparator: -
-ifndef::env-github[:icons: font]
+//ifndef::env-github[:icons: font]
 ifdef::env-github,env-browser[]
 :toc: macro
 :toclevels: 1
@@ -12,10 +12,10 @@ ifdef::env-github[]
 :status:
 :outfilesuffix: .adoc
 :!toc-title:
-:caution-caption: :fire:
-:important-caption: :exclamation:
-:note-caption: :paperclip:
 :tip-caption: :bulb:
+:note-caption: :information_source:
+:important-caption: :heavy_exclamation_mark:
+:caution-caption: :fire:
 :warning-caption: :warning:
 endif::[]
 :icons:
@@ -193,6 +193,8 @@ Use this tipe to describe a HPC job.
 ** `inputs`: List of inputs that will be passed to the scripts when executed in the HPC.
 * `skip_cleanup`: Set to true to not clean up orchestrator auxiliar files. Default `False`.
 
+NOTE: The variable $CURRENT_WORKDIR is available in all operations and scripts. It points to the working directory of the execution in the HPC from the _HOME_ directory: `/home/user/$CURRENT_WORKDIR/`.
+
 *Example*
 
 This example demonstrates how to describe a new job.
@@ -253,7 +255,9 @@ Use this tipe to describe a HPC job executed from a {uri-singularity}[Singularit
 ** `bootstrap`: Relative path to blueprint to the script that will be executed in the HPC at the install workflow to bootstrap the job (like image download, data movements, etc.)
 ** `revert`: Relative path to blueprint to the script that will be executed in the HPC at the uninstall workflow, reverting the bootstrap or other clean up operations (like removing the image).
 ** `inputs`: List of inputs that will be passed to the scripts when executed in the HPC
-* `avoid_cleanup`: Optional set to true to not clean up auxiliar files (for debug purposes).
+* `skip_cleanup`: Set to true to not clean up orchestrator auxiliar files. Default `False`.
+
+NOTE: The variable $CURRENT_WORKDIR is available in all operations and scripts. It points to the working directory of the execution in the HPC from the _HOME_ directory: `/home/user/$CURRENT_WORKDIR/`.
 
 *Example*
 
