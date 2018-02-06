@@ -163,7 +163,6 @@ class Slurm(WorkloadManager):
         # (sacct only check current day)
         call = "sacct -n -o jobname%32,jobid -X --name=" + ','.join(job_names)
         output, exit_code = self._execute_shell_command(ssh_client,
-                                                        ".",
                                                         call,
                                                         wait_result=True)
 
@@ -189,7 +188,7 @@ class Slurm(WorkloadManager):
         # (sacct only check current day)
         call = "sacct -n -o jobid,state -X --jobs=" + ','.join(job_ids)
         output, exit_code = self._execute_shell_command(ssh_client,
-                                                        ".", call,
+                                                        call,
                                                         wait_result=True)
 
         states = {}

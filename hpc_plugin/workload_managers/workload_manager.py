@@ -1,5 +1,6 @@
 import string
 import random
+from datetime import datetime
 from hpc_plugin.ssh import SshClient
 
 
@@ -48,7 +49,8 @@ class WorkloadManager(object):
             if not self._create_shell_script(ssh_client,
                                              name + ".script",
                                              script_content,
-                                             logger):
+                                             logger,
+                                             workdir=workdir):
                 return False
 
             settings = {
@@ -145,11 +147,11 @@ class WorkloadManager(object):
                                            workdir=workdir)
 
     def create_new_workdir(self, ssh_client, base_name):
-        workdir = self._get_random_name(base_name)
+        workdir = self._get_time_name(base_name)
 
         # we are sure that the workdir does not exists
         while self._exists_path(ssh_client, workdir):
-            workdir = self._get_random_name(base_name)
+            workdir = self._get_time_name(base_name)
 
         self._execute_shell_command(ssh_client,
                                     "mkdir -p " + workdir)
@@ -258,6 +260,10 @@ class WorkloadManager(object):
     def _get_random_name(self, base_name):
         """ Get a random name with a prefix """
         return base_name + '_' + self.__id_generator()
+
+    def _get_time_name(self, base_name):
+        """ Get a random name with a prefix """
+        return base_name + '_' + datetime.utcnow().strftime('%Y%m%d_%H%M%S')
 
     def __id_generator(self,
                        size=6,

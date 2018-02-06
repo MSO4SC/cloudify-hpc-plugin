@@ -24,15 +24,19 @@ from workload_managers.workload_manager import WorkloadManager
 
 
 @operation
-def login_connection(config, simulate, **kwargs):  # pylint: disable=W0613
+def prepare_hpc(config, simulate, **kwargs):  # pylint: disable=W0613
     """ Tries to connect to a login node """
     ctx.logger.info('Connecting to login node..')
     if not simulate:
+        wm_type = config['workload_manager']
+        wm = WorkloadManager.factory(wm_type)
         credentials = config['credentials']
         client = SshClient(credentials['host'],
                            credentials['user'],
                            credentials['password'])
-        _, exit_code = client.send_command('uname', wait_result=True)
+        _, exit_code = wm._execute_shell_command(client,
+                                                 'uname',
+                                                 wait_result=True)
 
         if exit_code is not 0:
             raise NonRecoverableError(
@@ -40,15 +44,36 @@ def login_connection(config, simulate, **kwargs):  # pylint: disable=W0613
 
         ctx.instance.runtime_properties['login'] = exit_code is 0
 
-        ##
-        wm_type = config['workload_manager']
-        wm = WorkloadManager.factory(wm_type)
-        workdir = wm.create_new_workdir(client, "jcarnero_")
+        workdir = wm.create_new_workdir(client, ctx.blueprint.id)
         ctx.instance.runtime_properties['workdir'] = workdir
+        ctx.logger.info('..HPC ready')
     else:
         ctx.instance.runtime_properties['login'] = True
         ctx.instance.runtime_properties['workdir'] = "simulation"
         ctx.logger.warning('HPC login connection simulated')
+
+
+@operation
+def cleanup_hpc(config, skip, simulate, **kwargs):  # pylint: disable=W0613
+    """ Tries to connect to a login node """
+    if skip:
+        return
+
+    ctx.logger.info('Cleaning up...')
+    if not simulate:
+        workdir = ctx.instance.runtime_properties['workdir']
+        wm_type = config['workload_manager']
+        wm = WorkloadManager.factory(wm_type)
+        credentials = config['credentials']
+        client = SshClient(credentials['host'],
+                           credentials['user'],
+                           credentials['password'])
+        _, exit_code = wm._execute_shell_command(client,
+                                                 'rm -r ' + workdir,
+                                                 wait_result=True)
+        ctx.logger.info('..all clean.')
+    else:
+        ctx.logger.warning('HPC clean up simulated.')
 
 
 @operation
@@ -171,7 +196,9 @@ def stop_monitoring_hpc(config,
 
 
 @operation
-def bootstrap_job(deployment, avoid, **kwarsgs):  # pylint: disable=W0613
+def bootstrap_job(deployment,
+                  skip_cleanup,
+                  **kwarsgs):  # pylint: disable=W0613
     """Bootstrap a job with a script that receives SSH credentials as imput"""
     if not deployment:
         return
@@ -194,7 +221,7 @@ def bootstrap_job(deployment, avoid, **kwarsgs):  # pylint: disable=W0613
             workdir,
             name,
             ctx.logger,
-            avoid)
+            skip_cleanup)
     else:
         is_bootstraped = True
 
@@ -206,7 +233,7 @@ def bootstrap_job(deployment, avoid, **kwarsgs):  # pylint: disable=W0613
 
 
 @operation
-def revert_job(deployment, avoid, **kwarsgs):  # pylint: disable=W0613
+def revert_job(deployment, skip_cleanup, **kwarsgs):  # pylint: disable=W0613
     """Revert a job using a script that receives SSH credentials as input"""
     if not deployment:
         return
@@ -229,7 +256,7 @@ def revert_job(deployment, avoid, **kwarsgs):  # pylint: disable=W0613
             workdir,
             name,
             ctx.logger,
-            avoid)
+            skip_cleanup)
     else:
         is_reverted = True
 
@@ -246,7 +273,7 @@ def deploy_job(script,
                workdir,
                name,
                logger,
-               avoid_cleanup):  # pylint: disable=W0613
+               skip_cleanup):  # pylint: disable=W0613
     """ Exec a eployment job script that receives SSH credentials as input """
 
     # TODO(emepetres): manage errors
@@ -273,7 +300,7 @@ def deploy_job(script,
                 "failed to deploy job: call '" + call + "', exit code " +
                 str(exit_code))
 
-        if not avoid_cleanup:
+        if not skip_cleanup:
             if not wm._execute_shell_command(client,
                                              "rm " + name,
                                              workdir=workdir):
@@ -326,9 +353,9 @@ def send_job(job_options, **kwargs):  # pylint: disable=W0613
 
 
 @operation
-def clean_job_aux_files(job_options, avoid, **kwargs):  # pylint: disable=W0613
+def cleanup_job(job_options, skip, **kwargs):  # pylint: disable=W0613
     """Clean the aux files of the job in the HPC"""
-    if avoid:
+    if skip:
         return
 
     simulate = ctx.instance.runtime_properties['simulate']
