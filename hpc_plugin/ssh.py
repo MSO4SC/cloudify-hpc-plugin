@@ -60,6 +60,7 @@ class SshClient(object):
             # there is one channel per command
             stdin, stdout, stderr = self._client.exec_command(
                 command,
+                # get_pty=True, # Ask for shell login, not working with srun
                 timeout=exec_timeout)
 
             if wait_result:
