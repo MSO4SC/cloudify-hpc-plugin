@@ -19,7 +19,7 @@ from cloudify import ctx
 from cloudify.decorators import operation
 from cloudify.exceptions import NonRecoverableError
 
-from ssh import SshClient
+from cli_client.ssh import SshClient
 from workload_managers.workload_manager import WorkloadManager
 
 
