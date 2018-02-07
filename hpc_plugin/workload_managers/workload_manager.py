@@ -146,17 +146,20 @@ class WorkloadManager(object):
                                            call,
                                            workdir=workdir)
 
-    def create_new_workdir(self, ssh_client, base_name):
+    def create_new_workdir(self, ssh_client, base_dir, base_name):
         workdir = self._get_time_name(base_name)
 
         # we are sure that the workdir does not exists
         while self._exists_path(ssh_client, workdir):
             workdir = self._get_time_name(base_name)
 
-        self._execute_shell_command(ssh_client,
-                                    "mkdir -p " + workdir)
-
-        return workdir
+        full_path = base_dir + "/" + workdir
+        if self._execute_shell_command(
+                ssh_client,
+                "mkdir -p " + base_dir + "/" + workdir):
+            return full_path
+        else:
+            return None
 
     def _build_container_script(self,
                                 name,

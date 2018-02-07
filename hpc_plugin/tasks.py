@@ -24,7 +24,7 @@ from workload_managers.workload_manager import WorkloadManager
 
 
 @operation
-def prepare_hpc(config, simulate, **kwargs):  # pylint: disable=W0613
+def prepare_hpc(config, base_dir, simulate, **kwargs):  # pylint: disable=W0613
     """ Tries to connect to a login node """
     ctx.logger.info('Connecting to login node..')
     if not simulate:
@@ -44,7 +44,11 @@ def prepare_hpc(config, simulate, **kwargs):  # pylint: disable=W0613
 
         ctx.instance.runtime_properties['login'] = exit_code is 0
 
-        workdir = wm.create_new_workdir(client, ctx.blueprint.id)
+        workdir = wm.create_new_workdir(client, base_dir, ctx.blueprint.id)
+        if workdir is None:
+            raise NonRecoverableError(
+                "failed to create the working directory, base dir: " +
+                base_dir)
         ctx.instance.runtime_properties['workdir'] = workdir
         ctx.logger.info('..HPC ready')
     else:

@@ -49,6 +49,10 @@ node_types:
                 description: Job name prefix for this HPC
                 default: "cfyhpc"
                 type: string
+            base_dir:
+                description: Root directory of all executions
+                default: "$HOME"
+                type: string
             simulate:
                 description: Set to true to simulate job without sending it
                 type: boolean
@@ -67,6 +71,8 @@ node_types:
                     inputs:
                         config:
                             default: { get_property: [SELF, config] }
+                        base_dir:
+                            default: { get_property: [SELF, base_dir] }
                         simulate:
                             default: { get_property: [SELF, simulate] }
                 stop:
