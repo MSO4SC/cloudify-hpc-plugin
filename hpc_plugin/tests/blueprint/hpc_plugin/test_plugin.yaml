@@ -53,6 +53,10 @@ node_types:
                 description: Root directory of all executions
                 default: "$HOME"
                 type: string
+            workdir_prefix:
+                description: Prefix of the working directory instead of blueprint name
+                default: ""
+                type: string
             simulate:
                 description: Set to true to simulate job without sending it
                 type: boolean
@@ -73,6 +77,8 @@ node_types:
                             default: { get_property: [SELF, config] }
                         base_dir:
                             default: { get_property: [SELF, base_dir] }
+                        workdir_prefix:
+                            default: { get_property: [SELF, workdir_prefix] }
                         simulate:
                             default: { get_property: [SELF, simulate] }
                 stop:
