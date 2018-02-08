@@ -49,12 +49,6 @@ class DummyClient(CliClient):
             if self._use_login_shell else command)))
         return '', 0
 
-
-class Logger(object):
-    """Represents a stub for logger.
-    It can be used for debug purposes in combination with `dummy_client.SshClient`"""
-    def info(s):
-        sys.stdout.write('# INF ' + s + '\n')
-
-    def error(s):
-        sys.stderr.write('# ERR ' + s + '\n')
+# TODO: add logger with console coloring based on Logger from:
+#       https://github.com/python/cpython/tree/master/Lib/logging
+from logging import getLogger

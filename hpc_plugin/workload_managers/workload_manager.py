@@ -6,13 +6,15 @@ from hpc_plugin.cli_client.cli_client import CliClient as SshClient
 
 class WorkloadManager(object):
 
+    @staticmethod
     def factory(workload_manager):
         if workload_manager == "SLURM":
             from slurm import Slurm
             return Slurm()
-        assert 0, "Bad workload manager creation: " +\
-            workload_manager
-    factory = staticmethod(factory)
+        elif workload_manager == "TORQUE":
+            from torque import Torque
+            return Torque()
+        assert 0, "Bad workload manager creation: " + workload_manager
 
     def submit_job(self,
                    ssh_client,
@@ -53,6 +55,7 @@ class WorkloadManager(object):
                                              workdir=workdir):
                 return False
 
+            # @TODO: use more general type names (e.g., BATCH/INLINE, etc)
             settings = {
                 "type": "SBATCH",
                 "command": name + ".script"
@@ -170,7 +173,7 @@ class WorkloadManager(object):
         @type job_settings: dictionary
         @param job_settings: dictionary with the container job options
         @rtype string
-        @return string to with the sbatch script. None if an error arise.
+        @return string with the batch script. None if an error arise.
         """
         logger.error("'_build_container_script' not implemented.")
         return None
