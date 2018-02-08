@@ -50,7 +50,7 @@ def prepare_hpc(config, base_dir, simulate, **kwargs):  # pylint: disable=W0613
                 "failed to create the working directory, base dir: " +
                 base_dir)
         ctx.instance.runtime_properties['workdir'] = workdir
-        ctx.logger.info('..HPC ready')
+        ctx.logger.info('..HPC ready on ' + workdir)
     else:
         ctx.instance.runtime_properties['login'] = True
         ctx.instance.runtime_properties['workdir'] = "simulation"
