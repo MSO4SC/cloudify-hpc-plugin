@@ -38,6 +38,8 @@ class WorkloadManager(object):
         if not self._checkSshClient(ssh_client, logger):
             return False
 
+        print "*************************************************"
+
         if is_singularity:
             # generate script content for singularity
             script_content = self._build_container_script(name,
@@ -57,13 +59,21 @@ class WorkloadManager(object):
                 "type": "SBATCH",
                 "command": name + ".script"
             }
+
+            if 'scale' in job_settings and \
+                    job_settings['scale'] > 1:
+                settings['scale'] = job_settings['scale']
         else:
             settings = job_settings
+
+        print "*************************************************"
 
         # build the call to submit the job
         response = self._build_job_submission_call(name,
                                                    settings,
                                                    logger)
+
+        print response
         if 'error' in response:
             logger.error(
                 "Couldn't build the call to send the job: " +

@@ -52,7 +52,7 @@ node_templates:
             config: { get_input: mso4sc_hpc_primary }
             external_monitor_entrypoint: { get_input: monitor_entrypoint }
             job_prefix: { get_input: job_prefix }
-            workdir_prefix: "single_sbatch"
+            workdir_prefix: "single_srun"
             skip_cleanup: True
             simulate: True  # COMMENT to test against a real HPC
 
@@ -62,6 +62,7 @@ node_templates:
             job_options:
                 type: 'SBATCH'
                 command: "touch.script single.test"
+                scale: 2
             deployment:
                 bootstrap: 'scripts/bootstrap_sbatch_example.sh'
                 revert: 'scripts/revert_sbatch_example.sh'

@@ -131,6 +131,10 @@ class Slurm(WorkloadManager):
         elif job_settings['type'] == 'SRUN':
             return {'error': "'SRUN' jobs must define the 'max_time' property"}
 
+        if 'scale' in job_settings and \
+                job_settings['scale'] > 1:
+            slurm_call += ' --array=0-' + str(job_settings['scale'])
+
         # add executable and arguments
         slurm_call += ' ' + job_settings['command']
 
