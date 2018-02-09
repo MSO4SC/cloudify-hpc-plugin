@@ -93,3 +93,6 @@ class TestPlugin(unittest.TestCase):
 
         # # assert deployment outputs are ok
         # self.assertEqual(cfy_local.outputs()['job_name'][:4], 'cfy_')
+
+if __name__ == '__main__':
+    unittest.main()

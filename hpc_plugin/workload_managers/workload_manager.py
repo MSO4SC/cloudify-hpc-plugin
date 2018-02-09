@@ -227,6 +227,7 @@ class WorkloadManager(object):
                              script_content,
                              logger,
                              workdir=None):
+        # @TODO: why not to use ctx.download_resource and ssh_client.open_sftp().put(...)?
         # escape for echo command
         script_data = script_content \
             .replace("\\", "\\\\") \

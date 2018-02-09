@@ -117,6 +117,23 @@ class Torque(WorkloadManager):
         if len(resources_request) > 0:
             torque_call += ' -l {}'.format(resources_request)
 
+        if 'queue' in job_settings: # more precisely is it a destination [queue][@server]
+            torque_call += " -q {}".format(shlex_quote(job_settings['queue']))
+
+        if 'rerunable' in job_settings:
+            torque_call += " -r {}".format('y' if job_settings['rerunable'] else 'n')
+
+        if 'working_directory' in job_settings:
+            torque_call += " -w {}".format(shlex_quote(job_settings['working_directory']))
+
+        additional_attributes = {}
+        if 'groupname' in job_settings:
+            additional_attributes["group_list"]=shlex_quote(job_settings['groupname'])
+
+        if len(additional_attributes) > 0:
+            torque_call += " -W {}".format(','.join("{0}={1}".format(k,v)\
+                for k, v in additional_attributes.items()))
+
         # if 'tasks' in job_settings:
         #     torque_call += ' -n ' + str(job_settings['tasks'])
 
