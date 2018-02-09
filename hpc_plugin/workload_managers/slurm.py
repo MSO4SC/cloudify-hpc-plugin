@@ -131,11 +131,27 @@ class Slurm(WorkloadManager):
         elif job_settings['type'] == 'SRUN':
             return {'error': "'SRUN' jobs must define the 'max_time' property"}
 
+        response = {}
         if 'scale' in job_settings and \
                 job_settings['scale'] > 1:
             if job_settings['type'] == 'SRUN':
                 return {'error': "'SRUN' does not allow scale property"}
+            # set the job array
             slurm_call += ' --array=0-' + str(job_settings['scale'] - 1)
+            # set the max of parallel jobs
+            scale_max = job_settings['scale']
+            if 'scale_max_in_parallel' in job_settings and \
+                    job_settings['scale_max_in_parallel'] > 0:
+                slurm_call += '%' + str(job_settings['scale_max_in_parallel'])
+                scale_max = job_settings['scale_max_in_parallel']
+            # map the orchestrator variables after last sbatch
+            scale_env_mapping_call = "sed -i ':a;N;$! ba;s/\\n.*#SBATCH.*\\n/&" +\
+                "SCALE_INDEX=$SLURM_ARRAY_TASK_ID\\n" +\
+                "SCALE_COUNT=$SLURM_ARRAY_TASK_COUNT\\n" +\
+                "SCALE_MAX=" + str(scale_max) + "\\n\\n/' " +\
+                job_settings['command'].split()[0]  # get only the file
+            response['scale_env_mapping_call'] = scale_env_mapping_call
+            print scale_env_mapping_call
 
         # add executable and arguments
         slurm_call += ' ' + job_settings['command']
@@ -146,7 +162,8 @@ class Slurm(WorkloadManager):
         if job_settings['type'] == 'SRUN':
             slurm_call += ' &'
 
-        return {'call': slurm_call}
+        response['call'] = slurm_call
+        return response
 
     def _build_job_cancellation_call(self, name, job_settings, logger):
         return "scancel --name " + name

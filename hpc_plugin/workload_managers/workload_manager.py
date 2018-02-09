@@ -75,6 +75,21 @@ class WorkloadManager(object):
                 response['error'])
             return False
 
+        # prepare the scale env variables
+        if 'scale_env_mapping_call' in response:
+            scale_env_mapping_call = response['scale_env_mapping_call']
+            output, exit_code = self._execute_shell_command(
+                ssh_client,
+                scale_env_mapping_call,
+                workdir=workdir,
+                wait_result=True)
+            if exit_code is not 0:
+                logger.error("Scale env vars mapping '" +
+                             scale_env_mapping_call +
+                             "' failed with code " +
+                             str(exit_code) + ":\n" + output)
+                return False
+
         # submit the job
         call = response['call']
         output, exit_code = self._execute_shell_command(ssh_client,

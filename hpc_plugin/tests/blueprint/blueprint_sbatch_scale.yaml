@@ -52,9 +52,9 @@ node_templates:
             config: { get_input: mso4sc_hpc_primary }
             external_monitor_entrypoint: { get_input: monitor_entrypoint }
             job_prefix: { get_input: job_prefix }
-            workdir_prefix: "single_array"
+            workdir_prefix: "sbatch_scale"
             skip_cleanup: True
-            simulate: True  # COMMENT to test against a real HPC
+#            simulate: True  # COMMENT to test against a real HPC
 
     single_job:
         type: hpc.nodes.job
