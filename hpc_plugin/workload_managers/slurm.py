@@ -167,7 +167,14 @@ class Slurm(WorkloadManager):
         """
         # TODO(emepetres) set first day of consulting
         # (sacct only check current day)
-        call = "sacct -n -o jobname%32,jobid -X -P --name=" + \
+        # DOCUMENTS for further changes
+        # sacct -n -o jobname%32,jobid -X -P --name=mso_zse43j
+        # mso_zse43j|930223_1
+        # mso_zse43j|930223_0
+        # sacct -n -o jobname%32,jobIDRaw -X -P --name=mso_zse43j
+        # mso_zse43j|930223
+        # mso_zse43j|930226
+        call = "sacct -n -o jobname%32,jobid -X --name=" + \
             ','.join(job_names)
         output, exit_code = self._execute_shell_command(ssh_client,
                                                         call,
