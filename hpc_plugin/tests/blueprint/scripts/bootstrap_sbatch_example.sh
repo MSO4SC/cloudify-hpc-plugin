@@ -9,7 +9,7 @@ cat > $FILE <<- EOM
 #SBATCH -N 1
 #SBATCH -n 1
 #SBATCH --ntasks-per-node=1
-#SBATCH -t 00:01
+#SBATCH -t 00:01:00
 
 touch $1.test
 EOM

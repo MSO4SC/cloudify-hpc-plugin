@@ -38,8 +38,6 @@ class WorkloadManager(object):
         if not self._checkSshClient(ssh_client, logger):
             return False
 
-        print "*************************************************"
-
         if is_singularity:
             # generate script content for singularity
             script_content = self._build_container_script(name,
@@ -66,14 +64,11 @@ class WorkloadManager(object):
         else:
             settings = job_settings
 
-        print "*************************************************"
-
         # build the call to submit the job
         response = self._build_job_submission_call(name,
                                                    settings,
                                                    logger)
 
-        print response
         if 'error' in response:
             logger.error(
                 "Couldn't build the call to send the job: " +

@@ -47,7 +47,156 @@ class TestPlugin(unittest.TestCase):
 
         return inputs
 
-    @workflow_test(os.path.join('blueprint', 'blueprint_single_srun.yaml'),
+    @workflow_test(os.path.join('blueprint', 'blueprint_srun.yaml'),
+                   resources_to_copy=[(os.path.join('blueprint', 'hpc_plugin',
+                                                    'test_plugin.yaml'),
+                                       'hpc_plugin'),
+                                      (os.path.join('blueprint', 'scripts',
+                                                    'bootstrap_example.sh'),
+                                       'scripts'),
+                                      (os.path.join('blueprint', 'scripts',
+                                                    'revert_example.sh'),
+                                       'scripts')],
+                   inputs='set_inputs')
+    def test_srun(self, cfy_local):
+        """ Install & Run workflows. """
+        cfy_local.execute('install', task_retries=0)
+        cfy_local.execute('run_jobs', task_retries=0)
+        cfy_local.execute('uninstall', task_retries=0)
+
+        # extract single node instance
+        instance = cfy_local.storage.get_node_instances()[0]
+
+        # due to a cfy bug sometimes login keyword is not ready in the tests
+        if 'login' in instance.runtime_properties:
+            # assert runtime properties is properly set in node instance
+            self.assertEqual(instance.runtime_properties['login'],
+                             True)
+        else:
+            logging.warning('[WARNING] Login could not be tested')
+
+    @workflow_test(os.path.join('blueprint', 'blueprint_sbatch.yaml'),
+                   resources_to_copy=[(os.path.join('blueprint', 'hpc_plugin',
+                                                    'test_plugin.yaml'),
+                                       'hpc_plugin'),
+                                      (os.path.join('blueprint', 'scripts',
+                                                    'bootstrap_' +
+                                                    'sbatch_example.sh'),
+                                       'scripts'),
+                                      (os.path.join('blueprint', 'scripts',
+                                                    'revert_' +
+                                                    'sbatch_example.sh'),
+                                       'scripts')],
+                   inputs='set_inputs')
+    def test_sbatch(self, cfy_local):
+        """ Install & Run workflows. """
+        cfy_local.execute('install', task_retries=0)
+        cfy_local.execute('run_jobs', task_retries=0)
+        cfy_local.execute('uninstall', task_retries=0)
+
+        # extract single node instance
+        instance = cfy_local.storage.get_node_instances()[0]
+
+        # due to a cfy bug sometimes login keyword is not ready in the tests
+        if 'login' in instance.runtime_properties:
+            # assert runtime properties is properly set in node instance
+            self.assertEqual(instance.runtime_properties['login'],
+                             True)
+        else:
+            logging.warning('[WARNING] Login could not be tested')
+
+    @workflow_test(os.path.join('blueprint', 'blueprint_sbatch_scale.yaml'),
+                   resources_to_copy=[(os.path.join('blueprint', 'hpc_plugin',
+                                                    'test_plugin.yaml'),
+                                       'hpc_plugin'),
+                                      (os.path.join('blueprint', 'scripts',
+                                                    'bootstrap_' +
+                                                    'sbatch_example.sh'),
+                                       'scripts'),
+                                      (os.path.join('blueprint', 'scripts',
+                                                    'revert_' +
+                                                    'sbatch_example.sh'),
+                                       'scripts')],
+                   inputs='set_inputs')
+    def test_sbatch_scale(self, cfy_local):
+        """ Install & Run workflows. """
+        cfy_local.execute('install', task_retries=0)
+        cfy_local.execute('run_jobs', task_retries=0)
+        cfy_local.execute('uninstall', task_retries=0)
+
+        # extract single node instance
+        instance = cfy_local.storage.get_node_instances()[0]
+
+        # due to a cfy bug sometimes login keyword is not ready in the tests
+        if 'login' in instance.runtime_properties:
+            # assert runtime properties is properly set in node instance
+            self.assertEqual(instance.runtime_properties['login'],
+                             True)
+        else:
+            logging.warning('[WARNING] Login could not be tested')
+
+    @workflow_test(os.path.join('blueprint', 'blueprint_singularity.yaml'),
+                   resources_to_copy=[(os.path.join('blueprint', 'hpc_plugin',
+                                                    'test_plugin.yaml'),
+                                       'hpc_plugin'),
+                                      (os.path.join('blueprint', 'scripts',
+                                                    'singularity_' +
+                                                    'bootstrap_example.sh'),
+                                       'scripts'),
+                                      (os.path.join('blueprint', 'scripts',
+                                                    'singularity_' +
+                                                    'revert_example.sh'),
+                                       'scripts')],
+                   inputs='set_inputs')
+    def test_singularity(self, cfy_local):
+        """ Install & Run workflows. """
+        cfy_local.execute('install', task_retries=0)
+        cfy_local.execute('run_jobs', task_retries=0)
+        cfy_local.execute('uninstall', task_retries=0)
+
+        # extract single node instance
+        instance = cfy_local.storage.get_node_instances()[0]
+
+        # due to a cfy bug sometimes login keyword is not ready in the tests
+        if 'login' in instance.runtime_properties:
+            # assert runtime properties is properly set in node instance
+            self.assertEqual(instance.runtime_properties['login'],
+                             True)
+        else:
+            logging.warning('[WARNING] Login could not be tested')
+
+    @workflow_test(os.path.join('blueprint',
+                                'blueprint_singularity_scale.yaml'),
+                   resources_to_copy=[(os.path.join('blueprint', 'hpc_plugin',
+                                                    'test_plugin.yaml'),
+                                       'hpc_plugin'),
+                                      (os.path.join('blueprint', 'scripts',
+                                                    'singularity_' +
+                                                    'bootstrap_example.sh'),
+                                       'scripts'),
+                                      (os.path.join('blueprint', 'scripts',
+                                                    'singularity_' +
+                                                    'revert_example.sh'),
+                                       'scripts')],
+                   inputs='set_inputs')
+    def test_singularity_scale(self, cfy_local):
+        """ Install & Run workflows. """
+        cfy_local.execute('install', task_retries=0)
+        cfy_local.execute('run_jobs', task_retries=0)
+        cfy_local.execute('uninstall', task_retries=0)
+
+        # extract single node instance
+        instance = cfy_local.storage.get_node_instances()[0]
+
+        # due to a cfy bug sometimes login keyword is not ready in the tests
+        if 'login' in instance.runtime_properties:
+            # assert runtime properties is properly set in node instance
+            self.assertEqual(instance.runtime_properties['login'],
+                             True)
+        else:
+            logging.warning('[WARNING] Login could not be tested')
+
+    @workflow_test(os.path.join('blueprint', 'blueprint_four.yaml'),
                    resources_to_copy=[(os.path.join('blueprint', 'hpc_plugin',
                                                     'test_plugin.yaml'),
                                        'hpc_plugin'),
@@ -74,7 +223,7 @@ class TestPlugin(unittest.TestCase):
                                                     'sbatch_example.sh'),
                                        'scripts')],
                    inputs='set_inputs')
-    def test_install(self, cfy_local):
+    def test_four(self, cfy_local):
         """ Install & Run workflows. """
         cfy_local.execute('install', task_retries=0)
         cfy_local.execute('run_jobs', task_retries=0)
@@ -91,5 +240,46 @@ class TestPlugin(unittest.TestCase):
         else:
             logging.warning('[WARNING] Login could not be tested')
 
-        # # assert deployment outputs are ok
-        # self.assertEqual(cfy_local.outputs()['job_name'][:4], 'cfy_')
+    @workflow_test(os.path.join('blueprint', 'blueprint_four_scale.yaml'),
+                   resources_to_copy=[(os.path.join('blueprint', 'hpc_plugin',
+                                                    'test_plugin.yaml'),
+                                       'hpc_plugin'),
+                                      (os.path.join('blueprint', 'scripts',
+                                                    'bootstrap_example.sh'),
+                                       'scripts'),
+                                      (os.path.join('blueprint', 'scripts',
+                                                    'revert_example.sh'),
+                                       'scripts'),
+                                      (os.path.join('blueprint', 'scripts',
+                                                    'singularity_' +
+                                                    'bootstrap_example.sh'),
+                                       'scripts'),
+                                      (os.path.join('blueprint', 'scripts',
+                                                    'singularity_' +
+                                                    'revert_example.sh'),
+                                       'scripts'),
+                                      (os.path.join('blueprint', 'scripts',
+                                                    'bootstrap_' +
+                                                    'sbatch_example.sh'),
+                                       'scripts'),
+                                      (os.path.join('blueprint', 'scripts',
+                                                    'revert_' +
+                                                    'sbatch_example.sh'),
+                                       'scripts')],
+                   inputs='set_inputs')
+    def test_four_scale(self, cfy_local):
+        """ Install & Run workflows. """
+        cfy_local.execute('install', task_retries=0)
+        cfy_local.execute('run_jobs', task_retries=0)
+        cfy_local.execute('uninstall', task_retries=0)
+
+        # extract single node instance
+        instance = cfy_local.storage.get_node_instances()[0]
+
+        # due to a cfy bug sometimes login keyword is not ready in the tests
+        if 'login' in instance.runtime_properties:
+            # assert runtime properties is properly set in node instance
+            self.assertEqual(instance.runtime_properties['login'],
+                             True)
+        else:
+            logging.warning('[WARNING] Login could not be tested')

@@ -133,7 +133,9 @@ class Slurm(WorkloadManager):
 
         if 'scale' in job_settings and \
                 job_settings['scale'] > 1:
-            slurm_call += ' --array=0-' + str(job_settings['scale'])
+            if job_settings['type'] == 'SRUN':
+                return {'error': "'SRUN' does not allow scale property"}
+            slurm_call += ' --array=0-' + str(job_settings['scale'] - 1)
 
         # add executable and arguments
         slurm_call += ' ' + job_settings['command']
@@ -165,7 +167,8 @@ class Slurm(WorkloadManager):
         """
         # TODO(emepetres) set first day of consulting
         # (sacct only check current day)
-        call = "sacct -n -o jobname%32,jobid -X --name=" + ','.join(job_names)
+        call = "sacct -n -o jobname%32,jobid -X -P --name=" + \
+            ','.join(job_names)
         output, exit_code = self._execute_shell_command(ssh_client,
                                                         call,
                                                         wait_result=True)
