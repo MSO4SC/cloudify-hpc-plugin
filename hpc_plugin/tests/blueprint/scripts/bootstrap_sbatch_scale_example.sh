@@ -11,5 +11,5 @@ cat > $FILE <<- EOM
 #SBATCH --ntasks-per-node=1
 #SBATCH -t 00:01:00
 
-touch test_$1.test
+touch $1_\$SCALE_INDEX.test
 EOM
