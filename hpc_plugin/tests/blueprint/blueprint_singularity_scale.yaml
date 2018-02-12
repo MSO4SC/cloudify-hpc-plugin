@@ -17,8 +17,8 @@ tosca_definitions_version: cloudify_dsl_1_3
 
 imports:
     # to speed things up, it is possible downloading this file,
-    # - http://www.getcloudify.org/spec/cloudify/4.1/types.yaml
-    - https://raw.githubusercontent.com/cloudify-cosmo/cloudify-manager/17.10.19/resources/rest-service/cloudify/types/types.yaml
+    # - http://www.getcloudify.org/spec/cloudify/4.0.1/types.yaml
+    - http://www.getcloudify.org/spec/cloudify/4.1/types.yaml
     # relative import of plugin.yaml that resides in the blueprint directory
     - hpc_plugin/test_plugin.yaml
 
@@ -52,21 +52,35 @@ node_templates:
             config: { get_input: mso4sc_hpc_primary }
             external_monitor_entrypoint: { get_input: monitor_entrypoint }
             job_prefix: { get_input: job_prefix }
-            workdir_prefix: "single_srun"
+            workdir_prefix: "single_singularity"
             skip_cleanup: True
             simulate: True  # COMMENT to test against a real HPC
 
     single_job:
-        type: hpc.nodes.job
+        type: hpc.nodes.singularity_job
         properties:
-            job_options:
-                type: 'SBATCH'
-                command: "touch.script single.test"
+            job_options: 
+                modules:
+                    - gcc/5.3.0
+                    - openmpi/1.10.2
+                    - singularity/2.3.1
+                partition: 'thin-shared'
+                image: '$LUSTRE/openmpi_1.10.7_ring.img'
+                home: '$HOME:/home/$USER'
+                volumes:
+                    - '/scratch'
+                command: 'ring > single.test'
+                nodes: 1
+                tasks: 1
+                tasks_per_node: 1
+                max_time: '00:01:00'
+                scale: 2
             deployment:
-                bootstrap: 'scripts/bootstrap_sbatch_example.sh'
-                revert: 'scripts/revert_sbatch_example.sh'
+                bootstrap: 'scripts/singularity_bootstrap_example.sh'
+                #revert: 'scripts/singularity_revert_example.sh'
                 inputs:
-                    - 'single'
+                    - '$LUSTRE'
+                    - 'openmpi_1.10.7_ring.img'
             skip_cleanup: True
         relationships:
             - type: job_contained_in_hpc

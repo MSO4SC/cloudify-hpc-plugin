@@ -53,26 +53,20 @@ node_templates:
             external_monitor_entrypoint: { get_input: monitor_entrypoint }
             job_prefix: { get_input: job_prefix }
             base_dir: "$LUSTRE"
-            workdir_prefix: "four"
+            workdir_prefix: "four_scale"
             skip_cleanup: True
             simulate: True  # COMMENT to test against a real HPC
     
     first_job:
         type: hpc.nodes.job
         properties:
-            job_options: 
-                type: 'SRUN'
-                modules:
-                    - gcc/5.3.0
-                partition: 'thin-shared'
-                command: 'touch fourth_example_1.test'
-                nodes: 1
-                tasks: 1
-                tasks_per_node: 1
-                max_time: '00:01:00'
+            job_options:
+                type: 'SBATCH'
+                command: "touch.script fourth_example_1.test"
+                scale: 4
             deployment:
-                bootstrap: 'scripts/bootstrap_example.sh'
-                revert: 'scripts/revert_example.sh'
+                bootstrap: 'scripts/bootstrap_sbatch_example.sh'
+                revert: 'scripts/revert_sbatch_example.sh'
                 inputs:
                     - 'first_job'
             skip_cleanup: True
@@ -98,6 +92,7 @@ node_templates:
                 tasks: 1
                 tasks_per_node: 1
                 max_time: '00:01:00'
+                scale: 2
             deployment:
                 bootstrap: 'scripts/singularity_bootstrap_example.sh'
                 revert: 'scripts/singularity_revert_example.sh'
@@ -129,6 +124,7 @@ node_templates:
                 tasks: 1
                 tasks_per_node: 1
                 max_time: '00:01:00'
+                scale: 2
             deployment:
                 bootstrap: 'scripts/singularity_bootstrap_example.sh'
                 revert: 'scripts/singularity_revert_example.sh'
@@ -148,6 +144,7 @@ node_templates:
             job_options:
                 type: 'SBATCH'
                 command: "touch.script fourth_example_4.test"
+                scale: 4
             deployment:
                 bootstrap: 'scripts/bootstrap_sbatch_example.sh'
                 revert: 'scripts/revert_sbatch_example.sh'

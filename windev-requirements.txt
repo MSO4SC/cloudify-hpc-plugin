@@ -1,8 +1,0 @@
-https://github.com/cloudify-cosmo/cloudify-dsl-parser/archive/17.6.30.zip
-https://github.com/cloudify-cosmo/cloudify-rest-client/archive/17.6.30.zip
-https://github.com/cloudify-cosmo/cloudify-plugins-common/archive/17.6.30.zip
-nose
-mock
-pypiwin32
-pycrypto
-pyyaml
