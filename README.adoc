@@ -190,6 +190,7 @@ Use this tipe to describe a HPC job.
 ** `tasks_per_node`: Number of tasks per node. Default `1`.
 ** `max_time`: Set a limit on the total run time of the job allocation. Mandatory if SRUN type.
 ** `scale`: Execute in parallel the job N times according to this property. Only works with SBATCH jobs. Default `1` (no scale).
+** `scale_max_in_parallel`: Maximum number of scaled job instances that can be run in parallel. Only works with scale > `1`. Default same as scale.
 * `deployment`: Scripts to perform deployment operations. Optional.
 ** `bootstrap`: Relative path to blueprint to the script that will be executed in the HPC at the install workflow to bootstrap the job (like data movements, binary download, etc.)
 ** `revert`: Relative path to blueprint to the script that will be executed in the HPC at the uninstall workflow, reverting the bootstrap or other clean up operations.
@@ -197,6 +198,8 @@ Use this tipe to describe a HPC job.
 * `skip_cleanup`: Set to true to not clean up orchestrator auxiliar files. Default `False`.
 
 NOTE: The variable $CURRENT_WORKDIR is available in all operations and scripts. It points to the working directory of the execution in the HPC from the _HOME_ directory: `/home/user/$CURRENT_WORKDIR/`.
+
+NOTE: The variables $SCALE_INDEX, $SCALE_COUNT and $SCALE_MAX are available when scaling, holding for each job instance the index, the total number of instances, and the maximun in parallel respectively.
 
 *Example*
 
@@ -255,6 +258,7 @@ Use this tipe to describe a HPC job executed from a {uri-singularity}[Singularit
 ** `tasks_per_node`: Number of tasks per node. 1 by default.
 ** `max_time`: Set a limit on the total run time of the job allocation. Mandatory if SRUN type.
 ** `scale`: Execute in parallel the job N times according to this property. Default `1` (no scale).
+** `scale_max_in_parallel`: Maximum number of scaled job instances that can be run in parallel. Only works with scale > `1`. Default same as scale.
 * `deployment`: Optional scripts to perform deployment operations (bootstrap and revert).
 ** `bootstrap`: Relative path to blueprint to the script that will be executed in the HPC at the install workflow to bootstrap the job (like image download, data movements, etc.)
 ** `revert`: Relative path to blueprint to the script that will be executed in the HPC at the uninstall workflow, reverting the bootstrap or other clean up operations (like removing the image).
@@ -262,6 +266,8 @@ Use this tipe to describe a HPC job executed from a {uri-singularity}[Singularit
 * `skip_cleanup`: Set to true to not clean up orchestrator auxiliar files. Default `False`.
 
 NOTE: The variable $CURRENT_WORKDIR is available in all operations and scripts. It points to the working directory of the execution in the HPC from the _HOME_ directory: `/home/user/$CURRENT_WORKDIR/`.
+
+NOTE: The variables $SCALE_INDEX, $SCALE_COUNT and $SCALE_MAX are available when scaling, holding for each job instance the index, the total number of instances, and the maximun in parallel respectively.
 
 *Example*
 
