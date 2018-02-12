@@ -1,0 +1,78 @@
+########
+# Copyright (c) 2017 MSO4SC - javier.carnero@atos.net
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#        http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+tosca_definitions_version: cloudify_dsl_1_3
+
+imports:
+    # to speed things up, it is possible downloading this file,
+    # - http://www.getcloudify.org/spec/cloudify/4.1/types.yaml
+    - https://raw.githubusercontent.com/cloudify-cosmo/cloudify-manager/17.10.19/resources/rest-service/cloudify/types/types.yaml
+    # relative import of plugin.yaml that resides in the blueprint directory
+    - hpc_plugin/test_plugin.yaml
+
+inputs:
+    # Monitor
+    monitor_entrypoint:
+        description: Monitor entrypoint IP
+        default: ""
+        type: string
+
+    # Job prefix name
+    job_prefix:
+        description: Job name prefix in HPCs
+        default: "cfyhpc"
+        type: string
+
+    # First HPC configuration
+    mso4sc_hpc_primary:
+        description: Configuration for the primary HPC to be used
+        default: {}
+    
+    # Second HPC configuration
+    mso4sc_hpc_secondary:
+        description: Configuration for the secondary HPC to be used
+        default: {}
+
+node_templates:
+    first_hpc:
+        type: hpc.nodes.Compute
+        properties:
+            config: { get_input: mso4sc_hpc_primary }
+            external_monitor_entrypoint: { get_input: monitor_entrypoint }
+            job_prefix: { get_input: job_prefix }
+            workdir_prefix: "single_sbatch"
+            skip_cleanup: True
+            simulate: True  # COMMENT to test against a real HPC
+
+    single_job:
+        type: hpc.nodes.job
+        properties:
+            job_options:
+                type: 'SBATCH'
+                command: "touch.script single.test"
+            deployment:
+                bootstrap: 'scripts/bootstrap_sbatch_example.sh'
+                revert: 'scripts/revert_sbatch_example.sh'
+                inputs:
+                    - 'single'
+            skip_cleanup: True
+        relationships:
+            - type: job_contained_in_hpc
+              target: first_hpc
+
+outputs:
+    single_job_name:
+        description: single job name in the HPC
+        value: { get_attribute: [single_job, job_name] }
