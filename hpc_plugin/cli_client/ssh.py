@@ -15,7 +15,7 @@
 #
 # History:
 #
-# 2018-02-07   hpcgogol@hlrs.de     inherited SshClient from CliClient
+# 2018-02-07   hpcgogol@hlrs.de     inherited SshClient from CliClient,
 #                                   added option use_login_shell
 #
 
@@ -28,6 +28,8 @@ Todo:
 import select
 from paramiko import client
 
+# can be used for common pathname manipulations on remote HPC systems
+import posixpath as cli_path
 
 from hpc_plugin.cli_client.cli_client import CliClient
 from hpc_plugin.utilities import shlex_quote

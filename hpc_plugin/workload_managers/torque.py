@@ -20,7 +20,8 @@ from hpc_plugin.utilities import shlex_quote
 
 class Torque(WorkloadManager):
 
-    def _build_container_script(self, name, job_settings, logger):
+    @staticmethod
+    def _build_container_script(name, job_settings, logger):
         # check input information correctness
         if not isinstance(job_settings, dict) or\
                 not isinstance(name, basestring):
@@ -75,7 +76,8 @@ class Torque(WorkloadManager):
 
         return script
 
-    def _build_job_submission_call(self, name, job_settings, logger):
+    @staticmethod
+    def _build_job_submission_call(name, job_settings, logger):
         # basic checks for validity of input
         if not isinstance(job_settings, dict) or\
                 not isinstance(name, basestring):
@@ -85,6 +87,10 @@ class Torque(WorkloadManager):
             return {'error': "'type' and 'command' " +
                     "must be defined in job settings"}
 
+        if 'type' in job_settings and job_settings['type'] != 'SBATCH':
+            return {'error': "Job type '" + job_settings['type'] +
+                    "'not supported. Torque support only batched jobs."}
+
         # Build single line command
         torque_call = ''
 
@@ -93,17 +99,14 @@ class Torque(WorkloadManager):
             torque_call = 'module load {}; '.format(' '.join(job_settings['modules']))
 
         # Torque settings
-        if job_settings['type'] == 'SBATCH':
-            # qsub command plus job name
-            torque_call += "qsub -V -N {}".format(shlex_quote(name))
-        else:
-            return {'error': "Job type '" + job_settings['type'] +
-                    "'not supported"}
+        # qsub command plus job name
+        torque_call += "qsub -V -N {}".format(shlex_quote(name))
 
         resources_request = ""
         if 'nodes' in job_settings:
             resources_request = "nodes={}".format(job_settings['nodes'])
 
+            # number of cores requested per node
             if 'tasks_per_node' in job_settings:
                 resources_request += ':ppn={}'.format(job_settings['tasks_per_node'])
         else:
@@ -119,6 +122,9 @@ class Torque(WorkloadManager):
 
         if 'queue' in job_settings: # more precisely is it a destination [queue][@server]
             torque_call += " -q {}".format(shlex_quote(job_settings['queue']))
+
+        if 'restartable' in job_settings: # same to requeue in SLURM
+            torque_call += " -r {}".format('y' if job_settings['restartable'] else 'n')
 
         if 'rerunable' in job_settings:
             torque_call += " -r {}".format('y' if job_settings['rerunable'] else 'n')
@@ -136,6 +142,27 @@ class Torque(WorkloadManager):
 
         # if 'tasks' in job_settings:
         #     torque_call += ' -n ' + str(job_settings['tasks'])
+
+        response = {}
+        if 'scale' in job_settings and \
+                job_settings['scale'] > 1:
+            # set the job array
+            slurm_call += ' -J 0-{}'.format(job_settings['scale'] - 1)
+            # set the max of parallel jobs
+            torque_call = job_settings['scale']
+            if 'scale_max_in_parallel' in job_settings and \
+                    job_settings['scale_max_in_parallel'] > 0:
+                slurm_call += '%' + str(job_settings['scale_max_in_parallel'])
+                scale_max = job_settings['scale_max_in_parallel']
+            # map the orchestrator variables after last sbatch
+            scale_env_mapping_call = \
+                "sed -i ':a;N;$! ba;s/\\n.*#SBATCH.*\\n/&" + \
+                "SCALE_INDEX=$PBS_ARRAYID\\n" + \
+                "SCALE_COUNT=" + job_settings['scale'] + "\\n" + \
+                "SCALE_MAX=" + str(scale_max) + "\\n\\n/' " + \
+                job_settings['command'].split()[0]  # get only the file
+            response['scale_env_mapping_call'] = scale_env_mapping_call
+            print scale_env_mapping_call
 
         # add executable and arguments
         torque_call += ' ' + job_settings['command']
@@ -172,7 +199,8 @@ class Torque(WorkloadManager):
 
         ids = {}
         if exit_code == 0:
-            ids = self.parse_qstat(output)
+            # @TODO: replace by improved parsing
+            ids = dict( (k, v.split('.')[0]) for k, v in self.parse_qstat(output).items)
 
         return ids
 
@@ -198,11 +226,13 @@ class Torque(WorkloadManager):
 
         states = {}
         if exit_code == 0:
-            states = self.parse_qstat(output)
+            # @TODO: replace by improved parsing
+            states = dict( (k, v.split('.')[0]) for k, v in self.parse_qstat(output).items)
 
         return states
 
-    def parse_qstat(self, qstat_output):
+    @staticmethod
+    def parse_qstat(qstat_output):
         """ Parse two colums qstat entries into a dict """
         jobs = qstat_output.splitlines()
         parsed = {}
