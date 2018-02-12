@@ -145,7 +145,8 @@ class Slurm(WorkloadManager):
                 slurm_call += '%' + str(job_settings['scale_max_in_parallel'])
                 scale_max = job_settings['scale_max_in_parallel']
             # map the orchestrator variables after last sbatch
-            scale_env_mapping_call = "sed -i ':a;N;$! ba;s/\\n.*#SBATCH.*\\n/&" +\
+            scale_env_mapping_call = \
+                "sed -i ':a;N;$! ba;s/\\n.*#SBATCH.*\\n/&" +\
                 "SCALE_INDEX=$SLURM_ARRAY_TASK_ID\\n" +\
                 "SCALE_COUNT=$SLURM_ARRAY_TASK_COUNT\\n" +\
                 "SCALE_MAX=" + str(scale_max) + "\\n\\n/' " +\
