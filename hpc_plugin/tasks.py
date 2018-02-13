@@ -102,11 +102,11 @@ def preconfigure_job(config,
 
     ctx.source.instance.runtime_properties['credentials'] = \
         config['credentials']
-    ctx.source.instance.runtime_properties['monitor_entrypoint'] = \
+    ctx.source.instance.runtime_properties['external_monitor_entrypoint'] = \
         external_monitor_entrypoint
-    ctx.source.instance.runtime_properties['monitor_port'] = \
+    ctx.source.instance.runtime_properties['external_monitor_port'] = \
         external_monitor_port
-    ctx.source.instance.runtime_properties['monitor_type'] = \
+    ctx.source.instance.runtime_properties['external_monitor_type'] = \
         external_monitor_type
     ctx.source.instance.runtime_properties['monitor_orchestrator_port'] = \
         external_monitor_orchestrator_port

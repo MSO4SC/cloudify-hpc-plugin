@@ -36,21 +36,25 @@ JOBSTATES = [
 ]
 
 
-def get_states(url_instances_map, url_mtype_map, url_host_map):
+def get_states(monitor_jobs):
     """ Retrieves the status of every job asking to the monitors"""
     states = {}
 
-    for url, names in url_instances_map.iteritems():
-        if url_mtype_map[url] == "PROMETHEUS":
-            _get_prometheus(url, names, url_host_map[url], states)
+    for host, settings in monitor_jobs.iteritems():
+        if settings['type'] == "PROMETHEUS":
+            _get_prometheus(host,
+                            settings['config'],
+                            settings['names'],
+                            states)
         else:
-            print "ERROR: Monitor of type " + url_mtype_map[url] + \
+            print "ERROR: Monitor of type " + settings['type'] + \
                 "not suppported."
 
     return states
 
 
-def _get_prometheus(url, names, host, states):
+def _get_prometheus(host, config, names, states):
+    url = config['url']
     if len(names) == 1:
         query = (url + '/api/v1/query?query=job_status'
                  '%7Bjob%3D%22' + host +

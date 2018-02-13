@@ -53,24 +53,39 @@ class JobGraphInstance(object):
         if parent.is_job:
             self._status = 'WAITING'
 
-            prefix = (instance._node_instance.  # pylint: disable=W0212
-                      runtime_properties["job_prefix"])
-
-            self.monitor_type = (instance.  # pylint: disable=W0212
-                                 _node_instance.runtime_properties[
-                                     "monitor_type"])
-            self.host = (instance.  # pylint: disable=W0212
-                         _node_instance.runtime_properties[
-                             "credentials"]["host"])
-            self.monitor_url = ('http://' + instance.  # pylint: disable=W0212
-                                _node_instance.runtime_properties[
-                                    "monitor_entrypoint"] +
-                                instance.  # pylint: disable=W0212
-                                _node_instance.runtime_properties[
-                                    "monitor_port"])
-
+            # Get runtime properties
             self.simulate = (instance._node_instance.  # pylint: disable=W0212
                              runtime_properties["simulate"])
+            credentials = (instance.  # pylint: disable=W0212
+                           _node_instance.runtime_properties[
+                               "credentials"])
+            self.host = credentials["host"]
+            workload_manager = (instance.  # pylint: disable=W0212
+                                _node_instance.runtime_properties[
+                                    "workload_manager"])
+            prefix = (instance._node_instance.  # pylint: disable=W0212
+                      runtime_properties["job_prefix"])
+            external_monitor_type = (instance.  # pylint: disable=W0212
+                                     _node_instance.runtime_properties[
+                                         "external_monitor_type"])
+            external_monitor_entrypoint = (instance.  # pylint: disable=W0212
+                                           _node_instance.runtime_properties[
+                                               "external_monitor_entrypoint"])
+            external_monitor_port = (instance.  # pylint: disable=W0212
+                                     _node_instance.runtime_properties[
+                                         "external_monitor_port"])
+
+            # Decide how to monitor the job
+            if external_monitor_entrypoint:
+                self.monitor_type = external_monitor_type
+                self.monitor_config = {
+                    'url': ('http://' +
+                            external_monitor_entrypoint +
+                            external_monitor_port)
+                }
+            else:  # internal monitoring
+                self.monitor_type = workload_manager
+                self.monitor_config = credentials
 
             # build job name
             instance_components = instance.id.split('_')
@@ -322,28 +337,25 @@ class Monitor(object):
         """Gets all executing instances and update their state"""
 
         # first get the instances we need to check
-        url_names_map = {}
-        url_host_map = {}
-        url_mtype_map = {}
+        monitor_jobs = {}
         for _, job_node in self.get_executions_iterator():
             if job_node.is_job:
                 for job_instance in job_node.instances:
                     if not job_instance.simulate:
-                        if job_instance.monitor_url in url_names_map:
-                            url_names_map[job_instance.monitor_url].append(
+                        if job_instance.host in monitor_jobs:
+                            monitor_jobs[job_instance.host]['names'].append(
                                 job_instance.name)
                         else:
-                            url_names_map[job_instance.monitor_url] = [
-                                job_instance.name]
-                            url_host_map[job_instance.monitor_url] = \
-                                job_instance.host
-                            url_mtype_map[job_instance.monitor_url] = \
-                                job_instance.monitor_type
+                            monitor_jobs[job_instance.host] = {
+                                'config': job_instance.monitor_config,
+                                'type': job_instance.monitor_type,
+                                'names': [job_instance.name]
+                            }
                     else:
                         job_instance.set_status('COMPLETED')
 
         # nothing to do if we don't have nothing to monitor
-        if not url_names_map:
+        if not monitor_jobs:
             return
 
         # We wait to not sature the monitor
@@ -356,8 +368,7 @@ class Monitor(object):
         self.timestamp = time.time()
 
         # then look for the status of the instances through its name
-        states = monitors.get_states(
-            url_names_map, url_mtype_map, url_host_map)
+        states = monitors.get_states(monitor_jobs)
 
         # finally set job status
         for inst_name, state in states.iteritems():
