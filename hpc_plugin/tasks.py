@@ -34,6 +34,11 @@ def prepare_hpc(config,
     if not simulate:
         wm_type = config['workload_manager']
         wm = WorkloadManager.factory(wm_type)
+        if not wm:
+            raise NonRecoverableError(
+                "Workload Manager '" +
+                wm_type +
+                "' not supported.")
         credentials = config['credentials']
         client = SshClient(credentials['host'],
                            credentials['user'],
@@ -76,6 +81,11 @@ def cleanup_hpc(config, skip, simulate, **kwargs):  # pylint: disable=W0613
         workdir = ctx.instance.runtime_properties['workdir']
         wm_type = config['workload_manager']
         wm = WorkloadManager.factory(wm_type)
+        if not wm:
+            raise NonRecoverableError(
+                "Workload Manager '" +
+                wm_type +
+                "' not supported.")
         credentials = config['credentials']
         client = SshClient(credentials['host'],
                            credentials['user'],
@@ -288,8 +298,12 @@ def deploy_job(script,
                skip_cleanup):  # pylint: disable=W0613
     """ Exec a eployment job script that receives SSH credentials as input """
 
-    # TODO(emepetres): manage errors
     wm = WorkloadManager.factory(wm_type)
+    if not wm:
+        raise NonRecoverableError(
+            "Workload Manager '" +
+            wm_type +
+            "' not supported.")
 
     # Execute the script and manage the output
     client = SshClient(credentials['host'],
@@ -340,8 +354,12 @@ def send_job(job_options, **kwargs):  # pylint: disable=W0613
                            credentials['user'],
                            credentials['password'])
 
-        # TODO(emepetres): manage errors
         wm = WorkloadManager.factory(wm_type)
+        if not wm:
+            raise NonRecoverableError(
+                "Workload Manager '" +
+                wm_type +
+                "' not supported.")
         is_submitted = wm.submit_job(client,
                                      name,
                                      job_options,
@@ -385,6 +403,11 @@ def cleanup_job(job_options, skip, **kwargs):  # pylint: disable=W0613
 
         # TODO(emepetres): manage errors
         wm = WorkloadManager.factory(wm_type)
+        if not wm:
+            raise NonRecoverableError(
+                "Workload Manager '" +
+                wm_type +
+                "' not supported.")
         is_clean = wm.clean_job_aux_files(client,
                                           name,
                                           job_options,
@@ -423,6 +446,11 @@ def stop_job(job_options, **kwargs):  # pylint: disable=W0613
 
         # TODO(emepetres): manage errors
         wm = WorkloadManager.factory(wm_type)
+        if not wm:
+            raise NonRecoverableError(
+                "Workload Manager '" +
+                wm_type +
+                "' not supported.")
         is_stopped = wm.stop_job(client,
                                  name,
                                  job_options,

@@ -16,6 +16,7 @@
 """ Holds the functions that requests monitor information """
 
 import requests
+from workload_managers.workload_manager import WorkloadManager
 
 JOBSTATES = [
     "BOOT_FAIL",
@@ -41,26 +42,33 @@ def get_states(monitor_jobs, logger):
     states = {}
 
     for host, settings in monitor_jobs.iteritems():
-        if settings['type'] == "PROMETHEUS":
-            _get_prometheus(host,
-                            settings['config'],
-                            settings['names'],
-                            states)
-        else:
-            logger.error("Monitor of type " +
-                         settings['type'] +
-                         " not suppported. " +
-                         "Jobs [" +
-                         ','.join(settings['names']) +
-                         "] on host '" + host
-                         + "' will be considered FAILED.")
-            for name in settings['names']:
-                states[name] = 'FAILED'
+        if settings['type'] == "PROMETHEUS":  # external
+            partial_states = _get_prometheus(host,
+                                             settings['config'],
+                                             settings['names'])
+        else:  # internal
+            wm = WorkloadManager.factory(settings['type'])
+            if wm:
+                partial_states = wm.get_states(settings['config'],
+                                               settings['names'],
+                                               logger)
+                if not partial_states:
+                    partial_states = _no_states(host,
+                                                settings['type'],
+                                                settings['names'],
+                                                logger)
+            else:
+                partial_states = _no_states(host,
+                                            settings['type'],
+                                            settings['names'],
+                                            logger)
+        states.update(partial_states)
 
     return states
 
 
-def _get_prometheus(host, config, names, states):
+def _get_prometheus(host, config, names):
+    states = {}
     url = config['url']
     if len(names) == 1:
         query = (url + '/api/v1/query?query=job_status'
@@ -78,3 +86,19 @@ def _get_prometheus(host, config, names, states):
 
     for item in response["data"]["result"]:
         states[item["metric"]["name"]] = JOBSTATES[int(item["value"][1])]
+
+    return states
+
+
+def _no_states(host, mtype, names, logger):
+    logger.error("Monitor of type " +
+                 mtype +
+                 " not suppported. " +
+                 "Jobs [" +
+                 ','.join(names) +
+                 "] on host '" + host
+                 + "' will be considered FAILED.")
+    states = {}
+    for name in names:  # TODO cancel those jobs
+        states[name] = 'FAILED'
+    return states

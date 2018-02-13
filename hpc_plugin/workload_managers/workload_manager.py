@@ -10,8 +10,8 @@ class WorkloadManager(object):
         if workload_manager == "SLURM":
             from slurm import Slurm
             return Slurm()
-        assert 0, "Bad workload manager creation: " +\
-            workload_manager
+        else:
+            return None
     factory = staticmethod(factory)
 
     def submit_job(self,
@@ -181,6 +181,20 @@ class WorkloadManager(object):
             return full_path
         else:
             return None
+
+    def get_states(self, credentials, names, logger):
+        """
+        Get the states of the jobs names
+
+        @type credentials: dictionary
+        @param credentials: dictionary with the HPC SSH credentials
+        @type names: list
+        @param names: list of the job names to retrieve their states
+        @rtype dict
+        @return a dictionary of job names and its states
+        """
+        logger.error("'get_states' not implemented.")
+        return None
 
     def _build_container_script(self,
                                 name,
