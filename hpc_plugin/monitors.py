@@ -36,7 +36,7 @@ JOBSTATES = [
 ]
 
 
-def get_states(monitor_jobs):
+def get_states(monitor_jobs, logger):
     """ Retrieves the status of every job asking to the monitors"""
     states = {}
 
@@ -47,8 +47,15 @@ def get_states(monitor_jobs):
                             settings['names'],
                             states)
         else:
-            print "ERROR: Monitor of type " + settings['type'] + \
-                "not suppported."
+            logger.error("Monitor of type " +
+                         settings['type'] +
+                         " not suppported. " +
+                         "Jobs [" +
+                         ','.join(settings['names']) +
+                         "] on host '" + host
+                         + "' will be considered FAILED.")
+            for name in settings['names']:
+                states[name] = 'FAILED'
 
     return states
 

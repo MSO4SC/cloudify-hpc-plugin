@@ -368,7 +368,7 @@ class Monitor(object):
         self.timestamp = time.time()
 
         # then look for the status of the instances through its name
-        states = monitors.get_states(monitor_jobs)
+        states = monitors.get_states(monitor_jobs, self.logger)
 
         # finally set job status
         for inst_name, state in states.iteritems():

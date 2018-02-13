@@ -55,7 +55,7 @@ node_templates:
             base_dir: "$LUSTRE"
             workdir_prefix: "four"
             skip_cleanup: True
-            simulate: True  # COMMENT to test against a real HPC
+#            simulate: True  # COMMENT to test against a real HPC
     
     first_job:
         type: hpc.nodes.job
