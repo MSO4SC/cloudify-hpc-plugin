@@ -10,8 +10,8 @@ class WorkloadManager(object):
         if workload_manager == "SLURM":
             from slurm import Slurm
             return Slurm()
-        assert 0, "Bad workload manager creation: " +\
-            workload_manager
+        else:
+            return None
     factory = staticmethod(factory)
 
     def submit_job(self,
@@ -182,6 +182,19 @@ class WorkloadManager(object):
         else:
             return None
 
+    def get_states(self, ssh_client, names, logger):
+        """
+        Get the states of the jobs names
+
+        @type credentials: dictionary
+        @param credentials: dictionary with the HPC SSH credentials
+        @type names: list
+        @param names: list of the job names to retrieve their states
+        @rtype dict
+        @return a dictionary of job names and its states
+        """
+        raise NotImplementedError("'get_states' not implemented.")
+
     def _build_container_script(self,
                                 name,
                                 settings,
@@ -196,8 +209,7 @@ class WorkloadManager(object):
         @rtype string
         @return string to with the sbatch script. None if an error arise.
         """
-        logger.error("'_build_container_script' not implemented.")
-        return None
+        raise NotImplementedError("'_build_container_script' not implemented.")
 
     def _build_job_submission_call(self,
                                    name,
@@ -214,7 +226,8 @@ class WorkloadManager(object):
         @return string to call slurm with its parameters.
             None if an error arise.
         """
-        return {'error': "'_build_job_submission_call' not implemented."}
+        raise NotImplementedError(
+            "'_build_job_submission_call' not implemented.")
 
     def _build_job_cancellation_call(self,
                                      name,
@@ -231,8 +244,8 @@ class WorkloadManager(object):
         @return string to call slurm with its parameters.
             None if an error arise.
         """
-        logger.error("'_build_job_cancellation_call' not implemented.")
-        return None
+        raise NotImplementedError(
+            "'_build_job_cancellation_call' not implemented.")
 
     def _checkSshClient(self,
                         ssh_client,
