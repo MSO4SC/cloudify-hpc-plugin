@@ -21,6 +21,8 @@ from cloudify.decorators import workflow
 from cloudify.workflows import ctx, api, tasks
 from hpc_plugin import monitors
 
+MONITOR_PERIOD = 15
+
 
 BOOTFAIL = 0
 CANCELLED = 1
@@ -324,7 +326,7 @@ def build_graph(nodes):
 
 
 class Monitor(object):
-    """Monitor the instances talking with prometheus"""
+    """Monitor the instances"""
 
     def __init__(self, job_instances_map, logger):
         self.job_ids = {}
@@ -359,7 +361,7 @@ class Monitor(object):
             return
 
         # We wait to not sature the monitor
-        seconds_to_wait = 15 - (time.time() - self.timestamp)
+        seconds_to_wait = MONITOR_PERIOD - (time.time() - self.timestamp)
         if seconds_to_wait > 0:
             sys.stdout.flush()  # necessary to output work properly with sleep
             time.sleep(seconds_to_wait)

@@ -58,6 +58,7 @@ def prepare_hpc(config,
             prefix = ctx.blueprint.id
 
         workdir = wm.create_new_workdir(client, base_dir, prefix)
+        client.close_connection()
         if workdir is None:
             raise NonRecoverableError(
                 "failed to create the working directory, base dir: " +
@@ -93,6 +94,7 @@ def cleanup_hpc(config, skip, simulate, **kwargs):  # pylint: disable=W0613
         _, exit_code = wm._execute_shell_command(client,
                                                  'rm -r ' + workdir,
                                                  wait_result=True)
+        client.close_connection()
         ctx.logger.info('..all clean.')
     else:
         ctx.logger.warning('HPC clean up simulated.')

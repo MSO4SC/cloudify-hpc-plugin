@@ -182,7 +182,7 @@ class WorkloadManager(object):
         else:
             return None
 
-    def get_states(self, credentials, names, logger):
+    def get_states(self, ssh_client, names, logger):
         """
         Get the states of the jobs names
 
@@ -194,7 +194,7 @@ class WorkloadManager(object):
         @return a dictionary of job names and its states
         """
         logger.error("'get_states' not implemented.")
-        return None
+        return {}
 
     def _build_container_script(self,
                                 name,
