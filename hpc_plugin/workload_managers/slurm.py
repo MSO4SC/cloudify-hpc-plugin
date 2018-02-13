@@ -152,7 +152,6 @@ class Slurm(WorkloadManager):
                 "SCALE_MAX=" + str(scale_max) + "\\n\\n/' " +\
                 job_settings['command'].split()[0]  # get only the file
             response['scale_env_mapping_call'] = scale_env_mapping_call
-            print scale_env_mapping_call
 
         # add executable and arguments
         slurm_call += ' ' + job_settings['command']
@@ -171,15 +170,8 @@ class Slurm(WorkloadManager):
 
 # Monitor
     def get_states(self, ssh_client, names, logger):
-        # TODO(emepetres) set first day of consulting
+        # TODO(emepetres) set start time of consulting
         # (sacct only check current day)
-        # INFO for scale changes
-        # sacct -n -o jobname%32,jobid -X -P --name=mso_zse43j
-        # mso_zse43j|930223_1
-        # mso_zse43j|930223_0
-        # sacct -n -o jobname%32,jobIDRaw -X -P --name=mso_zse43j
-        # mso_zse43j|930223
-        # mso_zse43j|930226
         call = "sacct -n -o JobName,State -X -P --name=" + ','.join(names)
         output, exit_code = self._execute_shell_command(ssh_client,
                                                         call,

@@ -58,11 +58,6 @@ def get_states(monitor_jobs, logger):
                                                settings['names'],
                                                logger)
                 client.close_connection()
-                if not partial_states:
-                    partial_states = _no_states(host,
-                                                settings['type'],
-                                                settings['names'],
-                                                logger)
             else:
                 partial_states = _no_states(host,
                                             settings['type'],

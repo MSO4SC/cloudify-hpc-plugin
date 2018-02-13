@@ -111,7 +111,7 @@ class TestPlugin(unittest.TestCase):
                                        'hpc_plugin'),
                                       (os.path.join('blueprint', 'scripts',
                                                     'bootstrap_' +
-                                                    'sbatch_example.sh'),
+                                                    'sbatch_scale_example.sh'),
                                        'scripts'),
                                       (os.path.join('blueprint', 'scripts',
                                                     'revert_' +

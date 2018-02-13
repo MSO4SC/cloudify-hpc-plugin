@@ -193,8 +193,7 @@ class WorkloadManager(object):
         @rtype dict
         @return a dictionary of job names and its states
         """
-        logger.error("'get_states' not implemented.")
-        return {}
+        raise NotImplementedError("'get_states' not implemented.")
 
     def _build_container_script(self,
                                 name,
@@ -210,8 +209,7 @@ class WorkloadManager(object):
         @rtype string
         @return string to with the sbatch script. None if an error arise.
         """
-        logger.error("'_build_container_script' not implemented.")
-        return None
+        raise NotImplementedError("'_build_container_script' not implemented.")
 
     def _build_job_submission_call(self,
                                    name,
@@ -228,7 +226,8 @@ class WorkloadManager(object):
         @return string to call slurm with its parameters.
             None if an error arise.
         """
-        return {'error': "'_build_job_submission_call' not implemented."}
+        raise NotImplementedError(
+            "'_build_job_submission_call' not implemented.")
 
     def _build_job_cancellation_call(self,
                                      name,
@@ -245,8 +244,8 @@ class WorkloadManager(object):
         @return string to call slurm with its parameters.
             None if an error arise.
         """
-        logger.error("'_build_job_cancellation_call' not implemented.")
-        return None
+        raise NotImplementedError(
+            "'_build_job_cancellation_call' not implemented.")
 
     def _checkSshClient(self,
                         ssh_client,
