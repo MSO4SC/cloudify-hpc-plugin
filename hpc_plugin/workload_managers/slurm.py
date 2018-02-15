@@ -152,7 +152,6 @@ class Slurm(WorkloadManager):
                 "SCALE_MAX=" + str(scale_max) + "\\n\\n/' " +\
                 job_settings['command'].split()[0]  # get only the file
             response['scale_env_mapping_call'] = scale_env_mapping_call
-            print scale_env_mapping_call
 
         # add executable and arguments
         slurm_call += ' ' + job_settings['command']
@@ -170,72 +169,27 @@ class Slurm(WorkloadManager):
         return "scancel --name " + name
 
 # Monitor
-
-    def _get_jobids_by_name(self, ssh_client, job_names):
-        """
-        Get JobID from sacct command
-
-        This function uses sacct command to query Slurm. In this case Slurm
-        strongly recommends that the code should performs these queries once
-        every 60 seconds or longer. Using these commands contacts the master
-        controller directly, the same process responsible for scheduling all
-        work on the cluster. Polling more frequently, especially across all
-        users on the cluster, will slow down response times and may bring
-        scheduling to a crawl. Please don't.
-        """
-        # TODO(emepetres) set first day of consulting
+    def get_states(self, ssh_client, names, logger):
+        # TODO(emepetres) set start time of consulting
         # (sacct only check current day)
-        # DOCUMENTS for further changes
-        # sacct -n -o jobname%32,jobid -X -P --name=mso_zse43j
-        # mso_zse43j|930223_1
-        # mso_zse43j|930223_0
-        # sacct -n -o jobname%32,jobIDRaw -X -P --name=mso_zse43j
-        # mso_zse43j|930223
-        # mso_zse43j|930226
-        call = "sacct -n -o jobname%32,jobid -X --name=" + \
-            ','.join(job_names)
-        output, exit_code = self._execute_shell_command(ssh_client,
-                                                        call,
-                                                        wait_result=True)
-
-        ids = {}
-        if exit_code == 0:
-            ids = self.parse_sacct(output)
-
-        return ids
-
-    def _get_status(self, ssh_client, job_ids):
-        """
-        Get Status from sacct command
-
-        This function uses sacct command to query Slurm. In this case Slurm
-        strongly recommends that the code should performs these queries once
-        every 60 seconds or longer. Using these commands contacts the master
-        controller directly, the same process responsible for scheduling all
-        work on the cluster. Polling more frequently, especially across all
-        users on the cluster, will slow down response times and may bring
-        scheduling to a crawl. Please don't.
-        """
-        # TODO(emepetres) set first day of consulting
-        # (sacct only check current day)
-        call = "sacct -n -o jobid,state -X --jobs=" + ','.join(job_ids)
+        call = "sacct -n -o JobName,State -X -P --name=" + ','.join(names)
         output, exit_code = self._execute_shell_command(ssh_client,
                                                         call,
                                                         wait_result=True)
 
         states = {}
         if exit_code == 0:
-            states = self.parse_sacct(output)
+            states = self._parse_sacct(output)
 
         return states
 
-    def parse_sacct(self, sacct_output):
+    def _parse_sacct(self, sacct_output):
         """ Parse two colums sacct entries into a dict """
         jobs = sacct_output.splitlines()
         parsed = {}
         if jobs and (len(jobs) > 1 or jobs[0] is not ''):
             for job in jobs:
-                first, second = job.strip().split()
+                first, second = job.strip().split('|')
                 parsed[first] = second
 
         return parsed
