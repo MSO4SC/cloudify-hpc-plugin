@@ -108,6 +108,31 @@ class TestTorque(unittest.TestCase):
                                " -l nodes=4:ppn=24,walltime=00:05:00"\
                                " cmd")
 
+    def test_batch_call_with_job_array(self):
+        """ Complete batch call. """
+        response = self.wm._build_job_submission_call('test',
+            dict(modules        = ['mod1', 'mod2'],
+                 type           = 'SBATCH',
+                 command        = 'cmd',
+                 partition      = 'thinnodes',
+                 nodes          = 4,
+                 tasks          = 96,
+                 tasks_per_node = 24,
+                 max_time       = '00:05:00',
+                 scale          = 10,
+                 scale_max_in_parallel = 2),
+            self.logger)
+        self.assertNotIn('error', response)
+        self.assertIn('call', response)
+
+        call = response['call']
+        self.assertEqual(call, "module load mod1 mod2; "\
+                               "qsub -V"\
+                               " -N test"\
+                               " -l nodes=4:ppn=24,walltime=00:05:00"\
+                               " -J 0-9%2"\
+                               " cmd")
+
     def test_cancellation_call(self):
         """ Jobs cancellation call. """
         response = self.wm._build_job_cancellation_call('test',

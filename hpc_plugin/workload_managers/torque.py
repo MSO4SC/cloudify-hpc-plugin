@@ -62,14 +62,14 @@ class Torque(WorkloadManager):
 
         # TODO: why not cd job_settings['home']?
         if 'home' in job_settings and job_settings['home'] != '':
-            script += '-H ' + job_settings['home'] + ' '
+            script += '-H {} '.format(job_settings['home'])
 
         if 'volumes' in job_settings:
             for volume in job_settings['volumes']:
-                script += '-B ' + volume + ' '
+                script += '-B {} '.format(volume)
 
         # add executable and arguments
-        script += job_settings['image'] + ' ' + job_settings['command'] + '\n'
+        script += "{image} {command}\n".format(image=job_settings['image'], command=job_settings['command'])
 
         # disable output
         # script += ' >/dev/null 2>&1';
@@ -155,7 +155,7 @@ class Torque(WorkloadManager):
             scale_env_mapping_call = \
                 "sed -i ':a;N;$! ba;s/\\n.*#SBATCH.*\\n/&" \
                 "SCALE_INDEX=$PBS_ARRAYID\\n" \
-                "SCALE_COUNT=" + scale_max + "\\n" \
+                "SCALE_COUNT=" + str(scale_max) + "\\n" \
                 "SCALE_MAX=" + str(scale_max) + "\\n\\n/' " + \
                 job_settings['command'].split()[0]  # get only the file
             response['scale_env_mapping_call'] = scale_env_mapping_call

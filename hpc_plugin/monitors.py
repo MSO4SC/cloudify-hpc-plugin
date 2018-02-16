@@ -16,7 +16,7 @@
 """ Holds the functions that requests monitor information """
 
 import requests
-from ssh import SshClient
+from cli_client.ssh import SshClient
 from workload_managers.workload_manager import WorkloadManager
 
 JOBSTATES = [
