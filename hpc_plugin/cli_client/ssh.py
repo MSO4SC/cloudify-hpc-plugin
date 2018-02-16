@@ -31,10 +31,10 @@ from paramiko import client
 # can be used for common pathname manipulations on remote HPC systems
 import posixpath as cli_path
 
-from hpc_plugin.cli_client.cli_client import CliClient
+from hpc_plugin.cli_client.cli_client import ICliClient
 from hpc_plugin.utilities import shlex_quote
 
-class SshClient(CliClient):
+class SshClient(ICliClient):
     """Represents a SSH client"""
 
     def __init__(self, address, username, password, port=22, use_login_shell = False, **kwargs):

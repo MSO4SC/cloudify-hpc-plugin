@@ -1,7 +1,7 @@
 import string
 import random
 from datetime import datetime
-from hpc_plugin.cli_client.cli_client import CliClient as SshClient
+from hpc_plugin.cli_client.cli_client import ICliClient as SshClient
 
 
 class WorkloadManager(object):

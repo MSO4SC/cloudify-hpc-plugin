@@ -20,10 +20,10 @@ Todo:
     * control SSH exceptions and return failures
 """
 
-from hpc_plugin.cli_client.cli_client import CliClient
+from hpc_plugin.cli_client.cli_client import ICliClient
 from hpc_plugin.utilities  import shlex_quote
 
-class DummyClient(CliClient):
+class DummyClient(ICliClient):
     """Represents a stub for SSH client that prints out SSH calls without executing them.
     It can be used for debug purposes and generating shell scripts."""
 

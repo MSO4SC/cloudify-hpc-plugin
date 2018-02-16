@@ -87,17 +87,15 @@ class TestTorque(unittest.TestCase):
     def test_complete_batch_call(self):
         """ Complete batch call. """
         response = self.wm._build_job_submission_call('test',
-                                                      {'modules': ['mod1',
-                                                                   'mod2'],
-                                                       'type': 'SBATCH',
-                                                       'command': 'cmd',
-                                                       'partition':
-                                                       'thinnodes',
-                                                       'nodes': 4,
-                                                       'tasks': 96,
-                                                       'tasks_per_node': 24,
-                                                       'max_time': '00:05:00'},
-                                                      self.logger)
+            dict(modules        = ['mod1', 'mod2'],
+                 type           = 'SBATCH',
+                 command        = 'cmd',
+                 partition      = 'thinnodes',
+                 nodes          =  4,
+                 tasks          = 96,
+                 tasks_per_node = 24,
+                 max_time       = '00:05:00'),
+            self.logger)
         self.assertNotIn('error', response)
         self.assertIn('call', response)
 
@@ -115,7 +113,7 @@ class TestTorque(unittest.TestCase):
                  type           = 'SBATCH',
                  command        = 'cmd',
                  partition      = 'thinnodes',
-                 nodes          = 4,
+                 nodes          =  4,
                  tasks          = 96,
                  tasks_per_node = 24,
                  max_time       = '00:05:00',
@@ -132,6 +130,10 @@ class TestTorque(unittest.TestCase):
                                " -l nodes=4:ppn=24,walltime=00:05:00"\
                                " -J 0-9%2"\
                                " cmd")
+        scale_env_mapping_call = response['scale_env_mapping_call']
+        self.assertEqual(scale_env_mapping_call,
+            "sed -i ':a;N;$! ba;s/\\n.*#SBATCH.*\\n/&"\
+            "SCALE_INDEX=$PBS_ARRAYID\\nSCALE_COUNT=10\\nSCALE_MAX=2\\n\\n/' cmd")
 
     def test_cancellation_call(self):
         """ Jobs cancellation call. """
@@ -140,6 +142,7 @@ class TestTorque(unittest.TestCase):
                                                       self.logger)
         self.assertEqual(response, "qselect -N test | xargs qdel")
 
+    # @TODO remove this test as deprecated
     def test_identifying_job_ids_call(self):
         """ Call for revealing job ids by job names. """
         job_names = {'test_1', 'test 2'}
@@ -152,6 +155,7 @@ class TestTorque(unittest.TestCase):
         self.assertEqual(response, 'qstat -i `echo \'\'"\'"\'test 2\'"\'"\' test_1\' | xargs -n 1 qselect -N` |'\
             ' tail -n+6 | awk \'{ print $4 " " $1 }\'')
 
+    # @TODO remove this test as deprecated
     def test_identifying_job_status_call(self):
         """ Call for revealing status of jobs by job ids. """
         job_ids = {'1.some.host', '11.some.host'}
@@ -161,6 +165,26 @@ class TestTorque(unittest.TestCase):
             format( ' '.join(job_ids) )
 
         self.assertEqual(response, 'qstat -i 11.some.host 1.some.host | tail -n+6 | awk \'{ print $1 " " $10 }\'')
+
+    def test_get_states(self):
+        """ Call for revealing job ids by job names. """
+        from hpc_plugin.cli_client.cli_client import ICliClient
+        class MockClient(ICliClient):
+            def __init__(self, test_case):
+              self._test_case = test_case
+
+            def is_open(self):
+                return True
+
+            def send_command(self, command, **kwargs):
+                self._test_case.assertEqual(command,
+                    'qstat -i `echo \'\'"\'"\'test 2\'"\'"\' test_1\' | xargs -n 1 qselect -N` '\
+                        '| tail -n+6 | awk \'{ print $4 "|" $10 }\'')
+                return """   test_1 | S
+   test 2   | R\n""", 0
+
+        response = self.wm.get_states(MockClient(self), {'test_1', 'test 2'}, self.logger)
+        self.assertDictEqual(response, {'test_1': 'S', 'test 2': 'R'})
 
     def test_random_name(self):
         """ Random name formation. """

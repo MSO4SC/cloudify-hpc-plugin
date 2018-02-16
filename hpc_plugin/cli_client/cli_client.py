@@ -13,12 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Interface for shell clients (Unix shell, SSH, etc)
+"""Interface for the shell clients (Unix shell, SSH, etc)
 """
 
 from abc import ABCMeta,abstractmethod
 
-class CliClient:
+class ICliClient:
     __metaclass__ = ABCMeta
 
     @abstractmethod

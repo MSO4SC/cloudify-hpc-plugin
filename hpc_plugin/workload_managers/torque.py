@@ -51,8 +51,7 @@ class Torque(WorkloadManager):
         # if 'tasks' in job_settings:
         #     script += '#qsub -n ' + str(job_settings['tasks']) + '\n'
 
-        script += '#PBS -l walltime={}\n'.format(job_settings['max_time'])
-        script += '\n'
+        script += '#PBS -l walltime={}\n\n'.format(job_settings['max_time'])
 
         # load extra modules
         if 'modules' in job_settings:
@@ -69,7 +68,10 @@ class Torque(WorkloadManager):
                 script += '-B {} '.format(volume)
 
         # add executable and arguments
-        script += "{image} {command}\n".format(image=job_settings['image'], command=job_settings['command'])
+        script += "{image} {command}\n".format(
+            image   = job_settings['image'],
+            command = job_settings['command']
+        )
 
         # disable output
         # script += ' >/dev/null 2>&1';
@@ -155,9 +157,12 @@ class Torque(WorkloadManager):
             scale_env_mapping_call = \
                 "sed -i ':a;N;$! ba;s/\\n.*#SBATCH.*\\n/&" \
                 "SCALE_INDEX=$PBS_ARRAYID\\n" \
-                "SCALE_COUNT=" + str(scale_max) + "\\n" \
-                "SCALE_MAX=" + str(scale_max) + "\\n\\n/' " + \
-                job_settings['command'].split()[0]  # get only the file
+                "SCALE_COUNT={scale_count}\\n" \
+                "SCALE_MAX={scale_max}\\n\\n/' {command}".format(
+                    scale_count = job_settings['scale'],
+                    scale_max   = scale_max,
+                    command     = job_settings['command'].split()[0]  # get only the file
+                )
             response['scale_env_mapping_call'] = scale_env_mapping_call
 
         # add executable and arguments
@@ -166,14 +171,15 @@ class Torque(WorkloadManager):
         # disable output
         # torque_call += ' >/dev/null 2>&1';
 
-        return {'call': torque_call}
+        response['call'] = torque_call
+        return response
 
     def _build_job_cancellation_call(self, name, job_settings, logger):
         return r"qselect -N {} | xargs qdel".format(shlex_quote(name))
 
 # Monitor
 
-    def get_states(self, ssh_client, names, logger):
+    def get_states(self, ssh_client, job_names, logger):
         """
         Get job states by job names
 
@@ -184,7 +190,9 @@ class Torque(WorkloadManager):
         scheduling to a crawl.
         """
         # TODO(emepetres) set start day of consulting
-        call = "qstat -i `echo {} | xargs -n 1 qselect -N` | tail -n+6 | awk '{{ print $4 \"|\" $10 }}'".\
+        # @caution This code fails to manage the situation if several jobs have the same name
+        call = "qstat -i `echo {} | xargs -n 1 qselect -N` "\
+                "| tail -n+6 | awk '{{ print $4 \"|\" $10 }}'".\
             format( shlex_quote(' '.join(map(shlex_quote, job_names))) )
         output, exit_code = self._execute_shell_command(ssh_client,
                                                         call,
@@ -192,6 +200,7 @@ class Torque(WorkloadManager):
 
         if exit_code == 0:
             # @TODO: use full parsing of `qstat` tabular output without `tail/awk` preprocessing on the remote HPC
+            # @TODO: need mapping of Torque states to some states common for Torque and Slurm
             return self._parse_qstat(output)
         else:
             return {}
