@@ -152,19 +152,19 @@ class TestTorque(unittest.TestCase):
 
         self.assertEqual(len(names), len(set(names)))
 
-    def test_parse_qstat_jobids(self):
+    def test_parse_qstat_job_states(self):
         """ Parse JobID from qstat """
-        parsed = self.wm.parse_qstat("""   test1 012345.some.host
-   test2    123456.some.host
-   test3    234567.some.host\n""")
+        parsed = self.wm._parse_qstat("""   test1 | S
+   test2   | R
+   test3   | W\n""")
 
-        self.assertDictEqual(parsed, {'test1': '012345.some.host',
-                                      'test2': '123456.some.host',
-                                      'test3': '234567.some.host'})
+        self.assertDictEqual(parsed, {'test1': 'S',
+                                      'test2': 'R',
+                                      'test3': 'W'})
 
     def test_parse_clean_qstat(self):
         """ Parse empty output from qstat. """
-        parsed = self.wm.parse_qstat("\n")
+        parsed = self.wm._parse_qstat("\n")
 
         self.assertDictEqual(parsed, {})
 
