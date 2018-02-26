@@ -54,7 +54,7 @@ node_templates:
             job_prefix: { get_input: job_prefix }
             workdir_prefix: "single_sbatch"
             skip_cleanup: True
-#            simulate: True  # COMMENT to test against a real HPC
+            simulate: True  # COMMENT to test against a real HPC
 
     single_job:
         type: hpc.nodes.job
