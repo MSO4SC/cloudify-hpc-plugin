@@ -30,7 +30,6 @@ def prepare_hpc(config,
                 simulate,
                 **kwargs):  # pylint: disable=W0613
     """ Tries to connect to a login node """
-    ctx.logger.info('Connecting to login node..')
     if not simulate:
         wm_type = config['workload_manager']
         wm = WorkloadManager.factory(wm_type)
@@ -40,6 +39,7 @@ def prepare_hpc(config,
                 wm_type +
                 "' not supported.")
         credentials = config['credentials']
+        ctx.logger.info('Connecting to login node {user}@{host}..'.format(*credentials))
         client = SshClient(credentials['host'],
                            credentials['user'],
                            credentials['password'])
@@ -66,6 +66,7 @@ def prepare_hpc(config,
         ctx.instance.runtime_properties['workdir'] = workdir
         ctx.logger.info('..HPC ready on ' + workdir)
     else:
+        ctx.logger.info('Connecting to login node [simulation]..')
         ctx.instance.runtime_properties['login'] = True
         ctx.instance.runtime_properties['workdir'] = "simulation"
         ctx.logger.warning('HPC login connection simulated')
