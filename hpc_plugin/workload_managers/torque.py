@@ -13,16 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-""" Holds the Torque functions """
 from workload_manager import WorkloadManager
-
 from hpc_plugin.utilities import shlex_quote
 
 class Torque(WorkloadManager):
+    """ Holds the Torque functions. Acts similarly to the class `Slurm`."""
 
     @staticmethod
     def _build_container_script(name, job_settings, logger):
-        # check input information correctness
+        """ Check input information correctness """
         if not isinstance(job_settings, dict) or\
                 not isinstance(name, basestring):
             logger.error("Singularity Script malformed")
@@ -80,7 +79,7 @@ class Torque(WorkloadManager):
 
     @staticmethod
     def _build_job_submission_call(name, job_settings, logger):
-        # basic checks for validity of input
+        """ Basic checks for validity of input """
         if not isinstance(job_settings, dict) or\
                 not isinstance(name, basestring):
             return {'error': "Incorrect inputs"}
@@ -179,6 +178,21 @@ class Torque(WorkloadManager):
 
 # Monitor
 
+    _job_states = dict(
+        # C includes completion by both success and fail: "COMPLETED",
+        #     "TIMEOUT", "FAILED","CANCELLED", #"BOOT_FAIL", and "REVOKED"
+        C = "COMPLETED",  # Job is completed after having run.
+        E = "COMPLETING", # Job is exiting after having run.
+        H = "PENDING",    # [@TODO close to "RESV_DEL_HOLD" in Slurm]  Job is held.
+        Q = "PENDING",    # Job is queued, eligible to run or routed.
+        R = "RUNNING",    # Job is running.
+        T = "PENDING",    # [no direct analogue in Slurm] Job is being moved to new location.
+        W = "PENDING",    # [no direct analogue in Slurm] Job is waiting for the time after which the job is eligible for execution (`qsub -a`).
+        S = "SUSPENDED",  # (Unicos only) Job is suspended.
+        # The latter states have no analogues
+        #     "CONFIGURING", "STOPPED", "NODE_FAIL", "PREEMPTED", "SPECIAL_EXIT"
+    )
+
     def get_states(self, ssh_client, job_names, logger):
         """
         Get job states by job names
@@ -208,9 +222,13 @@ class Torque(WorkloadManager):
     @staticmethod
     def _parse_qstat(qstat_output):
         """ Parse two colums `qstat` entries into a dict """
+        def parse_qstat_record(record):
+            name, state_code = map(str.strip, record.split('|'))
+            return name, Torque._job_states[state_code]
+
         jobs = qstat_output.splitlines()
         parsed = {}
         if jobs and (len(jobs) > 1 or jobs[0] is not ''):
-            parsed = dict(map(str.strip, job.split('|')) for job in jobs)
+            parsed = dict(parse_qstat_record(job) for job in jobs)
 
         return parsed

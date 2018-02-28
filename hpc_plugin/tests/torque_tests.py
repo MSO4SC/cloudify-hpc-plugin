@@ -184,7 +184,7 @@ class TestTorque(unittest.TestCase):
    test 2   | R\n""", 0
 
         response = self.wm.get_states(MockClient(self), {'test_1', 'test 2'}, self.logger)
-        self.assertDictEqual(response, {'test_1': 'S', 'test 2': 'R'})
+        self.assertDictEqual(response, {'test_1': 'SUSPENDED', 'test 2': 'RUNNING'})
 
     def test_random_name(self):
         """ Random name formation. """
@@ -204,12 +204,14 @@ class TestTorque(unittest.TestCase):
     def test_parse_qstat_job_states(self):
         """ Parse JobID from qstat """
         parsed = self.wm._parse_qstat("""   test1 | S
-   test2   | R
-   test3   | W\n""")
+   test2   | C
+   test3   | R
+   test4   | W\n""")
 
-        self.assertDictEqual(parsed, {'test1': 'S',
-                                      'test2': 'R',
-                                      'test3': 'W'})
+        self.assertDictEqual(parsed, {'test1': 'SUSPENDED',
+                                      'test2': 'COMPLETED',
+                                      'test3': 'RUNNING',
+                                      'test4': 'PENDING'})
 
     def test_parse_clean_qstat(self):
         """ Parse empty output from qstat. """
