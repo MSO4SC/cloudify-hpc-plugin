@@ -8,7 +8,8 @@ plugins:
         # URL to archive containing the plugin or name of directory containing
         # the plugin if it is included in the the blueprint directory under the
         # "plugins" directory.
-        source: https://github.com/MSO4SC/cloudify-hpc-plugin/archive/master.zip
+        # source: https://github.com/MSO4SC/cloudify-hpc-plugin/archive/master.zip # @TODO: comment out if merge into upstream repo
+        source: https://github.com/SGo-Go/cloudify-hpc-plugin/archive/master.zip # @TODO: comment if merge into upstream repo
         package_name: cloudify-hpc-plugin
         package_version: '1.0'
 
