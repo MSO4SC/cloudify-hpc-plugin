@@ -16,7 +16,8 @@
 """Interface for the shell clients (Unix shell, SSH, etc)
 """
 
-from abc import ABCMeta,abstractmethod
+from abc import ABCMeta, abstractmethod
+
 
 class ICliClient:
     __metaclass__ = ABCMeta

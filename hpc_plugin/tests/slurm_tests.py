@@ -189,5 +189,6 @@ class TestSlurm(unittest.TestCase):
 
         self.assertDictEqual(parsed, {})
 
+
 if __name__ == '__main__':
     unittest.main()

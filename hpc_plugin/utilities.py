@@ -17,8 +17,8 @@
 """
 
 # Import proper implementation of shell lexical quoting
-try:                # python3
-    from shlex import quote as shlex_quote
-except ImportError: # python2
+try:                 # python3
+    from shlex import quote as shlex_quote  # noqa: F401
+except ImportError:  # python2
     # from shellescape import quote as shlex_quote
-    from pipes import quote as shlex_quote
+    from pipes import quote as shlex_quote  # noqa: F401

@@ -28,16 +28,19 @@ Todo:
 import select
 from paramiko import client
 
-# can be used for common pathname manipulations on remote HPC systems
-import posixpath as cli_path
+# # @TODO `posixpath` can be used for common pathname manipulations on
+# #       remote HPC systems
+# import posixpath as cli_path
 
 from hpc_plugin.cli_client.cli_client import ICliClient
 from hpc_plugin.utilities import shlex_quote
 
+
 class SshClient(ICliClient):
     """Represents a SSH client"""
 
-    def __init__(self, address, username, password, port=22, use_login_shell = False, **kwargs):
+    def __init__(self, address, username, password, port=22,
+                 use_login_shell=False, **kwargs):
         # print "Connecting to server ", str(address)+":"+str(port)
         self._client = client.SSHClient()
         self._client.set_missing_host_key_policy(client.AutoAddPolicy())
@@ -54,7 +57,8 @@ class SshClient(ICliClient):
         # See discussions in the following threads:
         #   https://superuser.com/questions/306530/run-remote-ssh-command-with-full-login-shell
         #   https://stackoverflow.com/questions/32139904/ssh-via-paramiko-load-bashrc
-        # @TODO: think of SSHClient.invoke_shell() instead of SSHClient.exec_command()
+        # @TODO: think of SSHClient.invoke_shell()
+        #        instead of SSHClient.exec_command()
         self._use_login_shell = use_login_shell
 
     def is_open(self):
@@ -77,9 +81,10 @@ class SshClient(ICliClient):
         if self._client is not None:
             # there is one channel per command
             stdin, stdout, stderr = self._client.exec_command(
-                r"{0} {1}".format(self._call_prefix, \
-                    shlex_quote("bash -l -c {}".format(shlex_quote(command))) \
-                    if self._use_login_shell else command),
+                r"{0} {1}".format(self._call_prefix,
+                                  shlex_quote("bash -l -c {}".format(
+                                      shlex_quote(command)))
+                                  if self._use_login_shell else command),
                 # get_pty=True, # Ask for shell login, not working with srun
                 timeout=exec_timeout)
 

@@ -16,6 +16,7 @@
 from workload_manager import WorkloadManager
 from hpc_plugin.utilities import shlex_quote
 
+
 class Torque(WorkloadManager):
     """ Holds the Torque functions. Acts similarly to the class `Slurm`."""
 
@@ -40,12 +41,14 @@ class Torque(WorkloadManager):
             resources_request = "nodes={}".format(job_settings['nodes'])
 
             if 'tasks_per_node' in job_settings:
-                resources_request += ':ppn={}'.format(job_settings['tasks_per_node'])
+                resources_request += ':ppn={}'.format(
+                    job_settings['tasks_per_node'])
 
             script += '#PBS -l walltime={}\n'.format(resources_request)
         else:
             if 'tasks_per_node' in job_settings:
-                logger.error(r"Specify 'tasks_per_node' while 'nodes' is not specified")
+                logger.error(
+                    r"Specify 'tasks_per_node' while 'nodes' is not specified")
 
         # if 'tasks' in job_settings:
         #     script += '#qsub -n ' + str(job_settings['tasks']) + '\n'
@@ -54,7 +57,8 @@ class Torque(WorkloadManager):
 
         # load extra modules
         if 'modules' in job_settings:
-            script += 'module load {}\n\n'.format(' '.join(job_settings['modules']))
+            script += 'module load {}\n\n'.format(
+                ' '.join(job_settings['modules']))
 
         script += 'mpirun singularity exec '
 
@@ -68,8 +72,8 @@ class Torque(WorkloadManager):
 
         # add executable and arguments
         script += "{image} {command}\n".format(
-            image   = job_settings['image'],
-            command = job_settings['command']
+            image=job_settings['image'],
+            command=job_settings['command']
         )
 
         # disable output
@@ -97,7 +101,8 @@ class Torque(WorkloadManager):
 
         # load extra modules
         if 'modules' in job_settings:
-            torque_call = 'module load {}; '.format(' '.join(job_settings['modules']))
+            torque_call = 'module load {}; '.format(
+                ' '.join(job_settings['modules']))
 
         # Torque settings
         # qsub command plus job name
@@ -109,34 +114,42 @@ class Torque(WorkloadManager):
 
             # number of cores requested per node
             if 'tasks_per_node' in job_settings:
-                resources_request += ':ppn={}'.format(job_settings['tasks_per_node'])
+                resources_request += ':ppn={}'.format(
+                    job_settings['tasks_per_node'])
         else:
             if 'tasks_per_node' in job_settings:
-                logger.error(r"Specify 'tasks_per_node' while 'nodes' is not specified")
+                logger.error(
+                    r"Specify 'tasks_per_node' while 'nodes' is not specified")
 
         if 'max_time' in job_settings:
-            if len(resources_request) > 0: resources_request +=','
+            if len(resources_request) > 0:
+                resources_request += ','
             resources_request += 'walltime={}'.format(job_settings['max_time'])
 
         if len(resources_request) > 0:
             torque_call += ' -l {}'.format(resources_request)
 
-        if 'queue' in job_settings: # more precisely is it a destination [queue][@server]
+        # more precisely is it a destination [queue][@server]
+        if 'queue' in job_settings:
             torque_call += " -q {}".format(shlex_quote(job_settings['queue']))
 
-        if 'rerunnable' in job_settings: # same to requeue in SLURM
-            torque_call += " -r {}".format('y' if job_settings['rerunnable'] else 'n')
+        if 'rerunnable' in job_settings:  # same to requeue in SLURM
+            torque_call += " -r {}".format(
+                'y' if job_settings['rerunnable'] else 'n')
 
         if 'work_dir' in job_settings:
-            torque_call += " -w {}".format(shlex_quote(job_settings['work_dir']))
+            torque_call += " -w {}".format(
+                shlex_quote(job_settings['work_dir']))
 
         additional_attributes = {}
         if 'group_name' in job_settings:
-            additional_attributes["group_list"]=shlex_quote(job_settings['group_name'])
+            additional_attributes["group_list"] = shlex_quote(
+                job_settings['group_name'])
 
         if len(additional_attributes) > 0:
-            torque_call += " -W {}".format(','.join("{0}={1}".format(k,v)\
-                for k, v in additional_attributes.iteritems()))
+            torque_call += " -W {}".format(
+                ','.join("{0}={1}".format(k, v)
+                         for k, v in additional_attributes.iteritems()))
 
         # if 'tasks' in job_settings:
         #     torque_call += ' -n ' + str(job_settings['tasks'])
@@ -150,7 +163,8 @@ class Torque(WorkloadManager):
             # set the max of parallel jobs
             if 'scale_max_in_parallel' in job_settings and \
                     job_settings['scale_max_in_parallel'] > 0:
-                torque_call += '%{}'.format(job_settings['scale_max_in_parallel'])
+                torque_call += '%{}'.format(
+                    job_settings['scale_max_in_parallel'])
                 scale_max = job_settings['scale_max_in_parallel']
             # map the orchestrator variables after last sbatch
             scale_env_mapping_call = \
@@ -158,9 +172,9 @@ class Torque(WorkloadManager):
                 "SCALE_INDEX=$PBS_ARRAYID\\n" \
                 "SCALE_COUNT={scale_count}\\n" \
                 "SCALE_MAX={scale_max}\\n\\n/' {command}".format(
-                    scale_count = job_settings['scale'],
-                    scale_max   = scale_max,
-                    command     = job_settings['command'].split()[0]  # get only the file
+                    scale_count=job_settings['scale'],
+                    scale_max=scale_max,
+                    command=job_settings['command'].split()[0]  # file only
                 )
             response['scale_env_mapping_call'] = scale_env_mapping_call
 
@@ -181,16 +195,17 @@ class Torque(WorkloadManager):
     _job_states = dict(
         # C includes completion by both success and fail: "COMPLETED",
         #     "TIMEOUT", "FAILED","CANCELLED", #"BOOT_FAIL", and "REVOKED"
-        C = "COMPLETED",  # Job is completed after having run.
-        E = "COMPLETING", # Job is exiting after having run.
-        H = "PENDING",    # [@TODO close to "RESV_DEL_HOLD" in Slurm]  Job is held.
-        Q = "PENDING",    # Job is queued, eligible to run or routed.
-        R = "RUNNING",    # Job is running.
-        T = "PENDING",    # [no direct analogue in Slurm] Job is being moved to new location.
-        W = "PENDING",    # [no direct analogue in Slurm] Job is waiting for the time after which the job is eligible for execution (`qsub -a`).
-        S = "SUSPENDED",  # (Unicos only) Job is suspended.
+        C="COMPLETED",   # Job is completed after having run
+        E="COMPLETING",  # Job is exiting after having run
+        H="PENDING",     # (@TODO like "RESV_DEL_HOLD" in Slurm) Job is held
+        Q="PENDING",     # Job is queued, eligible to run or routed
+        R="RUNNING",     # Job is running
+        T="PENDING",     # (nothng in Slurm) Job is being moved to new location
+        W="PENDING",     # (nothng in Slurm) Job is waiting for the time after
+        #                  which the job is eligible for execution (`qsub -a`)
+        S="SUSPENDED",   # (Unicos only) Job is suspended
         # The latter states have no analogues
-        #     "CONFIGURING", "STOPPED", "NODE_FAIL", "PREEMPTED", "SPECIAL_EXIT"
+        #   "CONFIGURING", "STOPPED", "NODE_FAIL", "PREEMPTED", "SPECIAL_EXIT"
     )
 
     def get_states(self, ssh_client, job_names, logger):
@@ -204,17 +219,20 @@ class Torque(WorkloadManager):
         scheduling to a crawl.
         """
         # TODO(emepetres) set start day of consulting
-        # @caution This code fails to manage the situation if several jobs have the same name
+        # @caution This code fails to manage the situation
+        #          if several jobs have the same name
         call = "qstat -i `echo {} | xargs -n 1 qselect -N` "\
-                "| tail -n+6 | awk '{{ print $4 \"|\" $10 }}'".\
-            format( shlex_quote(' '.join(map(shlex_quote, job_names))) )
+            "| tail -n+6 | awk '{{ print $4 \"|\" $10 }}'".format(
+                shlex_quote(' '.join(map(shlex_quote, job_names))))
         output, exit_code = self._execute_shell_command(ssh_client,
                                                         call,
                                                         wait_result=True)
 
         if exit_code == 0:
-            # @TODO: use full parsing of `qstat` tabular output without `tail/awk` preprocessing on the remote HPC
-            # @TODO: need mapping of Torque states to some states common for Torque and Slurm
+            # @TODO: use full parsing of `qstat` tabular output
+            #        without `tail/awk` preprocessing on the remote HPC
+            # @TODO: need mapping of Torque states to
+            #        some states common for Torque and Slurm
             return self._parse_qstat(output)
         else:
             return {}
