@@ -81,10 +81,8 @@ class SshClient(ICliClient):
         if self._client is not None:
             # there is one channel per command
             stdin, stdout, stderr = self._client.exec_command(
-                r"{0} {1}".format(self._call_prefix,
-                                  shlex_quote("bash -l -c {}".format(
-                                      shlex_quote(command)))
-                                  if self._use_login_shell else command),
+                "bash -l -c {}".format(shlex_quote(command))
+                if self._use_login_shell else command,
                 # get_pty=True, # Ask for shell login, not working with srun
                 timeout=exec_timeout)
 

@@ -32,10 +32,8 @@ def prepare_hpc(config,
     """ Tries to connect to a login node """
     ctx.logger.info('Connecting to login node:')
     if not simulate:
-        credentials = config['credentials']
-
         wm_type = config['workload_manager']
-        ctx.logger.info(' - manager:{wm_type}'.format(wm_type=wm_type))
+        ctx.logger.info(' - manager: {wm_type}'.format(wm_type=wm_type))
 
         wm = WorkloadManager.factory(wm_type)
         if not wm:
@@ -44,6 +42,7 @@ def prepare_hpc(config,
                 wm_type +
                 "' not supported.")
 
+        credentials = config['credentials']
         ctx.logger.info(' - remote host: {user}@{host}..'.format(
             user=credentials['user'],
             host=credentials['host']))
