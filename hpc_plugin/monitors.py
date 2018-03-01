@@ -53,7 +53,8 @@ def get_states(monitor_jobs, logger):
                 credentials = settings['config']
                 client = SshClient(credentials['host'],
                                    credentials['user'],
-                                   credentials['password'])
+                                   credentials['password'],
+                                   use_login_shell=credentials['login_shell'])
                 partial_states = wm.get_states(client,
                                                settings['names'],
                                                logger)

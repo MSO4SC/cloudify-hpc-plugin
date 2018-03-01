@@ -43,12 +43,16 @@ def prepare_hpc(config,
                 "' not supported.")
 
         credentials = config['credentials']
-        ctx.logger.info(' - remote host: {user}@{host}..'.format(
-            user=credentials['user'],
-            host=credentials['host']))
+        ctx.logger.info(
+            ' - remote host: {user}@{host}, {login_sh} remote login..'.format(
+                login_sh='with'if credentials['login_shell'] else 'w/o',
+                user=credentials['user'],
+                host=credentials['host'])
+        )
         client = SshClient(credentials['host'],
                            credentials['user'],
-                           credentials['password'])
+                           credentials['password'],
+                           use_login_shell=credentials['login_shell'])
         _, exit_code = wm._execute_shell_command(client,
                                                  'uname',
                                                  wait_result=True)
@@ -97,7 +101,8 @@ def cleanup_hpc(config, skip, simulate, **kwargs):  # pylint: disable=W0613
         credentials = config['credentials']
         client = SshClient(credentials['host'],
                            credentials['user'],
-                           credentials['password'])
+                           credentials['password'],
+                           use_login_shell=credentials['login_shell'])
         _, exit_code = wm._execute_shell_command(client,
                                                  'rm -r ' + workdir,
                                                  wait_result=True)
@@ -317,7 +322,8 @@ def deploy_job(script,
     # Execute the script and manage the output
     client = SshClient(credentials['host'],
                        credentials['user'],
-                       credentials['password'])
+                       credentials['password'],
+                       use_login_shell=credentials['login_shell'])
     if wm._create_shell_script(client,
                                name,
                                ctx.get_resource(script),
@@ -361,7 +367,8 @@ def send_job(job_options, **kwargs):  # pylint: disable=W0613
         wm_type = ctx.instance.runtime_properties['workload_manager']
         client = SshClient(credentials['host'],
                            credentials['user'],
-                           credentials['password'])
+                           credentials['password'],
+                           use_login_shell=credentials['login_shell'])
 
         wm = WorkloadManager.factory(wm_type)
         if not wm:
@@ -408,7 +415,8 @@ def cleanup_job(job_options, skip, **kwargs):  # pylint: disable=W0613
 
         client = SshClient(credentials['host'],
                            credentials['user'],
-                           credentials['password'])
+                           credentials['password'],
+                           use_login_shell=credentials['login_shell'])
 
         # TODO(emepetres): manage errors
         wm = WorkloadManager.factory(wm_type)
@@ -451,7 +459,8 @@ def stop_job(job_options, **kwargs):  # pylint: disable=W0613
         wm_type = ctx.instance.runtime_properties['workload_manager']
         client = SshClient(credentials['host'],
                            credentials['user'],
-                           credentials['password'])
+                           credentials['password'],
+                           use_login_shell=credentials['login_shell'])
 
         # TODO(emepetres): manage errors
         wm = WorkloadManager.factory(wm_type)
