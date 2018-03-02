@@ -203,7 +203,7 @@ class TestTorque(unittest.TestCase):
                 return """   test_1 | S
    test 2   | R\n""", 0
 
-        response = self.wm.get_states(
+        response = self.wm.get_states_tabular(
             MockClient(self), job_names, self.logger)
         self.assertDictEqual(
             response, {'test_1': 'SUSPENDED', 'test 2': 'RUNNING'})
@@ -225,7 +225,7 @@ class TestTorque(unittest.TestCase):
 
     def test_parse_qstat_job_states(self):
         """ Parse JobID from qstat """
-        parsed = self.wm._parse_qstat("""   test1 | S
+        parsed = self.wm._parse_qstat_tabular("""   test1 | S
    test2   | C
    test3   | R
    test4   | W\n""")
@@ -237,7 +237,7 @@ class TestTorque(unittest.TestCase):
 
     def test_parse_clean_qstat(self):
         """ Parse empty output from qstat. """
-        parsed = self.wm._parse_qstat("\n")
+        parsed = self.wm._parse_qstat_tabular("\n")
 
         self.assertDictEqual(parsed, {})
 

@@ -45,7 +45,7 @@ def prepare_hpc(config,
         credentials = config['credentials']
         ctx.logger.info(
             ' - remote host: {user}@{host}, {login_sh} remote login..'.format(
-                login_sh='with'if credentials['login_shell'] else 'w/o',
+                login_sh='with' if credentials['login_shell'] else 'w/o',
                 user=credentials['user'],
                 host=credentials['host'])
         )

@@ -208,7 +208,32 @@ class Torque(WorkloadManager):
         #   "CONFIGURING", "STOPPED", "NODE_FAIL", "PREEMPTED", "SPECIAL_EXIT"
     )
 
+    _job_exit_status = {
+        0:   "COMPLETED",  # OK             Job execution successful
+        -1:  "FAILED",     # FAIL1          Job execution failed, before
+        #                                   files, no retry
+        -2:  "FAILED",     # FAIL2          Job execution failed, after
+        #                                    files, no retry
+        -3:  "FAILED",     # RETRY          Job execution failed, do retry
+        -4:  "BOOT_FAIL",  # INITABT        Job aborted on MOM initialization
+        -5:  "BOOT_FAIL",  # INITRST        Job aborted on MOM init, chkpt,
+        #                                    no migrate
+        -6:  "BOOT_FAIL",  # INITRMG        Job aborted on MOM init, chkpt,
+        #                                    ok migrate
+        -7:  "FAILED",     # BADRESRT       Job restart failed
+        -8:  "FAILED",     # CMDFAIL        Exec() of user command failed
+        -9:  "NODE_FAIL",  # STDOUTFAIL     Couldn't create/open stdout/stderr
+        -10: "NODE_FAIL",  # OVERLIMIT_MEM  Job exceeded a memory limit
+        -11: "NODE_FAIL",  # OVERLIMIT_WT   Job exceeded a walltime limit
+        -12: "TIMEOUT",    # OVERLIMIT_CPUT Job exceeded a CPU time limit
+    }
+
     def get_states(self, ssh_client, job_names, logger):
+        return self.get_states_detailed(ssh_client, job_names, logger)\
+            if len(job_names) > 0 else {}
+
+    @staticmethod
+    def get_states_tabular(ssh_client, job_names, logger):
         """
         Get job states by job names
 
@@ -217,6 +242,8 @@ class Torque(WorkloadManager):
         frequently, especially across all users on the cluster,
         will slow down response times and may bring
         scheduling to a crawl.
+
+        It invokes `tail/awk` to make simple parsing on the remote HPC.
         """
         # TODO(emepetres) set start day of consulting
         # @caution This code fails to manage the situation
@@ -224,21 +251,12 @@ class Torque(WorkloadManager):
         call = "qstat -i `echo {} | xargs -n 1 qselect -N` "\
             "| tail -n+6 | awk '{{ print $4 \"|\" $10 }}'".format(
                 shlex_quote(' '.join(map(shlex_quote, job_names))))
-        output, exit_code = self._execute_shell_command(ssh_client,
-                                                        call,
-                                                        wait_result=True)
+        output, exit_code = ssh_client.send_command(call, wait_result=True)
 
-        if exit_code == 0:
-            # @TODO: use full parsing of `qstat` tabular output
-            #        without `tail/awk` preprocessing on the remote HPC
-            # @TODO: need mapping of Torque states to
-            #        some states common for Torque and Slurm
-            return self._parse_qstat(output)
-        else:
-            return {}
+        return Torque._parse_qstat_tabular(output) if exit_code == 0 else {}
 
     @staticmethod
-    def _parse_qstat(qstat_output):
+    def _parse_qstat_tabular(qstat_output):
         """ Parse two colums `qstat` entries into a dict """
         def parse_qstat_record(record):
             name, state_code = map(str.strip, record.split('|'))
@@ -247,6 +265,97 @@ class Torque(WorkloadManager):
         jobs = qstat_output.splitlines()
         parsed = {}
         if jobs and (len(jobs) > 1 or jobs[0] is not ''):
-            parsed = dict(parse_qstat_record(job) for job in jobs)
+            parsed = dict(map(parse_qstat_record, jobs))
 
         return parsed
+
+    @staticmethod
+    def get_states_detailed(ssh_client, job_names, logger):
+        """
+        Get job states by job names
+
+        This function uses `qstat` command to query Torque.
+        Please don't launch this call very friquently. Polling it
+        frequently, especially across all users on the cluster,
+        will slow down response times and may bring
+        scheduling to a crawl.
+
+        It allows to a precise mapping of Torque states to
+        Slurm states by taking into account `exit_code`.
+        Unlike `get_states_tabular` it parses output on host
+        and uses several SSH commands.
+        """
+        # identify job ids
+        call = "echo {} | xargs -n 1 qselect -N".format(
+            shlex_quote(' '.join(map(shlex_quote, job_names))))
+        output, exit_code = ssh_client.send_command(call, wait_result=True)
+        job_ids = Torque._parse_qselect(output)
+        if not job_ids:
+            return {}
+
+        # get detailed information about jobs
+        call = "qstat -f {}".format(' '.join(map(str, job_ids)))
+        output, exit_code = ssh_client.send_command(call, wait_result=True)
+
+        return Torque._parse_qstat_detailed(output)
+
+    @staticmethod
+    def _parse_qselect(qselect_output):
+        """ Parse `qselect` output and returns
+        list of job ids without host names """
+        jobs = qselect_output.splitlines()
+        if not jobs or (len(jobs) == 1 and jobs[0] is ''):
+            return []
+        return [int(job.split('.')[0]) for job in jobs]
+
+    @staticmethod
+    def _tokenize_qstat_detailed(fp):
+        import re
+        # regexps for tokenization (buiding AST) of `qstat -f` output
+        pattern_attribute_first = re.compile(
+            r"(?P<key>Job Id): (?P<value>(\w|\.)+)")
+        pattern_attribute_next = re.compile(
+            r"    (?P<key>\w+(\.\w+)*) = (?P<value>.*)")
+        pattern_attribute_continue = re.compile(r"\t(?P<value>.*)")
+
+        # tokenizes stream output and
+        job_attr_tokens = {}
+        for line in fp.readlines():
+            if len(line) > 1:  # skip empty lines
+                # find match for the new attribute
+                match = pattern_attribute_first.match(line)
+                if match:      # start to handle new job descriptor
+                    if len(job_attr_tokens) > 0:
+                        yield job_attr_tokens
+                    job_attr_tokens = {}
+                else:
+                    match = pattern_attribute_next.match(line)
+
+                if match:      # line corresponds to the new attribute
+                    attr = match.group('key').replace(' ', '_')
+                    job_attr_tokens[attr] = match.group('value')
+                else:          # either multiline attribute or broken line
+                    match = pattern_attribute_continue.match(line)
+                    if match:  # multiline attribute value continues
+                        job_attr_tokens[attr] += match.group('value')
+                    else:
+                        raise ValueError("failed to parse line %s" % line)
+        if len(job_attr_tokens) > 0:
+            yield job_attr_tokens
+
+    @staticmethod
+    def _parse_qstat_detailed(qstat_output):
+        from StringIO import StringIO
+        jobs = {}
+        for job in Torque._tokenize_qstat_detailed(StringIO(qstat_output)):
+            # ignore job['Job_Id'], use identification by name
+            name = job.get('Job_Name', '')
+            state_code = job.get('job_state', None)
+            if name and state_code:
+                if state_code == 'C':
+                    exit_status = job.get('exit_status', 0)
+                    state = Torque._job_exit_status.get(exit_status, "UNKNOWN")
+                else:
+                    state = Torque._job_states[state_code]
+            jobs[name] = state
+        return jobs
