@@ -290,18 +290,27 @@ class Torque(WorkloadManager):
         # identify job ids
         call = "echo {} | xargs -n 1 qselect -N".format(
             shlex_quote(' '.join(map(shlex_quote, job_names))))
+
         output, exit_code = ssh_client.send_command(call, wait_result=True)
         job_ids = Torque._parse_qselect(output)
         if not job_ids:
             return {}
 
         # get detailed information about jobs
-        logger.info("tested ids=[{}]".format(','.join(map(str, job_ids))))
         call = "qstat -f {}".format(' '.join(map(str, job_ids)))
         output, exit_code = ssh_client.send_command(call, wait_result=True)
-        logger.info("text to tarse::\n\\[\n{}\n\\]".format(output))
+        try:
+            job_states = Torque._parse_qstat_detailed(output)
+        except ValueError as e:
+            logger.warning("failed parse state request for jobs=[{}]".format(
+                ','.join(map(str, job_ids))))
+            logger.warning(e.strerror)
+            logger.warning("`qstat -f` output to parse:\n\\[\n{}\n\\]".format(
+                output))
+            # @TODO think whether error ignoring is better for the correct lifecycle
+            raise e
 
-        return Torque._parse_qstat_detailed(output)
+        return job_states
 
     @staticmethod
     def _parse_qselect(qselect_output):
