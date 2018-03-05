@@ -304,9 +304,9 @@ class Torque(WorkloadManager):
         except ValueError as e:
             logger.warning("failed parse state request for jobs=[{}]".format(
                 ','.join(map(str, job_ids))))
-            logger.warning(e.strerror)
-            logger.warning("`qstat -f` output to parse:\n\\[\n{}\n\\]".format(
-                output))
+            logger.warning(
+                "{err}\n`qstat -f` output to parse:\n\\[\n{text}\n\\]".format(
+                err=str(e), text=output))
             # @TODO think whether error ignoring is better for the correct lifecycle
             raise e
 
