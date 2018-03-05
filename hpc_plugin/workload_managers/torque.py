@@ -337,6 +337,7 @@ class Torque(WorkloadManager):
         # tokenizes stream output and
         job_attr_tokens = {}
         for line_no, line in enumerate(fp.readlines()):
+            line = line.rstrip('\n\r')  # strip trailing newline character
             if len(line) > 1:  # skip empty lines
                 # find match for the new attribute
                 match = pattern_attribute_first.match(line)
@@ -349,13 +350,13 @@ class Torque(WorkloadManager):
 
                 if match:      # line corresponds to the new attribute
                     attr = match.group('key').replace(' ', '_')
-                    job_attr_tokens[attr] = match.group('value')[:-1]
+                    job_attr_tokens[attr] = match.group('value')
                 else:          # either multiline attribute or broken line
                     match = pattern_attribute_continue.match(line)
                     if match:  # multiline attribute value continues
-                        job_attr_tokens[attr] += match.group('value')[:-1]
+                        job_attr_tokens[attr] += match.group('value')
                     elif len(job_attr_tokens[attr]) > 0\
-                            and job_attr_tokens[attr][-1] == '\\':
+                            and job_attr_tokens[attr][-1] == '\\' :
                         # multiline attribute with newline character
                         job_attr_tokens[attr] = "{0}\n{1}".format(
                             job_attr_tokens[attr][:-1], line)
