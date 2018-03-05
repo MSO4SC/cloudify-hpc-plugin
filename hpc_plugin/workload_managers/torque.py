@@ -296,8 +296,10 @@ class Torque(WorkloadManager):
             return {}
 
         # get detailed information about jobs
+        logger.info("tested ids=[{}]".format(','.join(map(str, job_ids))))
         call = "qstat -f {}".format(' '.join(map(str, job_ids)))
         output, exit_code = ssh_client.send_command(call, wait_result=True)
+        logger.info("text to tarse::\n\\[\n{}\n\\]".format(output))
 
         return Torque._parse_qstat_detailed(output)
 
