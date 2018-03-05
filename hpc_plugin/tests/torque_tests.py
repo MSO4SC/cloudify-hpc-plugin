@@ -135,7 +135,8 @@ class TestTorque(unittest.TestCase):
                                " cmd")
         scale_env_mapping_call = response['scale_env_mapping_call']
         self.assertEqual(scale_env_mapping_call,
-                         "sed -i ':a;N;$! ba;s/\\n.*#SBATCH.*\\n/&"
+                         "sed -i ':a;N;$! ba;"
+                         "s/\\n.*#SBATCH.*\\n/&"
                          "SCALE_INDEX=$PBS_ARRAYID\\n"
                          "SCALE_COUNT=10\\n"
                          "SCALE_MAX=2\\n\\n/' cmd")

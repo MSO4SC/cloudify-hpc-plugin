@@ -168,7 +168,8 @@ class Torque(WorkloadManager):
                 scale_max = job_settings['scale_max_in_parallel']
             # map the orchestrator variables after last sbatch
             scale_env_mapping_call = \
-                "sed -i ':a;N;$! ba;s/\\n.*#SBATCH.*\\n/&" \
+                "sed -i ':a;N;$! ba;"\
+                "s/\\n.*#SBATCH.*\\n/&" \
                 "SCALE_INDEX=$PBS_ARRAYID\\n" \
                 "SCALE_COUNT={scale_count}\\n" \
                 "SCALE_MAX={scale_max}\\n\\n/' {command}".format(
@@ -264,6 +265,7 @@ class Torque(WorkloadManager):
 
         jobs = qstat_output.splitlines()
         parsed = {}
+        # @TODO: think of catch-and-log parsing exceptions
         if jobs and (len(jobs) > 1 or jobs[0] is not ''):
             parsed = dict(map(parse_qstat_record, jobs))
 
@@ -320,7 +322,7 @@ class Torque(WorkloadManager):
 
         # tokenizes stream output and
         job_attr_tokens = {}
-        for line in fp.readlines():
+        for line_no, line in enumerate(fp.readlines()):
             if len(line) > 1:  # skip empty lines
                 # find match for the new attribute
                 match = pattern_attribute_first.match(line)
@@ -339,7 +341,9 @@ class Torque(WorkloadManager):
                     if match:  # multiline attribute value continues
                         job_attr_tokens[attr] += match.group('value')
                     else:
-                        raise ValueError("failed to parse line %s" % line)
+                        raise ValueError(
+                            'failed to parse l{no}: "{line}"\n{text}'.format(
+                                no=line_no, line=line, text=fp.read()))
         if len(job_attr_tokens) > 0:
             yield job_attr_tokens
 
