@@ -14,6 +14,7 @@ mso4sc_hpc_primary:
         host: "HOST"
         user: "USER"
         password: "PASSWD"
+        use_login_shell: true
     country_tz: "Europe/Madrid"
     workload_manager: "SLURM"
 
@@ -23,5 +24,6 @@ mso4sc_hpc_secondary:
         host: "HOST"
         user: "USER"
         password: "PASSWD"
+        use_login_shell: false
     country_tz: "Europe/Budapest"
     workload_manager: "SLURM"
