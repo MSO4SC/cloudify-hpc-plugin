@@ -301,13 +301,15 @@ class Torque(WorkloadManager):
         output, exit_code = ssh_client.send_command(call, wait_result=True)
         try:
             job_states = Torque._parse_qstat_detailed(output)
-        except ValueError as e:
-            logger.warning("failed parse state request for jobs=[{}]".format(
-                ','.join(map(str, job_ids))))
+        except SyntaxError as e:
+            logger.warning(
+                "cannot parse state response for job ids=[{}]".format(
+                    ','.join(map(str, job_ids))))
             logger.warning(
                 "{err}\n`qstat -f` output to parse:\n\\[\n{text}\n\\]".format(
-                err=str(e), text=output))
-            # @TODO think whether error ignoring is better for the correct lifecycle
+                    err=str(e), text=output))
+            # @TODO think whether error ignoring is better
+            #       for the correct lifecycle
             raise e
 
         return job_states
@@ -326,10 +328,11 @@ class Torque(WorkloadManager):
         import re
         # regexps for tokenization (buiding AST) of `qstat -f` output
         pattern_attribute_first = re.compile(
-            r"(?P<key>Job Id): (?P<value>(\w|\.)+)")
+            r"^(?P<key>Job Id): (?P<value>(\w|\.)+)", re.M)
         pattern_attribute_next = re.compile(
-            r"    (?P<key>\w+(\.\w+)*) = (?P<value>.*)")
-        pattern_attribute_continue = re.compile(r"\t(?P<value>.*)")
+            r"^    (?P<key>\w+(\.\w+)*) = (?P<value>.*)", re.M)
+        pattern_attribute_continue = re.compile(
+            r"^\t(?P<value>.*)", re.M)
 
         # tokenizes stream output and
         job_attr_tokens = {}
@@ -346,15 +349,20 @@ class Torque(WorkloadManager):
 
                 if match:      # line corresponds to the new attribute
                     attr = match.group('key').replace(' ', '_')
-                    job_attr_tokens[attr] = match.group('value')
+                    job_attr_tokens[attr] = match.group('value')[:-1]
                 else:          # either multiline attribute or broken line
                     match = pattern_attribute_continue.match(line)
                     if match:  # multiline attribute value continues
-                        job_attr_tokens[attr] += match.group('value')
+                        job_attr_tokens[attr] += match.group('value')[:-1]
+                    elif len(job_attr_tokens[attr]) > 0\
+                            and job_attr_tokens[attr][-1] == '\\':
+                        # multiline attribute with newline character
+                        job_attr_tokens[attr] = "{0}\n{1}".format(
+                            job_attr_tokens[attr][:-1], line)
                     else:
-                        raise ValueError(
-                            'failed to parse l{no}: "{line}"\n{text}'.format(
-                                no=line_no, line=line, text=fp.read()))
+                        raise SyntaxError(
+                            'failed to parse l{no}: "{line}"'.format(
+                                no=line_no, line=line))
         if len(job_attr_tokens) > 0:
             yield job_attr_tokens
 
