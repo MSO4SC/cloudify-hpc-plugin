@@ -356,7 +356,7 @@ class Torque(WorkloadManager):
                     if match:  # multiline attribute value continues
                         job_attr_tokens[attr] += match.group('value')
                     elif len(job_attr_tokens[attr]) > 0\
-                            and job_attr_tokens[attr][-1] == '\\' :
+                            and job_attr_tokens[attr][-1] == '\\':
                         # multiline attribute with newline character
                         job_attr_tokens[attr] = "{0}\n{1}".format(
                             job_attr_tokens[attr][:-1], line)
@@ -377,8 +377,9 @@ class Torque(WorkloadManager):
             state_code = job.get('job_state', None)
             if name and state_code:
                 if state_code == 'C':
-                    exit_status = job.get('exit_status', 0)
-                    state = Torque._job_exit_status.get(exit_status, "UNKNOWN")
+                    exit_status = int(job.get('exit_status', 0))
+                    state = Torque._job_exit_status.get(
+                        exit_status, "FAILED")  # unknown failure by default
                 else:
                     state = Torque._job_states[state_code]
             jobs[name] = state
