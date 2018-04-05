@@ -18,7 +18,7 @@ tosca_definitions_version: cloudify_dsl_1_3
 imports:
     # to speed things up, it is possible downloading this file
     # - http://www.getcloudify.org/spec/cloudify/4.1/types.yaml
-    - http://raw.githubusercontent.com/mso4sc/cloudify-hpc-plugin/master/resources/types/types.yaml
+    - http://raw.githubusercontent.com/mso4sc/cloudify-hpc-plugin/master/resources/types/cfy_types.yaml
     # relative import of plugin.yaml that resides in the blueprint directory
     - hpc_plugin/test_plugin.yaml
 
