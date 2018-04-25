@@ -19,6 +19,49 @@ from workload_manager import WorkloadManager
 
 class Slurm(WorkloadManager):
 
+    def _parse_slurm_job_settings(self, prefix, job_settings, suffix):
+
+        _prefix = prefix if prefix else ''
+        _suffix = suffix if suffix else ''
+        _settings = ''
+
+        # Check if exists and has content
+        def check_job_settings_key(job_settings, key):
+            return key in job_settings and str(job_settings[key]).strip()
+
+        # Slurm settings
+        if check_job_settings_key(job_settings, 'max_time'):
+            _settings += _prefix + ' -t ' + str(job_settings['max_time']) + _suffix
+
+        if check_job_settings_key(job_settings, 'partition'):
+            _settings += _prefix + ' -p ' + str(job_settings['partition']) + _suffix
+
+        if check_job_settings_key(job_settings, 'nodes'):
+            _settings += _prefix + ' -N ' + str(job_settings['nodes']) + _suffix
+
+        if check_job_settings_key(job_settings, 'tasks'):
+            _settings += _prefix + ' -n ' + str(job_settings['tasks']) + _suffix
+
+        if check_job_settings_key(job_settings, 'tasks_per_node'):
+            _settings += _prefix + ' --ntasks-per-node=' + str(job_settings['tasks_per_node']) + _suffix
+
+        if check_job_settings_key(job_settings, 'memory'):
+            _settings += _prefix + ' --mem=' + str(job_settings['memory']) + _suffix
+
+        if check_job_settings_key(job_settings, 'reservation'):
+            _settings += _prefix + ' --reservation=' + str(job_settings['reservation']) + _suffix
+
+        if check_job_settings_key(job_settings, 'qos'):
+            _settings += _prefix + ' --qos=' + str(job_settings['qos']) + _suffix
+
+        if check_job_settings_key(job_settings, 'mail_user'):
+            _settings += _prefix + ' --mail-user=' + str(job_settings['mail_user']) + _suffix
+
+        if check_job_settings_key(job_settings, 'mail_type'):
+            _settings += _prefix + ' --mail-type=' + str(job_settings['mail_type']) + _suffix
+
+        return _settings
+
     def _build_container_script(self, name, job_settings, logger):
         # check input information correctness
         if not isinstance(job_settings, dict) or not isinstance(name,
@@ -34,26 +77,7 @@ class Slurm(WorkloadManager):
         script = '#!/bin/bash -l\n\n'
         # script += '#SBATCH --parsable\n'
         # script += '#SBATCH -J "' + name + '"\n'
-
-        # Slurm settings
-        if 'partition' in job_settings:
-            script += '#SBATCH -p ' + job_settings['partition'] + '\n'
-
-        if 'nodes' in job_settings:
-            script += '#SBATCH -N ' + str(job_settings['nodes']) + '\n'
-
-        if 'tasks' in job_settings:
-            script += '#SBATCH -n ' + str(job_settings['tasks']) + '\n'
-
-        if 'tasks_per_node' in job_settings:
-            script += '#SBATCH --ntasks-per-node=' + \
-                str(job_settings['tasks_per_node']) + '\n'
-
-        if 'reservation' in job_settings:
-            script += '#SBATCH --reservation=' + \
-                str(job_settings['reservation']) + '\n'
-
-        script += '#SBATCH -t ' + job_settings['max_time'] + '\n'
+        script += self._parse_slurm_job_settings('#SBATCH', job_settings, '\n')
 
         script += '\n'
 
@@ -108,28 +132,12 @@ class Slurm(WorkloadManager):
             return {'error': "Job type '" + job_settings['type'] +
                     "'not supported"}
 
-        # Slurm settings
-        if 'partition' in job_settings:
-            slurm_call += ' -p ' + job_settings['partition']
-
-        if 'nodes' in job_settings:
-            slurm_call += ' -N ' + str(job_settings['nodes'])
-
-        if 'tasks' in job_settings:
-            slurm_call += ' -n ' + str(job_settings['tasks'])
-
-        if 'tasks_per_node' in job_settings:
-            slurm_call += ' --ntasks-per-node=' + \
-                str(job_settings['tasks_per_node'])
-
-        if 'reservation' in job_settings:
-            slurm_call += ' --reservation=' + \
-                str(job_settings['reservation'])
-
         if 'max_time' in job_settings:
-            slurm_call += ' -t ' + job_settings['max_time']
+            pass
         elif job_settings['type'] == 'SRUN':
             return {'error': "'SRUN' jobs must define the 'max_time' property"}
+
+        slurm_call += self._parse_slurm_job_settings(None, job_settings, None)
 
         response = {}
         if 'scale' in job_settings and \

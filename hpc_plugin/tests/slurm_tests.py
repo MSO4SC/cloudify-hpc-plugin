@@ -104,7 +104,12 @@ class TestSlurm(unittest.TestCase):
                                                        'nodes': 4,
                                                        'tasks': 96,
                                                        'tasks_per_node': 24,
-                                                       'max_time': '05:00'},
+                                                       'memory': '4GB',
+                                                       'qos': 'qos',
+                                                       'reservation': 'mso4sc',
+                                                       'mail_user': 'user@email.com',
+                                                       'mail_type': 'ALL',
+                                                       'max_time': '05:00',},
                                                       self.logger)
         self.assertNotIn('error', response)
         self.assertIn('call', response)
@@ -112,11 +117,16 @@ class TestSlurm(unittest.TestCase):
         call = response['call']
         self.assertEqual(call, "module load mod1 mod2; "
                                "nohup srun -J 'test'"
+                               " -t 05:00"
                                " -p thinnodes"
                                " -N 4"
                                " -n 96"
                                " --ntasks-per-node=24"
-                               " -t 05:00"
+                               " --mem=4GB"
+                               " --reservation=mso4sc"
+                               " --qos=qos"
+                               " --mail-user=user@email.com"
+                               " --mail-type=ALL"
                                " cmd &")
 
     def test_basic_sbatch_call(self):
@@ -143,6 +153,11 @@ class TestSlurm(unittest.TestCase):
                                                        'nodes': 4,
                                                        'tasks': 96,
                                                        'tasks_per_node': 24,
+                                                       'memory': '4GB',
+                                                       'qos': 'qos',
+                                                       'reservation': 'mso4sc',
+                                                       'mail_user': 'user@email.com',
+                                                       'mail_type': 'ALL',
                                                        'max_time': '00:05:00'},
                                                       self.logger)
         self.assertNotIn('error', response)
@@ -151,11 +166,16 @@ class TestSlurm(unittest.TestCase):
         call = response['call']
         self.assertEqual(call, "module load mod1 mod2; "
                                "sbatch --parsable -J 'test'"
+                               " -t 00:05:00"
                                " -p thinnodes"
                                " -N 4"
                                " -n 96"
                                " --ntasks-per-node=24"
-                               " -t 00:05:00"
+                               " --mem=4GB"
+                               " --reservation=mso4sc"
+                               " --qos=qos"
+                               " --mail-user=user@email.com"
+                               " --mail-type=ALL"
                                " cmd")
 
     def test_random_name(self):
