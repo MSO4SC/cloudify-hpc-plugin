@@ -31,40 +31,52 @@ class Slurm(WorkloadManager):
 
         # Slurm settings
         if check_job_settings_key(job_settings, 'error'):
-            _settings += _prefix + ' -e ' + str(job_settings['error']) + _suffix
+            _settings += _prefix + ' -e ' + \
+                        str(job_settings['error']) + _suffix
 
         if check_job_settings_key(job_settings, 'output'):
-            _settings += _prefix + ' -o ' + str(job_settings['output']) + _suffix
+            _settings += _prefix + ' -o ' + \
+                        str(job_settings['output']) + _suffix
 
         if check_job_settings_key(job_settings, 'max_time'):
-            _settings += _prefix + ' -t ' + str(job_settings['max_time']) + _suffix
+            _settings += _prefix + ' -t ' + \
+                        str(job_settings['max_time']) + _suffix
 
         if check_job_settings_key(job_settings, 'partition'):
-            _settings += _prefix + ' -p ' + str(job_settings['partition']) + _suffix
+            _settings += _prefix + ' -p ' + \
+                        str(job_settings['partition']) + _suffix
 
         if check_job_settings_key(job_settings, 'nodes'):
-            _settings += _prefix + ' -N ' + str(job_settings['nodes']) + _suffix
+            _settings += _prefix + ' -N ' + \
+                        str(job_settings['nodes']) + _suffix
 
         if check_job_settings_key(job_settings, 'tasks'):
-            _settings += _prefix + ' -n ' + str(job_settings['tasks']) + _suffix
+            _settings += _prefix + ' -n ' + \
+                        str(job_settings['tasks']) + _suffix
 
         if check_job_settings_key(job_settings, 'tasks_per_node'):
-            _settings += _prefix + ' --ntasks-per-node=' + str(job_settings['tasks_per_node']) + _suffix
+            _settings += _prefix + ' --ntasks-per-node=' + \
+                        str(job_settings['tasks_per_node']) + _suffix
 
         if check_job_settings_key(job_settings, 'memory'):
-            _settings += _prefix + ' --mem=' + str(job_settings['memory']) + _suffix
+            _settings += _prefix + ' --mem=' + \
+                        str(job_settings['memory']) + _suffix
 
         if check_job_settings_key(job_settings, 'reservation'):
-            _settings += _prefix + ' --reservation=' + str(job_settings['reservation']) + _suffix
+            _settings += _prefix + ' --reservation=' + \
+                        str(job_settings['reservation']) + _suffix
 
         if check_job_settings_key(job_settings, 'qos'):
-            _settings += _prefix + ' --qos=' + str(job_settings['qos']) + _suffix
+            _settings += _prefix + ' --qos=' + \
+                        str(job_settings['qos']) + _suffix
 
         if check_job_settings_key(job_settings, 'mail_user'):
-            _settings += _prefix + ' --mail-user=' + str(job_settings['mail_user']) + _suffix
+            _settings += _prefix + ' --mail-user=' + \
+                        str(job_settings['mail_user']) + _suffix
 
         if check_job_settings_key(job_settings, 'mail_type'):
-            _settings += _prefix + ' --mail-type=' + str(job_settings['mail_type']) + _suffix
+            _settings += _prefix + ' --mail-type=' + \
+                        str(job_settings['mail_type']) + _suffix
 
         return _settings
 

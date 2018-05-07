@@ -101,16 +101,18 @@ class TestSlurm(unittest.TestCase):
                                                        'command': 'cmd',
                                                        'error': 'stderr.out',
                                                        'output': 'stdout.out',
-                                                       'partition': 'thinnodes',
+                                                       'partition':
+                                                       'thinnodes',
                                                        'nodes': 4,
                                                        'tasks': 96,
                                                        'tasks_per_node': 24,
                                                        'memory': '4GB',
                                                        'qos': 'qos',
                                                        'reservation': 'mso4sc',
-                                                       'mail_user': 'user@email.com',
+                                                       'mail_user':
+                                                       'user@email.com',
                                                        'mail_type': 'ALL',
-                                                       'max_time': '05:00',},
+                                                       'max_time': '05:00'},
                                                       self.logger)
         self.assertNotIn('error', response)
         self.assertIn('call', response)
@@ -153,14 +155,16 @@ class TestSlurm(unittest.TestCase):
                                                        'command': 'cmd',
                                                        'error': 'stderr.out',
                                                        'output': 'stdout.out',
-                                                       'partition': 'thinnodes',
+                                                       'partition':
+                                                       'thinnodes',
                                                        'nodes': 4,
                                                        'tasks': 96,
                                                        'tasks_per_node': 24,
                                                        'memory': '4GB',
                                                        'qos': 'qos',
                                                        'reservation': 'mso4sc',
-                                                       'mail_user': 'user@email.com',
+                                                       'mail_user':
+                                                       'user@email.com',
                                                        'mail_type': 'ALL',
                                                        'max_time': '00:05:00'},
                                                       self.logger)
