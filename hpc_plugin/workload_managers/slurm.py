@@ -30,6 +30,12 @@ class Slurm(WorkloadManager):
             return key in job_settings and str(job_settings[key]).strip()
 
         # Slurm settings
+        if check_job_settings_key(job_settings, 'error'):
+            _settings += _prefix + ' -e ' + str(job_settings['error']) + _suffix
+
+        if check_job_settings_key(job_settings, 'output'):
+            _settings += _prefix + ' -o ' + str(job_settings['output']) + _suffix
+
         if check_job_settings_key(job_settings, 'max_time'):
             _settings += _prefix + ' -t ' + str(job_settings['max_time']) + _suffix
 

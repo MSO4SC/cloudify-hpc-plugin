@@ -99,8 +99,9 @@ class TestSlurm(unittest.TestCase):
                                                                    'mod2'],
                                                        'type': 'SRUN',
                                                        'command': 'cmd',
-                                                       'partition':
-                                                       'thinnodes',
+                                                       'error': 'stderr.out',
+                                                       'output': 'stdout.out',
+                                                       'partition': 'thinnodes',
                                                        'nodes': 4,
                                                        'tasks': 96,
                                                        'tasks_per_node': 24,
@@ -117,6 +118,8 @@ class TestSlurm(unittest.TestCase):
         call = response['call']
         self.assertEqual(call, "module load mod1 mod2; "
                                "nohup srun -J 'test'"
+                               " -e stderr.out"
+                               " -o stdout.out"
                                " -t 05:00"
                                " -p thinnodes"
                                " -N 4"
@@ -148,8 +151,9 @@ class TestSlurm(unittest.TestCase):
                                                                    'mod2'],
                                                        'type': 'SBATCH',
                                                        'command': 'cmd',
-                                                       'partition':
-                                                       'thinnodes',
+                                                       'error': 'stderr.out',
+                                                       'output': 'stdout.out',
+                                                       'partition': 'thinnodes',
                                                        'nodes': 4,
                                                        'tasks': 96,
                                                        'tasks_per_node': 24,
@@ -166,6 +170,8 @@ class TestSlurm(unittest.TestCase):
         call = response['call']
         self.assertEqual(call, "module load mod1 mod2; "
                                "sbatch --parsable -J 'test'"
+                               " -e stderr.out"
+                               " -o stdout.out"
                                " -t 00:05:00"
                                " -p thinnodes"
                                " -N 4"
