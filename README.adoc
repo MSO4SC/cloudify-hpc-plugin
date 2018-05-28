@@ -199,7 +199,7 @@ Use this tipe to describe a HPC job.
 
 NOTE: The variable $CURRENT_WORKDIR is available in all operations and scripts. It points to the working directory of the execution in the HPC from the _HOME_ directory: `/home/user/$CURRENT_WORKDIR/`.
 
-NOTE: The variables $SCALE_INDEX, $SCALE_COUNT and $SCALE_MAX are available when scaling, holding for each job instance the index, the total number of instances, and the maximun in parallel respectively.
+NOTE: The variables `$SCALE_INDEX`, `$SCALE_COUNT` and `$SCALE_MAX` will be available in the batch script if the line `# DYNAMIC VARIABLES` exist (they will be dynamicaly loaded after this line). They hold, for each job instance, the index, the total number of instances, and the maximun in parallel respectively.
 
 *Example*
 

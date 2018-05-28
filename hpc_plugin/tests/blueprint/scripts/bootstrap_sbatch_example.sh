@@ -11,5 +11,7 @@ cat > $FILE <<- EOM
 #SBATCH --ntasks-per-node=1
 #SBATCH -t 00:01:00
 
+# DYNAMIC VARIABLES
+
 touch test_$1.test
 EOM

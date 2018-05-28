@@ -55,7 +55,7 @@ class Slurm(WorkloadManager):
 
         script += '#SBATCH -t ' + job_settings['max_time'] + '\n'
 
-        script += '\n'
+        script += '\n# DYNAMIC VARIABLES\n\n'
 
         # first set modules
         if 'modules' in job_settings:
@@ -146,10 +146,10 @@ class Slurm(WorkloadManager):
                 scale_max = job_settings['scale_max_in_parallel']
             # map the orchestrator variables after last sbatch
             scale_env_mapping_call = \
-                "sed -i ':a;N;$! ba;s/\\n.*#SBATCH.*\\n/&" +\
+                "sed -i '/# DYNAMIC VARIABLES/a\\" +\
                 "SCALE_INDEX=$SLURM_ARRAY_TASK_ID\\n" +\
                 "SCALE_COUNT=$SLURM_ARRAY_TASK_COUNT\\n" +\
-                "SCALE_MAX=" + str(scale_max) + "\\n\\n/' " +\
+                "SCALE_MAX=" + str(scale_max) + "' " +\
                 job_settings['command'].split()[0]  # get only the file
             response['scale_env_mapping_call'] = scale_env_mapping_call
 

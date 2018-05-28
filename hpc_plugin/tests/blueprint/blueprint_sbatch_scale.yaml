@@ -65,7 +65,7 @@ node_templates:
                 scale: 2
             deployment:
                 bootstrap: 'scripts/bootstrap_sbatch_scale_example.sh'
-                revert: 'scripts/revert_sbatch_example.sh'
+                #revert: 'scripts/revert_sbatch_example.sh'
                 inputs:
                     - 'single'
             skip_cleanup: True

@@ -222,8 +222,11 @@ class WorkloadManager(object):
         @param name: name of the job
         @type job_settings: dictionary
         @param job_settings: dictionary with the job options
-        @rtype string
-        @return string to call slurm with its parameters.
+        @rtype dict
+        @return dict with two keys:
+         'call' string to call slurm with its parameters, and
+         'scale_env_mapping_call' to push the scale env variables on
+         the batch scripts
             None if an error arise.
         """
         raise NotImplementedError(
