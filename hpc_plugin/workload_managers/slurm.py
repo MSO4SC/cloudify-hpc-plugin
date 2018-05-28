@@ -14,7 +14,7 @@
 # limitations under the License.
 
 """ Holds the slurm functions """
-from workload_manager import WorkloadManager
+from workload_manager import WorkloadManager, get_prevailing_state
 
 
 class Slurm(WorkloadManager):
@@ -190,6 +190,9 @@ class Slurm(WorkloadManager):
         if jobs and (len(jobs) > 1 or jobs[0] is not ''):
             for job in jobs:
                 first, second = job.strip().split('|')
-                parsed[first] = second
+                if first in parsed:
+                    parsed[first] = get_prevailing_state(parsed[first], second)
+                else:
+                    parsed[first] = second
 
         return parsed

@@ -17,25 +17,8 @@
 
 import requests
 from ssh import SshClient
-from workload_managers.workload_manager import WorkloadManager
-
-JOBSTATES = [
-    "BOOT_FAIL",
-    "CANCELLED",
-    "COMPLETED",
-    "CONFIGURING",
-    "COMPLETING",
-    "FAILED",
-    "NODE_FAIL",
-    "PENDING",
-    "PREEMPTED",
-    "REVOKED",
-    "RUNNING",
-    "SPECIAL_EXIT",
-    "STOPPED",
-    "SUSPENDED",
-    "TIMEOUT",
-]
+from workload_managers.workload_manager import (WorkloadManager,
+                                                state_int_to_str)
 
 
 def get_states(monitor_jobs, logger):
@@ -86,7 +69,7 @@ def _get_prometheus(host, config, names):
     response = payload.json()
 
     for item in response["data"]["result"]:
-        states[item["metric"]["name"]] = JOBSTATES[int(item["value"][1])]
+        states[item["metric"]["name"]] = state_int_to_str(item["value"][1])
 
     return states
 

@@ -24,23 +24,6 @@ from hpc_plugin import monitors
 MONITOR_PERIOD = 15
 
 
-BOOTFAIL = 0
-CANCELLED = 1
-COMPLETED = 2
-CONFIGURING = 3
-COMPLETING = 4
-FAILED = 5
-NODEFAIL = 6
-PENDING = 7
-PREEMPTED = 8
-REVOKED = 9
-RUNNING = 10
-SPECIALEXIT = 11
-STOPPED = 12
-SUSPENDED = 13
-TIMEOUT = 14
-
-
 class JobGraphInstance(object):
     """ Wrap to add job functionalities to node instances """
 

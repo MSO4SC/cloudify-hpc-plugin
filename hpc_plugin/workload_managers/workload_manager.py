@@ -4,6 +4,102 @@ from datetime import datetime
 from hpc_plugin.ssh import SshClient
 
 
+BOOTFAIL = 0
+CANCELLED = 1
+COMPLETED = 2
+CONFIGURING = 3
+COMPLETING = 4
+FAILED = 5
+NODEFAIL = 6
+PENDING = 7
+PREEMPTED = 8
+REVOKED = 9
+RUNNING = 10
+SPECIALEXIT = 11
+STOPPED = 12
+SUSPENDED = 13
+TIMEOUT = 14
+
+JOBSTATESLIST = [
+    "BOOT_FAIL",
+    "CANCELLED",
+    "COMPLETED",
+    "CONFIGURING",
+    "COMPLETING",
+    "FAILED",
+    "NODE_FAIL",
+    "PENDING",
+    "PREEMPTED",
+    "REVOKED",
+    "RUNNING",
+    "SPECIAL_EXIT",
+    "STOPPED",
+    "SUSPENDED",
+    "TIMEOUT",
+]
+
+JOBSTATESDICT = {
+    "BOOT_FAIL": 0,
+    "CANCELLED": 1,
+    "COMPLETED": 2,
+    "CONFIGURING": 3,
+    "COMPLETING": 4,
+    "FAILED": 5,
+    "NODE_FAIL": 6,
+    "PENDING": 7,
+    "PREEMPTED": 8,
+    "REVOKED": 9,
+    "RUNNING": 10,
+    "SPECIAL_EXIT": 11,
+    "STOPPED": 12,
+    "SUSPENDED": 13,
+    "TIMEOUT": 14,
+}
+
+_STATES_PRECEDENCE = [
+    FAILED,
+    NODEFAIL,
+    BOOTFAIL,
+    CANCELLED,
+    REVOKED,
+    TIMEOUT,
+    SPECIALEXIT,
+    STOPPED,
+    SUSPENDED,
+    PREEMPTED,
+    RUNNING,
+    CONFIGURING,
+    PENDING,
+    COMPLETING,
+    COMPLETED
+]
+
+
+def state_int_to_str(value):
+    """state on its int value to its string value"""
+    return JOBSTATESLIST[int(value)]
+
+
+def state_str_to_int(value):
+    """state on its string value to its int value"""
+    return JOBSTATESDICT[value]
+
+
+def get_prevailing_state(state1, state2):
+    """receives two string states and decides which one prevails"""
+    _st1 = state_str_to_int(state1)
+    _st2 = state_str_to_int(state2)
+
+    if _st1 == _st2:
+        return state1
+
+    for state in _STATES_PRECEDENCE:
+        if _st1 == state or _st2 == state:
+            return JOBSTATESLIST[state]
+
+    return state1
+
+
 class WorkloadManager(object):
 
     def factory(workload_manager):
