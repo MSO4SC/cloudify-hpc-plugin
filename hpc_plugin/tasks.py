@@ -263,31 +263,35 @@ def revert_job(deployment, skip_cleanup, **kwarsgs):  # pylint: disable=W0613
         return
 
     ctx.logger.info('Reverting job..')
-    simulate = ctx.instance.runtime_properties['simulate']
+    try:
+        simulate = ctx.instance.runtime_properties['simulate']
 
-    if not simulate and 'revert' in deployment:
-        inputs = deployment['inputs'] if 'inputs' in deployment else []
-        credentials = ctx.instance.runtime_properties['credentials']
-        workdir = ctx.instance.runtime_properties['workdir']
-        name = "revert_" + ctx.instance.id + ".sh"
-        wm_type = ctx.instance.runtime_properties['workload_manager']
+        if not simulate and 'revert' in deployment:
+            inputs = deployment['inputs'] if 'inputs' in deployment else []
+            credentials = ctx.instance.runtime_properties['credentials']
+            workdir = ctx.instance.runtime_properties['workdir']
+            name = "revert_" + ctx.instance.id + ".sh"
+            wm_type = ctx.instance.runtime_properties['workload_manager']
 
-        is_reverted = deploy_job(
-            deployment['revert'],
-            inputs,
-            credentials,
-            wm_type,
-            workdir,
-            name,
-            ctx.logger,
-            skip_cleanup)
-    else:
-        is_reverted = True
+            is_reverted = deploy_job(
+                deployment['revert'],
+                inputs,
+                credentials,
+                wm_type,
+                workdir,
+                name,
+                ctx.logger,
+                skip_cleanup)
+        else:
+            is_reverted = True
 
-    if is_reverted:
-        ctx.logger.info('..job reverted')
-    else:
-        ctx.logger.error('Job not reverted.')
+        if is_reverted:
+            ctx.logger.info('..job reverted')
+        else:
+            ctx.logger.error('Job could not be reverted.')
+    except KeyError:
+        # The job wasn't configured properly, so there was no bootstrap
+        ctx.logger.warning('Job was not reverted as it was not configured.')
 
 
 def deploy_job(script,
@@ -390,85 +394,95 @@ def cleanup_job(job_options, skip, **kwargs):  # pylint: disable=W0613
     if skip:
         return
 
-    simulate = ctx.instance.runtime_properties['simulate']
-    name = kwargs['name']
-    if not simulate:
-        is_singularity = 'hpc.nodes.singularity_job' in ctx.node.\
-            type_hierarchy
-        credentials = ctx.instance.runtime_properties['credentials']
-        workdir = ctx.instance.runtime_properties['workdir']
-        wm_type = ctx.instance.runtime_properties['workload_manager']
+    try:
+        simulate = ctx.instance.runtime_properties['simulate']
+        name = kwargs['name']
+        if not simulate:
+            is_singularity = 'hpc.nodes.singularity_job' in ctx.node.\
+                type_hierarchy
+            credentials = ctx.instance.runtime_properties['credentials']
+            workdir = ctx.instance.runtime_properties['workdir']
+            wm_type = ctx.instance.runtime_properties['workload_manager']
 
-        client = SshClient(credentials['host'],
-                           credentials['user'],
-                           credentials['password'])
+            client = SshClient(credentials['host'],
+                               credentials['user'],
+                               credentials['password'])
 
-        # TODO(emepetres): manage errors
-        wm = WorkloadManager.factory(wm_type)
-        if not wm:
-            raise NonRecoverableError(
-                "Workload Manager '" +
-                wm_type +
-                "' not supported.")
-        is_clean = wm.clean_job_aux_files(client,
-                                          name,
-                                          job_options,
-                                          is_singularity,
-                                          ctx.logger,
-                                          workdir=workdir)
+            # TODO(emepetres): manage errors
+            wm = WorkloadManager.factory(wm_type)
+            if not wm:
+                raise NonRecoverableError(
+                    "Workload Manager '" +
+                    wm_type +
+                    "' not supported.")
+            is_clean = wm.clean_job_aux_files(client,
+                                              name,
+                                              job_options,
+                                              is_singularity,
+                                              ctx.logger,
+                                              workdir=workdir)
 
-        client.close_connection()
-    else:
-        ctx.logger.warning('Instance ' + ctx.instance.id + ' simulated')
-        is_clean = True
+            client.close_connection()
+        else:
+            ctx.logger.warning('Instance ' + ctx.instance.id + ' simulated')
+            is_clean = True
 
-    if is_clean:
-        ctx.logger.info('Job ' + name + ' (' + ctx.instance.id + ') cleaned.')
-    else:
-        ctx.logger.error('Job ' + name + ' (' + ctx.instance.id +
-                         ') not cleaned.')
+        if is_clean:
+            ctx.logger.info(
+                'Job ' + name + ' (' + ctx.instance.id + ') cleaned.')
+        else:
+            ctx.logger.error('Job ' + name + ' (' + ctx.instance.id +
+                             ') not cleaned.')
+    except KeyError:
+        # The job wasn't configured properly, so no cleanup needed
+        ctx.logger.warning('Job was not cleaned up as it was not configured.')
 
 
 @operation
 def stop_job(job_options, **kwargs):  # pylint: disable=W0613
     """ Stops a job in the HPC """
-    simulate = ctx.instance.runtime_properties['simulate']
+    try:
+        simulate = ctx.instance.runtime_properties['simulate']
 
-    credentials = ctx.instance.runtime_properties['credentials']
-    name = kwargs['name']
-    is_singularity = 'hpc.nodes.singularity_job' in ctx.node.\
-        type_hierarchy
+        credentials = ctx.instance.runtime_properties['credentials']
+        name = kwargs['name']
+        is_singularity = 'hpc.nodes.singularity_job' in ctx.node.\
+            type_hierarchy
 
-    if not simulate:
-        workdir = ctx.instance.runtime_properties['workdir']
-        wm_type = ctx.instance.runtime_properties['workload_manager']
-        client = SshClient(credentials['host'],
-                           credentials['user'],
-                           credentials['password'])
+        if not simulate:
+            workdir = ctx.instance.runtime_properties['workdir']
+            wm_type = ctx.instance.runtime_properties['workload_manager']
+            client = SshClient(credentials['host'],
+                               credentials['user'],
+                               credentials['password'])
 
-        # TODO(emepetres): manage errors
-        wm = WorkloadManager.factory(wm_type)
-        if not wm:
-            raise NonRecoverableError(
-                "Workload Manager '" +
-                wm_type +
-                "' not supported.")
-        is_stopped = wm.stop_job(client,
-                                 name,
-                                 job_options,
-                                 is_singularity,
-                                 ctx.logger,
-                                 workdir=workdir)
+            # TODO(emepetres): manage errors
+            wm = WorkloadManager.factory(wm_type)
+            if not wm:
+                raise NonRecoverableError(
+                    "Workload Manager '" +
+                    wm_type +
+                    "' not supported.")
+            is_stopped = wm.stop_job(client,
+                                     name,
+                                     job_options,
+                                     is_singularity,
+                                     ctx.logger,
+                                     workdir=workdir)
 
-        client.close_connection()
-    else:
-        ctx.logger.warning('Instance ' + ctx.instance.id + ' simulated')
-        is_stopped = True
+            client.close_connection()
+        else:
+            ctx.logger.warning('Instance ' + ctx.instance.id + ' simulated')
+            is_stopped = True
 
-    if is_stopped:
-        ctx.logger.info('Job ' + name + ' (' + ctx.instance.id + ') stopped.')
-    else:
-        ctx.logger.error('Job ' + name + ' (' + ctx.instance.id +
-                         ') not stopped.')
-        raise NonRecoverableError('Job ' + name + ' (' + ctx.instance.id +
-                                  ') not stopped.')
+        if is_stopped:
+            ctx.logger.info(
+                'Job ' + name + ' (' + ctx.instance.id + ') stopped.')
+        else:
+            ctx.logger.error('Job ' + name + ' (' + ctx.instance.id +
+                             ') not stopped.')
+            raise NonRecoverableError('Job ' + name + ' (' + ctx.instance.id +
+                                      ') not stopped.')
+    except KeyError:
+        # The job wasn't configured properly, no need to be stopped
+        ctx.logger.warning('Job was not stopped as it was not configured.')
