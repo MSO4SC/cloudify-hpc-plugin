@@ -191,13 +191,13 @@ Use this tipe to describe a HPC job.
 ** `max_time`: Set a limit on the total run time of the job allocation. Mandatory if SRUN type.
 ** `scale`: Execute in parallel the job N times according to this property. Only works with SBATCH jobs. Default `1` (no scale).
 ** `scale_max_in_parallel`: Maximum number of scaled job instances that can be run in parallel. Only works with scale > `1`. Default same as scale.
-** `memory`: Specify the real memory required per node.  Different units can be specified using the suffix [`K|M|G|T`]. Default `""`.
-** `output`: Define the file where to gather the standard output of the job. Default `""`.
-** `error`: Define the file where to gather the standard error output. Default `""`.
-** `mail-user`: Email to receive notification of job state changes. Default `""`.
-** `mail-type`: Type of event to be notified by mail, can define several events separated by comma. Valid values `NONE, BEGIN, END, FAIL, TIME_LIMIT, REQUEUE, ALL`. Default `""`.
-** `reservation`: Allocate resources for the job from the named reservation. Default `""`.
-** `qos`: Request a quality of service for the job. Default `""`.
+** `memory`: Specify the real memory required per node.  Different units can be specified using the suffix [`K|M|G|T`]. Default value `""` lets the workload manager assign the default memory to the job.
+** `stdout_file`: Define the file where to gather the standard output of the job. Default value `""` sets `<job-name>.err` filename.
+** `stderr_file`: Define the file where to gather the standard error output. Default value `""` sets `<job-name>.out` filename.
+** `mail-user`: Email to receive notification of job state changes. Default value `""` does not send any mail.
+** `mail-type`: Type of event to be notified by mail, can define several events separated by comma. Valid values `NONE, BEGIN, END, FAIL, TIME_LIMIT, REQUEUE, ALL`. Default value `""` does not send any mail.
+** `reservation`: Allocate resources for the job from the named reservation. Default value `""` does not allocate from any named reservation.
+** `qos`: Request a quality of service for the job. Default value `""` lets de workload manager assign the default user `qos`.
 * `deployment`: Scripts to perform deployment operations. Optional.
 ** `bootstrap`: Relative path to blueprint to the script that will be executed in the HPC at the install workflow to bootstrap the job (like data movements, binary download, etc.)
 ** `revert`: Relative path to blueprint to the script that will be executed in the HPC at the uninstall workflow, reverting the bootstrap or other clean up operations.
@@ -266,13 +266,13 @@ Use this tipe to describe a HPC job executed from a {uri-singularity}[Singularit
 ** `max_time`: Set a limit on the total run time of the job allocation. Mandatory if SRUN type.
 ** `scale`: Execute in parallel the job N times according to this property. Default `1` (no scale).
 ** `scale_max_in_parallel`: Maximum number of scaled job instances that can be run in parallel. Only works with scale > `1`. Default same as scale.
-** `memory`: Specify the real memory required per node.  Different units can be specified using the suffix [`K|M|G|T`]. Default `""`.
-** `output`: Define the file where to gather the standard output of the job. Default `""`.
-** `error`: Define the file where to gather the standard error output. Default `""`.
-** `mail-user`: Email to receive notification of job state changes. Default `""`.
-** `mail-type`: Type of event to be notified by mail, can define several events separated by comma. Valid values `NONE, BEGIN, END, FAIL, TIME_LIMIT, REQUEUE, ALL`. Default `""`.
-** `reservation`: Allocate resources for the job from the named reservation. Default `""`.
-** `qos`: Request a quality of service for the job. Default `""`.
+** `memory`: Specify the real memory required per node.  Different units can be specified using the suffix [`K|M|G|T`]. Default value `""` lets the workload manager assign the default memory to the job.
+** `stdout_file`: Define the file where to gather the standard output of the job. Default value `""` sets `<job-name>.err` filename.
+** `stderr_file`: Define the file where to gather the standard error output. Default value `""` sets `<job-name>.out` filename.
+** `mail-user`: Email to receive notification of job state changes. Default value `""` does not send any mail.
+** `mail-type`: Type of event to be notified by mail, can define several events separated by comma. Valid values `NONE, BEGIN, END, FAIL, TIME_LIMIT, REQUEUE, ALL`. Default value `""` does not send any mail.
+** `reservation`: Allocate resources for the job from the named reservation. Default value `""` does not allocate from any named reservation.
+** `qos`: Request a quality of service for the job. Default value `""` lets de workload manager assign the default user `qos`.
 * `deployment`: Optional scripts to perform deployment operations (bootstrap and revert).
 ** `bootstrap`: Relative path to blueprint to the script that will be executed in the HPC at the install workflow to bootstrap the job (like image download, data movements, etc.)
 ** `revert`: Relative path to blueprint to the script that will be executed in the HPC at the uninstall workflow, reverting the bootstrap or other clean up operations (like removing the image).

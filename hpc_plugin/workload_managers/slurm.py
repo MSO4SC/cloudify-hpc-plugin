@@ -19,7 +19,7 @@ from workload_manager import WorkloadManager
 
 class Slurm(WorkloadManager):
 
-    def _parse_slurm_job_settings(self, job_name, job_settings, prefix, suffix):
+    def _parse_slurm_job_settings(self, job_id, job_settings, prefix, suffix):
 
         _prefix = prefix if prefix else ''
         _suffix = suffix if suffix else ''
@@ -35,14 +35,14 @@ class Slurm(WorkloadManager):
                         str(job_settings['stderr_file']) + _suffix
         else:
             _settings += _prefix + ' -e ' + \
-                        str(job_name+'.err') + _suffix
+                        str(job_id+'.err') + _suffix
 
         if check_job_settings_key(job_settings, 'stdout_file'):
             _settings += _prefix + ' -o ' + \
                         str(job_settings['stdout_file']) + _suffix
         else:
             _settings += _prefix + ' -e ' + \
-                        str(job_name+'.out') + _suffix
+                        str(job_id+'.out') + _suffix
 
         if check_job_settings_key(job_settings, 'max_time'):
             _settings += _prefix + ' -t ' + \
@@ -101,7 +101,8 @@ class Slurm(WorkloadManager):
         script = '#!/bin/bash -l\n\n'
         # script += '#SBATCH --parsable\n'
         # script += '#SBATCH -J "' + name + '"\n'
-        script += self._parse_slurm_job_settings(name, job_settings,'#SBATCH', '\n')
+        script += self._parse_slurm_job_settings(name, job_settings,
+                                                 '#SBATCH', '\n')
 
         script += '\n'
 
@@ -159,7 +160,8 @@ class Slurm(WorkloadManager):
         if 'max_time' not in job_settings and job_settings['type'] == 'SRUN':
             return {'error': "'SRUN' jobs must define the 'max_time' property"}
 
-        slurm_call += self._parse_slurm_job_settings(name, job_settings, None, None)
+        slurm_call += self._parse_slurm_job_settings(name, job_settings,
+                                                     None, None)
 
         response = {}
         if 'scale' in job_settings and \
