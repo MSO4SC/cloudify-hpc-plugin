@@ -19,7 +19,7 @@ from workload_manager import WorkloadManager
 
 class Slurm(WorkloadManager):
 
-    def _parse_slurm_job_settings(self, prefix, job_settings, suffix):
+    def _parse_slurm_job_settings(self, job_name, job_settings, prefix, suffix):
 
         _prefix = prefix if prefix else ''
         _suffix = suffix if suffix else ''
@@ -30,13 +30,19 @@ class Slurm(WorkloadManager):
             return key in job_settings and str(job_settings[key]).strip()
 
         # Slurm settings
-        if check_job_settings_key(job_settings, 'error'):
+        if check_job_settings_key(job_settings, 'stderr_file'):
             _settings += _prefix + ' -e ' + \
-                        str(job_settings['error']) + _suffix
+                        str(job_settings['stderr_file']) + _suffix
+        else:
+            _settings += _prefix + ' -e ' + \
+                        str(job_name+'.err') + _suffix
 
-        if check_job_settings_key(job_settings, 'output'):
+        if check_job_settings_key(job_settings, 'stdout_file'):
             _settings += _prefix + ' -o ' + \
-                        str(job_settings['output']) + _suffix
+                        str(job_settings['stdout_file']) + _suffix
+        else:
+            _settings += _prefix + ' -e ' + \
+                        str(job_name+'.out') + _suffix
 
         if check_job_settings_key(job_settings, 'max_time'):
             _settings += _prefix + ' -t ' + \
@@ -95,7 +101,7 @@ class Slurm(WorkloadManager):
         script = '#!/bin/bash -l\n\n'
         # script += '#SBATCH --parsable\n'
         # script += '#SBATCH -J "' + name + '"\n'
-        script += self._parse_slurm_job_settings('#SBATCH', job_settings, '\n')
+        script += self._parse_slurm_job_settings(name, job_settings,'#SBATCH', '\n')
 
         script += '\n'
 
@@ -150,12 +156,10 @@ class Slurm(WorkloadManager):
             return {'error': "Job type '" + job_settings['type'] +
                     "'not supported"}
 
-        if 'max_time' in job_settings:
-            pass
-        elif job_settings['type'] == 'SRUN':
+        if 'max_time' not in job_settings and job_settings['type'] == 'SRUN':
             return {'error': "'SRUN' jobs must define the 'max_time' property"}
 
-        slurm_call += self._parse_slurm_job_settings(None, job_settings, None)
+        slurm_call += self._parse_slurm_job_settings(name, job_settings, None, None)
 
         response = {}
         if 'scale' in job_settings and \

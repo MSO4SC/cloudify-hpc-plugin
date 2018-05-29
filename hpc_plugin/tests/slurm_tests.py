@@ -90,7 +90,7 @@ class TestSlurm(unittest.TestCase):
         self.assertIn('call', response)
 
         call = response['call']
-        self.assertEqual(call, "nohup srun -J 'test' -t 00:05:00 cmd &")
+        self.assertEqual(call, "nohup srun -J 'test' -e test.err -e test.out -t 00:05:00 cmd &")
 
     def test_complete_srun_call(self):
         """ Complete srun command. """
@@ -99,8 +99,10 @@ class TestSlurm(unittest.TestCase):
                                                                    'mod2'],
                                                        'type': 'SRUN',
                                                        'command': 'cmd',
-                                                       'error': 'stderr.out',
-                                                       'output': 'stdout.out',
+                                                       'stderr_file':
+                                                       'stderr.out',
+                                                       'stdout_file':
+                                                       'stdout.out',
                                                        'partition':
                                                        'thinnodes',
                                                        'nodes': 4,
@@ -144,7 +146,7 @@ class TestSlurm(unittest.TestCase):
         self.assertIn('call', response)
 
         call = response['call']
-        self.assertEqual(call, "sbatch --parsable -J 'test' cmd")
+        self.assertEqual(call, "sbatch --parsable -J 'test' -e test.err -e test.out cmd")
 
     def test_complete_sbatch_call(self):
         """ Complete sbatch command. """
@@ -153,8 +155,10 @@ class TestSlurm(unittest.TestCase):
                                                                    'mod2'],
                                                        'type': 'SBATCH',
                                                        'command': 'cmd',
-                                                       'error': 'stderr.out',
-                                                       'output': 'stdout.out',
+                                                       'stderr_file':
+                                                       'stderr.out',
+                                                       'stdout_file':
+                                                       'stdout.out',
                                                        'partition':
                                                        'thinnodes',
                                                        'nodes': 4,
