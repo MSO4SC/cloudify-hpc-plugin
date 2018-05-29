@@ -116,7 +116,7 @@ class TestSlurm(unittest.TestCase):
                                                        'mail_user':
                                                        'user@email.com',
                                                        'mail_type': 'ALL',
-                                                       'max_time': '05:00'},
+                                                       'max_time': '00:05:00'},
                                                       self.logger)
         self.assertNotIn('error', response)
         self.assertIn('call', response)
@@ -126,7 +126,7 @@ class TestSlurm(unittest.TestCase):
                                "nohup srun -J 'test'"
                                " -e stderr.out"
                                " -o stdout.out"
-                               " -t 05:00"
+                               " -t 00:05:00"
                                " -p thinnodes"
                                " -N 4"
                                " -n 96"

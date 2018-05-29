@@ -9,10 +9,10 @@ cat > $FILE <<- EOM
 #SBATCH -N 1
 #SBATCH -n 1
 #SBATCH --ntasks-per-node=1
-#SBATCH -t 00:02:15
+#SBATCH -t 00:15:15
 
 # DYNAMIC VARIABLES
 
-sleep 120
+sleep 900
 touch test_$1.test
 EOM
