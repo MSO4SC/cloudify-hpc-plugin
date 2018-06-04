@@ -98,6 +98,8 @@ class Slurm(WorkloadManager):
             logger.error("Singularity Script malformed")
             return None
 
+        logger.info("Settings:" + str(job_settings))
+
         script = '#!/bin/bash -l\n\n'
         # script += '#SBATCH --parsable\n'
         # script += '#SBATCH -J "' + name + '"\n'
@@ -139,6 +141,8 @@ class Slurm(WorkloadManager):
         if 'type' not in job_settings or 'command' not in job_settings:
             return {'error': "'type' and 'command' " +
                     "must be defined in job settings"}
+
+        logger.info("Settings:" + str(job_settings))
 
         # first set modules
         slurm_call = ''
