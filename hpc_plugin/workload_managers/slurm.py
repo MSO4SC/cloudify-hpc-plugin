@@ -41,7 +41,7 @@ class Slurm(WorkloadManager):
             _settings += _prefix + ' -o ' + \
                         str(job_settings['stdout_file']) + _suffix
         else:
-            _settings += _prefix + ' -e ' + \
+            _settings += _prefix + ' -o ' + \
                         str(job_id+'.out') + _suffix
 
         if check_job_settings_key(job_settings, 'max_time'):
