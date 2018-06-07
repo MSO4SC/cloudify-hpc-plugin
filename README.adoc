@@ -91,33 +91,30 @@ Additionally {uri-mso4sc}[MSO4SC] provide {uri-vagrant}[Vagrant] and {uri-docker
 
 The HPC plugin requires credentials, endpoint and other setup information in order to authenticate and interact with them.
 
-=== Providing Credentials as Secrets
-
-WARNING: Not yet implemented
-
-[[hpc-config-properties]]
-=== Providing Credentials as Environment Variables that are not Stored as Secrets
-
-If you do not use secret storage, you must provide the following credentials as properties (in the blueprint or as input):
+This configuration properties are defined in <<hpc.nodes.Compute>> config properties.
 
 [source,yaml]
 ----
-HPC_config:
+config:
     credentials:
         host: "[HPC-HOST]"
         user: "[HPC-SSH-USER]"
+        private_key: |
+            -----BEGIN RSA PRIVATE KEY-----
+            ......
+            -----END RSA PRIVATE KEY-----
+        private_key_password: "[PRIVATE-KEY-PASSWORD]"
         password: "[HPC-SSH-PASS]"
     country_tz: "Europe/Madrid"
     workload_manager: "SLURM"
 ----
 
-This configuration properties are passed then to <<hpc.nodes.Compute>> config properties.
-
-. _credentials_: HPC and ssh credentials
+. _credentials_: HPC and ssh credentials. At least `private_key` or `password` must be provided.
 . _country_tz_: Country Time Zone configured in the the HPC.
 . _workload_manager_: Workload manager used by the HPC.
 
 WARNING: Only Slurm is currently accepted as workload manager.
+
 
 == Types
 

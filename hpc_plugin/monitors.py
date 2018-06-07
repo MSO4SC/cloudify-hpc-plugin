@@ -33,10 +33,7 @@ def get_states(monitor_jobs, logger):
         else:  # internal
             wm = WorkloadManager.factory(settings['type'])
             if wm:
-                credentials = settings['config']
-                client = SshClient(credentials['host'],
-                                   credentials['user'],
-                                   credentials['password'])
+                client = SshClient(settings['config'])
                 partial_states = wm.get_states(client,
                                                settings['names'],
                                                logger)

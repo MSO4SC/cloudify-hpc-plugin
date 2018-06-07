@@ -24,6 +24,37 @@ from workload_managers.workload_manager import WorkloadManager
 
 
 @operation
+def preconfigure_job(config,
+                     external_monitor_entrypoint,
+                     external_monitor_port,
+                     external_monitor_type,
+                     external_monitor_orchestrator_port,
+                     job_prefix,
+                     simulate,
+                     **kwargs):  # pylint: disable=W0613
+    """ Set the job with the HPC credentials """
+    ctx.logger.info('Preconfiguring HPC job..')
+
+    ctx.source.instance.runtime_properties['credentials'] = \
+        config['credentials']
+    ctx.source.instance.runtime_properties['external_monitor_entrypoint'] = \
+        external_monitor_entrypoint
+    ctx.source.instance.runtime_properties['external_monitor_port'] = \
+        external_monitor_port
+    ctx.source.instance.runtime_properties['external_monitor_type'] = \
+        external_monitor_type
+    ctx.source.instance.runtime_properties['monitor_orchestrator_port'] = \
+        external_monitor_orchestrator_port
+    ctx.source.instance.runtime_properties['workload_manager'] = \
+        config['workload_manager']
+    ctx.source.instance.runtime_properties['simulate'] = simulate
+    ctx.source.instance.runtime_properties['job_prefix'] = job_prefix
+
+    ctx.source.instance.runtime_properties['workdir'] = \
+        ctx.target.instance.runtime_properties['workdir']
+
+
+@operation
 def prepare_hpc(config,
                 base_dir,
                 workdir_prefix,
@@ -39,10 +70,7 @@ def prepare_hpc(config,
                 "Workload Manager '" +
                 wm_type +
                 "' not supported.")
-        credentials = config['credentials']
-        client = SshClient(credentials['host'],
-                           credentials['user'],
-                           credentials['password'])
+        client = SshClient(config['credentials'])
         _, exit_code = wm._execute_shell_command(client,
                                                  'uname',
                                                  wait_result=True)
@@ -87,10 +115,7 @@ def cleanup_hpc(config, skip, simulate, **kwargs):  # pylint: disable=W0613
                 "Workload Manager '" +
                 wm_type +
                 "' not supported.")
-        credentials = config['credentials']
-        client = SshClient(credentials['host'],
-                           credentials['user'],
-                           credentials['password'])
+        client = SshClient(config['credentials'])
         _, exit_code = wm._execute_shell_command(client,
                                                  'rm -r ' + workdir,
                                                  wait_result=True)
@@ -101,37 +126,6 @@ def cleanup_hpc(config, skip, simulate, **kwargs):  # pylint: disable=W0613
 
 
 @operation
-def preconfigure_job(config,
-                     external_monitor_entrypoint,
-                     external_monitor_port,
-                     external_monitor_type,
-                     external_monitor_orchestrator_port,
-                     job_prefix,
-                     simulate,
-                     **kwargs):  # pylint: disable=W0613
-    """ Set the job with the HPC credentials """
-    ctx.logger.info('Preconfiguring HPC job..')
-
-    ctx.source.instance.runtime_properties['credentials'] = \
-        config['credentials']
-    ctx.source.instance.runtime_properties['external_monitor_entrypoint'] = \
-        external_monitor_entrypoint
-    ctx.source.instance.runtime_properties['external_monitor_port'] = \
-        external_monitor_port
-    ctx.source.instance.runtime_properties['external_monitor_type'] = \
-        external_monitor_type
-    ctx.source.instance.runtime_properties['monitor_orchestrator_port'] = \
-        external_monitor_orchestrator_port
-    ctx.source.instance.runtime_properties['workload_manager'] = \
-        config['workload_manager']
-    ctx.source.instance.runtime_properties['simulate'] = simulate
-    ctx.source.instance.runtime_properties['job_prefix'] = job_prefix
-
-    ctx.source.instance.runtime_properties['workdir'] = \
-        ctx.target.instance.runtime_properties['workdir']
-
-
-@operation
 def start_monitoring_hpc(config,
                          external_monitor_entrypoint,
                          external_monitor_port,
@@ -139,6 +133,7 @@ def start_monitoring_hpc(config,
                          simulate,
                          **kwargs):  # pylint: disable=W0613
     """ Starts monitoring using the Monitor orchestrator """
+    external_monitor_entrypoint = None  # FIXME: external monitor disabled
     if external_monitor_entrypoint:
         ctx.logger.info('Starting infrastructure monitor..')
 
@@ -150,6 +145,7 @@ def start_monitoring_hpc(config,
             url = 'http://' + external_monitor_entrypoint + \
                 external_monitor_orchestrator_port + '/exporters/add'
 
+            # FIXME: credentials doesn't have to have a password anymore
             payload = ("{\n\t\"host\": \"" + credentials['host'] +
                        "\",\n\t\"type\": \"" + workload_manager +
                        "\",\n\t\"persistent\": false,\n\t\"args\": {\n\t\t\""
@@ -181,6 +177,7 @@ def stop_monitoring_hpc(config,
                         simulate,
                         **kwargs):  # pylint: disable=W0613
     """ Stops monitoring using the Monitor Orchestrator """
+    external_monitor_entrypoint = None  # FIXME: external monitor disabled
     if external_monitor_entrypoint:
         ctx.logger.info('Stoping infrastructure monitor..')
 
@@ -192,6 +189,7 @@ def stop_monitoring_hpc(config,
             url = 'http://' + external_monitor_entrypoint + \
                 external_monitor_orchestrator_port + '/exporters/remove'
 
+            # FIXME: credentials doesn't have to have a password anymore
             payload = ("{\n\t\"host\": \"" + credentials['host'] +
                        "\",\n\t\"type\": \"" + workload_manager +
                        "\",\n\t\"persistent\": false,\n\t\"args\": {\n\t\t\""
@@ -312,9 +310,7 @@ def deploy_job(script,
             "' not supported.")
 
     # Execute the script and manage the output
-    client = SshClient(credentials['host'],
-                       credentials['user'],
-                       credentials['password'])
+    client = SshClient(credentials)
     if wm._create_shell_script(client,
                                name,
                                ctx.get_resource(script),
@@ -348,7 +344,6 @@ def send_job(job_options, **kwargs):  # pylint: disable=W0613
     """ Sends a job to the HPC """
     simulate = ctx.instance.runtime_properties['simulate']
 
-    credentials = ctx.instance.runtime_properties['credentials']
     name = kwargs['name']
     is_singularity = 'hpc.nodes.singularity_job' in ctx.node.\
         type_hierarchy
@@ -356,9 +351,7 @@ def send_job(job_options, **kwargs):  # pylint: disable=W0613
     if not simulate:
         workdir = ctx.instance.runtime_properties['workdir']
         wm_type = ctx.instance.runtime_properties['workload_manager']
-        client = SshClient(credentials['host'],
-                           credentials['user'],
-                           credentials['password'])
+        client = SshClient(ctx.instance.runtime_properties['credentials'])
 
         wm = WorkloadManager.factory(wm_type)
         if not wm:
@@ -400,13 +393,10 @@ def cleanup_job(job_options, skip, **kwargs):  # pylint: disable=W0613
         if not simulate:
             is_singularity = 'hpc.nodes.singularity_job' in ctx.node.\
                 type_hierarchy
-            credentials = ctx.instance.runtime_properties['credentials']
             workdir = ctx.instance.runtime_properties['workdir']
             wm_type = ctx.instance.runtime_properties['workload_manager']
 
-            client = SshClient(credentials['host'],
-                               credentials['user'],
-                               credentials['password'])
+            client = SshClient(ctx.instance.runtime_properties['credentials'])
 
             # TODO(emepetres): manage errors
             wm = WorkloadManager.factory(wm_type)
@@ -444,7 +434,6 @@ def stop_job(job_options, **kwargs):  # pylint: disable=W0613
     try:
         simulate = ctx.instance.runtime_properties['simulate']
 
-        credentials = ctx.instance.runtime_properties['credentials']
         name = kwargs['name']
         is_singularity = 'hpc.nodes.singularity_job' in ctx.node.\
             type_hierarchy
@@ -452,9 +441,7 @@ def stop_job(job_options, **kwargs):  # pylint: disable=W0613
         if not simulate:
             workdir = ctx.instance.runtime_properties['workdir']
             wm_type = ctx.instance.runtime_properties['workload_manager']
-            client = SshClient(credentials['host'],
-                               credentials['user'],
-                               credentials['password'])
+            client = SshClient(ctx.instance.runtime_properties['credentials'])
 
             # TODO(emepetres): manage errors
             wm = WorkloadManager.factory(wm_type)

@@ -20,22 +20,41 @@ Todo:
     * control SSH exceptions and return failures
 """
 import select
-from paramiko import client
+import cStringIO
+from paramiko import client, RSAKey
 
 
 class SshClient(object):
     """Represents a ssh client"""
     _client = None
 
-    def __init__(self, address, username, password, port=22):
+    def __init__(self, credentials):
         # print "Connecting to server ", str(address)+":"+str(port)
         self._client = client.SSHClient()
         self._client.set_missing_host_key_policy(client.AutoAddPolicy())
+
+        if 'private_key' in credentials:
+            key_file = cStringIO.StringIO()
+            key_file.write(credentials['private_key'])
+            key_file.seek(0)
+            if 'private_key_password' in credentials and \
+                    credentials['private_key_password'] != "":
+                private_key_password = credentials['private_key_password']
+            else:
+                private_key_password = None
+            private_key = RSAKey.from_private_key(
+                key_file,
+                password=private_key_password)
+        else:
+            private_key = None
+
         self._client.connect(
-            address,
-            port=port,
-            username=username,
-            password=password,
+            credentials['host'],
+            port=credentials['port'] if 'port' in credentials else 22,
+            username=credentials['user'],
+            pkey=private_key,
+            password=credentials['password'] if 'password' in credentials
+            else None,
             look_for_keys=False
         )
 
