@@ -5,7 +5,7 @@ FILE="touch.script"
 cat > $FILE <<- EOM
 #!/bin/bash -l
 
-#SBATCH -p thin-shared
+#SBATCH -p $2
 #SBATCH -N 1
 #SBATCH -n 1
 #SBATCH --ntasks-per-node=1

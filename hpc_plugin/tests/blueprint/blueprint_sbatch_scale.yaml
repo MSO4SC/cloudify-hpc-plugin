@@ -35,6 +35,11 @@ inputs:
         default: "cfyhpc"
         type: string
 
+    partition:
+        description: Partition in which the jobs will run
+        default: "public"
+        type: string
+
     # First HPC configuration
     mso4sc_hpc_primary:
         description: Configuration for the primary HPC to be used
@@ -68,6 +73,7 @@ node_templates:
                 #revert: 'scripts/revert_sbatch_example.sh'
                 inputs:
                     - 'single'
+                    - { get_input: partition }
             skip_cleanup: True
         relationships:
             - type: job_contained_in_hpc

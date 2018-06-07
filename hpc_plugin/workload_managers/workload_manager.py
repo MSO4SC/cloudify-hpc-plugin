@@ -188,7 +188,6 @@ class WorkloadManager(object):
 
         # submit the job
         call = response['call']
-        print("------------------->job call: "+call)
         output, exit_code = self._execute_shell_command(ssh_client,
                                                         call,
                                                         workdir=workdir,

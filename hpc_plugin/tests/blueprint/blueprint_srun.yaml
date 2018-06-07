@@ -35,6 +35,11 @@ inputs:
         default: "cfyhpc"
         type: string
 
+    partition:
+        description: Partition in which the jobs will run
+        default: "public"
+        type: string
+
     # First HPC configuration
     mso4sc_hpc_primary:
         description: Configuration for the primary HPC to be used
@@ -61,9 +66,7 @@ node_templates:
         properties:
             job_options: 
                 type: 'SRUN'
-                modules:
-                    - gcc/5.3.0
-                partition: 'thin-shared'
+                partition: { get_input: partition }
                 command: 'touch single.test'
                 nodes: 1
                 tasks: 1

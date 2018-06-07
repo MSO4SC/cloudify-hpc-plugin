@@ -34,6 +34,11 @@ inputs:
         description: Job name prefix in HPCs
         default: "cfyhpc"
         type: string
+    
+    partition:
+        description: Partition in which the jobs will run
+        default: "public"
+        type: string
 
     # First HPC configuration
     mso4sc_hpc_primary:
@@ -69,6 +74,7 @@ node_templates:
                 revert: 'scripts/revert_sbatch_example.sh'
                 inputs:
                     - 'first_job'
+                    - { get_input: partition }
             skip_cleanup: True
         relationships:
             - type: job_contained_in_hpc
@@ -82,7 +88,7 @@ node_templates:
                     - gcc/5.3.0
                     - openmpi/1.10.2
                     - singularity/2.3.1
-                partition: 'thin-shared'
+                partition: { get_input: partition }
                 image: '$LUSTRE/openmpi_1.10.7_ring.img'
                 home: '$HOME:/home/$USER'
                 volumes:
@@ -114,7 +120,7 @@ node_templates:
                     - gcc/5.3.0
                     - openmpi/1.10.2
                     - singularity/2.3.1
-                partition: 'thin-shared'
+                partition: { get_input: partition }
                 image: '$LUSTRE/openmpi_1.10.7_ring.img'
                 home: '$HOME:/home/$USER'
                 volumes:
@@ -150,6 +156,7 @@ node_templates:
                 revert: 'scripts/revert_sbatch_example.sh'
                 inputs:
                     - 'fourth_job'
+                    - { get_input: partition }
             skip_cleanup: True
         relationships:
             - type: job_contained_in_hpc
