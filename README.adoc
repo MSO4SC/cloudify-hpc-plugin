@@ -105,11 +105,15 @@ config:
             -----END RSA PRIVATE KEY-----
         private_key_password: "[PRIVATE-KEY-PASSWORD]"
         password: "[HPC-SSH-PASS]"
+        tunnel:
+            host: ...
+            ...
     country_tz: "Europe/Madrid"
     workload_manager: "SLURM"
 ----
 
 . _credentials_: HPC and ssh credentials. At least `private_key` or `password` must be provided.
+.. _tunnel_: Follows the same structure as its parent (credentials), to connect to the HPC through an tunneled SSH connection.
 . _country_tz_: Country Time Zone configured in the the HPC.
 . _workload_manager_: Workload manager used by the HPC.
 

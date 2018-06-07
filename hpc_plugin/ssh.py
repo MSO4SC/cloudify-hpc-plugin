@@ -20,7 +20,14 @@ Todo:
     * control SSH exceptions and return failures
 """
 import select
+import thread
 import cStringIO
+
+try:
+    import SocketServer
+except ImportError:
+    import socketserver as SocketServer
+
 from paramiko import client, RSAKey
 
 
@@ -29,10 +36,21 @@ class SshClient(object):
     _client = None
 
     def __init__(self, credentials):
+        # Build a tunnel if necessary
+        self._tunnel = None
+        self._host = credentials['host']
+        self._port = int(credentials['port']) if 'port' in credentials else 22
+        if 'tunnel' in credentials:
+            self._tunnel = SshForward(credentials)
+            self._host = "localhost"
+            self._port = self._tunnel.port()
+
         # print "Connecting to server ", str(address)+":"+str(port)
         self._client = client.SSHClient()
         self._client.set_missing_host_key_policy(client.AutoAddPolicy())
 
+        # Build the private key if provided
+        private_key = None
         if 'private_key' in credentials:
             key_file = cStringIO.StringIO()
             key_file.write(credentials['private_key'])
@@ -45,18 +63,20 @@ class SshClient(object):
             private_key = RSAKey.from_private_key(
                 key_file,
                 password=private_key_password)
-        else:
-            private_key = None
 
         self._client.connect(
-            credentials['host'],
-            port=credentials['port'] if 'port' in credentials else 22,
+            self._host,
+            port=self._port,
             username=credentials['user'],
             pkey=private_key,
             password=credentials['password'] if 'password' in credentials
             else None,
             look_for_keys=False
         )
+
+    def get_transport(self):
+        """Gets the transport object of the client (paramiko)"""
+        return self._client.get_transport()
 
     def is_open(self):
         """Check if connection is open"""
@@ -66,6 +86,8 @@ class SshClient(object):
         """Closes opened connection"""
         if self._client is not None:
             self._client.close()
+        if self._tunnel is not None:
+            self._tunnel.close()
 
     def send_command(self,
                      command,
@@ -155,3 +177,96 @@ class SshClient(object):
                 return (None, None)
             else:
                 return False
+
+
+class SshForward(object):
+    """Represents a ssh port forwarding"""
+
+    def __init__(self, credentials):
+        self._client = SshClient(credentials['tunnel'])
+        self._remote_port = \
+            int(credentials['port']) if 'port' in credentials else 22
+
+        class SubHander(Handler):
+            chain_host = credentials['host']
+            chain_port = self._remote_port
+            ssh_transport = self._client.get_transport()
+
+        self._server = ForwardServer(("", 0), SubHander)
+        self._port = self._server.server_address[1]
+
+        thread.start_new_thread(self._server.serve_forever, ())
+
+    def port(self):
+        return self._port
+
+    def close(self):
+        self._server.shutdown()
+
+
+# Following code taken from paramiko forward demo in github
+# https://github.com/paramiko/paramiko/blob/master/demos/forward.py
+
+class ForwardServer(SocketServer.ThreadingTCPServer):
+    daemon_threads = True
+    allow_reuse_address = True
+
+
+class Handler(SocketServer.BaseRequestHandler):
+
+    def handle(self):
+        try:
+            chan = self.ssh_transport.open_channel(
+                "direct-tcpip",
+                (self.chain_host, self.chain_port),
+                self.request.getpeername(),
+            )
+        except Exception as e:
+            verbose(
+                "Incoming request to %s:%d failed: %s"
+                % (self.chain_host, self.chain_port, repr(e))
+            )
+            return
+        if chan is None:
+            verbose(
+                "Incoming request to %s:%d was rejected by the SSH server."
+                % (self.chain_host, self.chain_port)
+            )
+            return
+
+        # verbose(
+        #     "Connected!  Tunnel open %r -> %r -> %r"
+        #     % (
+        #         self.request.getpeername(),
+        #         chan.getpeername(),
+        #         (self.chain_host, self.chain_port),
+        #     )
+        # )
+        while True:
+            r, w, x = select.select([self.request, chan], [], [])
+            if self.request in r:
+                data = self.request.recv(1024)
+                if len(data) == 0:
+                    break
+                chan.send(data)
+            if chan in r:
+                data = chan.recv(1024)
+                if len(data) == 0:
+                    break
+                self.request.send(data)
+
+        # peername = self.request.getpeername()
+        chan.close()
+        self.request.close()
+        # verbose("Tunnel closed from %r" % (peername,))
+
+
+def verbose(s):
+    print(s)
+
+
+def get_host_port(spec, default_port):
+    "parse 'hostname:22' into a host and port, with the port optional"
+    args = (spec.split(":", 1) + [default_port])[:2]
+    args[1] = int(args[1])
+    return args[0], args[1]
