@@ -8,12 +8,17 @@ monitor_entrypoint: ""
 # Job prefix name
 job_prefix: "cfyhpc"
 
+partition: "public"
+
 # First HPC configuration
 mso4sc_hpc_primary:
     credentials:
         host: "HOST"
         user: "USER"
-        password: "PASSWD"
+        private_key: |
+            -----BEGIN RSA PRIVATE KEY-----
+            ....
+            -----END RSA PRIVATE KEY-----
     country_tz: "Europe/Madrid"
     workload_manager: "SLURM"
 
@@ -23,5 +28,12 @@ mso4sc_hpc_secondary:
         host: "HOST"
         user: "USER"
         password: "PASSWD"
-    country_tz: "Europe/Budapest"
+        tunnel:
+            host: "TUNNEL_HOST"
+            user: "TUNNEL_USER"
+            private_key: |
+                -----BEGIN RSA PRIVATE KEY-----
+                ....
+                -----END RSA PRIVATE KEY-----
+    country_tz: "Europe/Paris"
     workload_manager: "SLURM"
