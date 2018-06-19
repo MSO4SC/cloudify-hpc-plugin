@@ -154,9 +154,11 @@ class WorkloadManager(object):
                 "command": name + ".script"
             }
 
-            if 'scale' in job_settings and \
-                    job_settings['scale'] > 1:
+            if 'scale' in job_settings:
                 settings['scale'] = job_settings['scale']
+                if 'scale_max_in_parallel' in job_settings:
+                    settings['scale_max_in_parallel'] = \
+                        job_settings['scale_max_in_parallel']
         else:
             settings = job_settings
 

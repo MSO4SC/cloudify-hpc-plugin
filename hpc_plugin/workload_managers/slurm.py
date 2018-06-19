@@ -32,57 +32,57 @@ class Slurm(WorkloadManager):
         # Slurm settings
         if check_job_settings_key(job_settings, 'stderr_file'):
             _settings += _prefix + ' -e ' + \
-                        str(job_settings['stderr_file']) + _suffix
+                str(job_settings['stderr_file']) + _suffix
         else:
             _settings += _prefix + ' -e ' + \
-                        str(job_id+'.err') + _suffix
+                str(job_id + '.err') + _suffix
 
         if check_job_settings_key(job_settings, 'stdout_file'):
             _settings += _prefix + ' -o ' + \
-                        str(job_settings['stdout_file']) + _suffix
+                str(job_settings['stdout_file']) + _suffix
         else:
             _settings += _prefix + ' -e ' + \
-                        str(job_id+'.out') + _suffix
+                str(job_id + '.out') + _suffix
 
         if check_job_settings_key(job_settings, 'max_time'):
             _settings += _prefix + ' -t ' + \
-                        str(job_settings['max_time']) + _suffix
+                str(job_settings['max_time']) + _suffix
 
         if check_job_settings_key(job_settings, 'partition'):
             _settings += _prefix + ' -p ' + \
-                        str(job_settings['partition']) + _suffix
+                str(job_settings['partition']) + _suffix
 
         if check_job_settings_key(job_settings, 'nodes'):
             _settings += _prefix + ' -N ' + \
-                        str(job_settings['nodes']) + _suffix
+                str(job_settings['nodes']) + _suffix
 
         if check_job_settings_key(job_settings, 'tasks'):
             _settings += _prefix + ' -n ' + \
-                        str(job_settings['tasks']) + _suffix
+                str(job_settings['tasks']) + _suffix
 
         if check_job_settings_key(job_settings, 'tasks_per_node'):
             _settings += _prefix + ' --ntasks-per-node=' + \
-                        str(job_settings['tasks_per_node']) + _suffix
+                str(job_settings['tasks_per_node']) + _suffix
 
         if check_job_settings_key(job_settings, 'memory'):
             _settings += _prefix + ' --mem=' + \
-                        str(job_settings['memory']) + _suffix
+                str(job_settings['memory']) + _suffix
 
         if check_job_settings_key(job_settings, 'reservation'):
             _settings += _prefix + ' --reservation=' + \
-                        str(job_settings['reservation']) + _suffix
+                str(job_settings['reservation']) + _suffix
 
         if check_job_settings_key(job_settings, 'qos'):
             _settings += _prefix + ' --qos=' + \
-                        str(job_settings['qos']) + _suffix
+                str(job_settings['qos']) + _suffix
 
         if check_job_settings_key(job_settings, 'mail_user'):
             _settings += _prefix + ' --mail-user=' + \
-                        str(job_settings['mail_user']) + _suffix
+                str(job_settings['mail_user']) + _suffix
 
         if check_job_settings_key(job_settings, 'mail_type'):
             _settings += _prefix + ' --mail-type=' + \
-                        str(job_settings['mail_type']) + _suffix
+                str(job_settings['mail_type']) + _suffix
 
         return _settings
 
@@ -99,9 +99,8 @@ class Slurm(WorkloadManager):
             return None
 
         script = '#!/bin/bash -l\n\n'
-        # script += '#SBATCH --parsable\n'
-        # script += '#SBATCH -J "' + name + '"\n'
-        script += self._parse_slurm_job_settings(name, job_settings,
+        script += self._parse_slurm_job_settings(name,
+                                                 job_settings,
                                                  '#SBATCH', '\n')
 
         script += '\n# DYNAMIC VARIABLES\n\n'
@@ -124,9 +123,6 @@ class Slurm(WorkloadManager):
 
         # add executable and arguments
         script += job_settings['image'] + ' ' + job_settings['command'] + '\n'
-
-        # disable output
-        # script += ' >/dev/null 2>&1';
 
         return script
 
@@ -160,20 +156,21 @@ class Slurm(WorkloadManager):
         if 'max_time' not in job_settings and job_settings['type'] == 'SRUN':
             return {'error': "'SRUN' jobs must define the 'max_time' property"}
 
-        slurm_call += self._parse_slurm_job_settings(name, job_settings,
+        slurm_call += self._parse_slurm_job_settings(name,
+                                                     job_settings,
                                                      None, None)
 
         response = {}
         if 'scale' in job_settings and \
-                job_settings['scale'] > 1:
+                int(job_settings['scale']) > 1:
             if job_settings['type'] == 'SRUN':
                 return {'error': "'SRUN' does not allow scale property"}
             # set the job array
-            slurm_call += ' --array=0-' + str(job_settings['scale'] - 1)
+            slurm_call += ' --array=0-' + str(int(job_settings['scale']) - 1)
             # set the max of parallel jobs
             scale_max = job_settings['scale']
             if 'scale_max_in_parallel' in job_settings and \
-                    job_settings['scale_max_in_parallel'] > 0:
+                    int(job_settings['scale_max_in_parallel']) > 0:
                 slurm_call += '%' + str(job_settings['scale_max_in_parallel'])
                 scale_max = job_settings['scale_max_in_parallel']
             # map the orchestrator variables after last sbatch
