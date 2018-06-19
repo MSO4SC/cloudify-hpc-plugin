@@ -142,7 +142,7 @@ class Slurm(WorkloadManager):
 
         # first set modules
         slurm_call = ''
-        if 'modules' in job_settings:
+        if 'modules' in job_settings and job_settings['modules']:
             slurm_call += 'module load'
             for module in job_settings['modules']:
                 slurm_call += ' ' + module
