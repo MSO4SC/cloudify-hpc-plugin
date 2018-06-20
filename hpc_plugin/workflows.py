@@ -99,6 +99,22 @@ class JobGraphInstance(object):
         # print result.task.dump()
         return result.task
 
+    def publish(self):
+        """ Send the instance to the HPC queue if it is a Job """
+        if not self.parent_node.is_job:
+            return
+
+        self.winstance.send_event('Publishing HPC job..')
+        result = self.winstance.execute_operation('hpc.interfaces.'
+                                                  'lifecycle.publish',
+                                                  kwargs={"name": self.name})
+        # TODO: How to do it in non-blocking??
+        result.task.wait_for_terminated()
+        if result.task.get_state() != tasks.TASK_FAILED:
+            self.winstance.send_event('..HPC job published')
+
+        return result.task
+
     def set_status(self, status):
         """ Update the instance state """
         if not status == self._status:
@@ -199,6 +215,17 @@ class JobGraphNode(object):
             tasks_list.append(job_instance.queue())
 
         self.status = 'QUEUED'
+        return tasks_list
+
+    def publish(self):
+        """ Send all instances to the HPC queue if it represents a Job """
+        if not self.is_job:
+            return []
+
+        tasks_list = []
+        for job_instance in self.instances:
+            tasks_list.append(job_instance.publish())
+
         return tasks_list
 
     def is_ready(self):

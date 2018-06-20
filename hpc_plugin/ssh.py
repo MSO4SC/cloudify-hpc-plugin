@@ -89,6 +89,20 @@ class SshClient(object):
         if self._tunnel is not None:
             self._tunnel.close()
 
+    def execute_shell_command(self,
+                              cmd,
+                              workdir=None,
+                              wait_result=False):
+        if not workdir:
+            return ssh_client.send_command(cmd,
+                                           wait_result=wait_result)
+        else:
+            call = "export CURRENT_WORKDIR=" + workdir + " && "
+            call += "cd " + workdir + " && "
+            call += cmd
+            return ssh_client.send_command(call,
+                                           wait_result=wait_result)
+
     def send_command(self,
                      command,
                      exec_timeout=3000,
@@ -177,6 +191,14 @@ class SshClient(object):
                 return (None, None)
             else:
                 return False
+
+    @staticmethod
+    def check_ssh_client(ssh_client,
+                         logger):
+        if not isinstance(ssh_client, SshClient) or not ssh_client.is_open():
+            logger.error("SSH Client can't be used")
+            return False
+        return True
 
 
 class SshForward(object):

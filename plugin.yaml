@@ -10,7 +10,7 @@ plugins:
         # "plugins" directory.
         source: https://github.com/MSO4SC/cloudify-hpc-plugin/archive/canary.zip
         package_name: cloudify-hpc-plugin
-        package_version: '1.2'
+        package_version: '1.3'
 
 workflows:
     run_jobs:
@@ -119,6 +119,9 @@ node_types:
                 default: {}
             job_options:
                 description: Job main command and options
+            publish:
+                description: Config to publish its outputs
+                default: []
             skip_cleanup:
                 description: True to not clean after execution (debug purposes)
                 type: boolean
@@ -147,6 +150,11 @@ node_types:
                     inputs:
                         job_options:
                             default: { get_property: [SELF, job_options] }
+                publish:
+                    implementation: hpc.hpc_plugin.tasks.publish
+                    inputs:
+                        publish_options:
+                            default: { get_property: [SELF, publish] }
                 cleanup:
                     implementation: hpc.hpc_plugin.tasks.cleanup_job
                     inputs:

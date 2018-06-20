@@ -21,6 +21,7 @@ from cloudify.exceptions import NonRecoverableError
 
 from ssh import SshClient
 from workload_managers.workload_manager import WorkloadManager
+from external_repositories.external_repository import ExternalRepository
 
 
 @operation
@@ -76,6 +77,7 @@ def prepare_hpc(config,
                                                  wait_result=True)
 
         if exit_code is not 0:
+            client.close_connection()
             raise NonRecoverableError(
                 "failed to connect to HPC: exit code " + str(exit_code))
 
@@ -111,6 +113,7 @@ def cleanup_hpc(config, skip, simulate, **kwargs):  # pylint: disable=W0613
         wm_type = config['workload_manager']
         wm = WorkloadManager.factory(wm_type)
         if not wm:
+            client.close_connection()
             raise NonRecoverableError(
                 "Workload Manager '" +
                 wm_type +
@@ -355,6 +358,7 @@ def send_job(job_options, **kwargs):  # pylint: disable=W0613
 
         wm = WorkloadManager.factory(wm_type)
         if not wm:
+            client.close_connection()
             raise NonRecoverableError(
                 "Workload Manager '" +
                 wm_type +
@@ -398,9 +402,10 @@ def cleanup_job(job_options, skip, **kwargs):  # pylint: disable=W0613
 
             client = SshClient(ctx.instance.runtime_properties['credentials'])
 
-            # TODO(emepetres): manage errors
+            # TODO: manage errors
             wm = WorkloadManager.factory(wm_type)
             if not wm:
+                client.close_connection()
                 raise NonRecoverableError(
                     "Workload Manager '" +
                     wm_type +
@@ -443,9 +448,10 @@ def stop_job(job_options, **kwargs):  # pylint: disable=W0613
             wm_type = ctx.instance.runtime_properties['workload_manager']
             client = SshClient(ctx.instance.runtime_properties['credentials'])
 
-            # TODO(emepetres): manage errors
+            # TODO: manage errors
             wm = WorkloadManager.factory(wm_type)
             if not wm:
+                client.close_connection()
                 raise NonRecoverableError(
                     "Workload Manager '" +
                     wm_type +
@@ -473,3 +479,45 @@ def stop_job(job_options, **kwargs):  # pylint: disable=W0613
     except KeyError:
         # The job wasn't configured properly, no need to be stopped
         ctx.logger.warning('Job was not stopped as it was not configured.')
+
+
+@operation
+def publish(publish_options, **kwargs):
+    """ Publish the job outputs """
+    try:
+        simulate = ctx.instance.runtime_properties['simulate']
+
+        name = kwargs['name']
+        is_singularity = 'hpc.nodes.singularity_job' in ctx.node.\
+            type_hierarchy
+
+        if not simulate:
+            workdir = ctx.instance.runtime_properties['workdir']
+            client = SshClient(ctx.instance.runtime_properties['credentials'])
+
+            for publish_item in publish_options:
+                er = ExternalRepository.factory(publish_item)
+                if not er:
+                    client.close_connection()
+                    raise NonRecoverableError(
+                        "External repository '" +
+                        publish_item['type'] + # TODO: manage key error
+                        "' not supported.")
+
+            client.close_connection()
+        else:
+            ctx.logger.warning('Instance ' + ctx.instance.id + ' simulated')
+            is_stopped = True
+
+        if is_stopped:
+            ctx.logger.info(
+                'Job ' + name + ' (' + ctx.instance.id + ') stopped.')
+        else:
+            ctx.logger.error('Job ' + name + ' (' + ctx.instance.id +
+                             ') not stopped.')
+            raise NonRecoverableError('Job ' + name + ' (' + ctx.instance.id +
+                                      ') not stopped.')
+    except KeyError:
+        # The job wasn't configured properly, no need to be stopped
+        ctx.logger.warning(
+            'Job outputs where not published as it was not configured.')

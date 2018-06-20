@@ -131,7 +131,7 @@ class WorkloadManager(object):
         @rtype string
         @return Slurm's job name sent. None if an error arise.
         """
-        if not self._checkSshClient(ssh_client, logger):
+        if not SshClient.check_ssh_client(ssh_client, logger):
             return False
 
         if is_singularity:
@@ -176,8 +176,7 @@ class WorkloadManager(object):
         # prepare the scale env variables
         if 'scale_env_mapping_call' in response:
             scale_env_mapping_call = response['scale_env_mapping_call']
-            output, exit_code = self._execute_shell_command(
-                ssh_client,
+            output, exit_code = ssh_client.execute_shell_command(
                 scale_env_mapping_call,
                 workdir=workdir,
                 wait_result=True)
@@ -190,10 +189,10 @@ class WorkloadManager(object):
 
         # submit the job
         call = response['call']
-        output, exit_code = self._execute_shell_command(ssh_client,
-                                                        call,
-                                                        workdir=workdir,
-                                                        wait_result=True)
+        output, exit_code = ssh_client.execute_shell_command(
+            call,
+            workdir=workdir,
+            wait_result=True)
         if exit_code is not 0:
             logger.error("Job submission '" + call + "' exited with code " +
                          str(exit_code) + ":\n" + output)
@@ -221,13 +220,13 @@ class WorkloadManager(object):
         @rtype string
         @return Slurm's job name stopped. None if an error arise.
         """
-        if not self._checkSshClient(ssh_client, logger):
+        if not SshClient.check_ssh_client(ssh_client, logger):
             return False
 
         if is_singularity:
-            return self._execute_shell_command(ssh_client,
-                                               "rm " + name + ".script",
-                                               workdir=workdir)
+            return ssh_client.execute_shell_command(
+                "rm " + name + ".script",
+                workdir=workdir)
         return True
 
     def stop_job(self,
@@ -251,7 +250,7 @@ class WorkloadManager(object):
         @rtype string
         @return Slurm's job name stopped. None if an error arise.
         """
-        if not self._checkSshClient(ssh_client, logger):
+        if not SshClient.check_ssh_client(ssh_client, logger):
             return False
 
         call = self._build_job_cancellation_call(name,
@@ -260,9 +259,9 @@ class WorkloadManager(object):
         if call is None:
             return False
 
-        return self._execute_shell_command(ssh_client,
-                                           call,
-                                           workdir=workdir)
+        return ssh_client.execute_shell_command(
+            call,
+            workdir=workdir)
 
     def create_new_workdir(self, ssh_client, base_dir, base_name):
         workdir = self._get_time_name(base_name)
@@ -273,8 +272,7 @@ class WorkloadManager(object):
             workdir = self._get_random_name(base_name)
 
         full_path = base_dir + "/" + workdir
-        if self._execute_shell_command(
-                ssh_client,
+        if ssh_client.execute_shell_command(
                 "mkdir -p " + base_dir + "/" + workdir):
             return full_path
         else:
@@ -348,14 +346,6 @@ class WorkloadManager(object):
         raise NotImplementedError(
             "'_build_job_cancellation_call' not implemented.")
 
-    def _checkSshClient(self,
-                        ssh_client,
-                        logger):
-        if not isinstance(ssh_client, SshClient) or not ssh_client.is_open():
-            logger.error("SSH Client can't be used")
-            return False
-        return True
-
     def _create_shell_script(self,
                              ssh_client,
                              name,
@@ -371,10 +361,10 @@ class WorkloadManager(object):
 
         create_call = "echo \"" + script_data + "\" >> " + name + \
             "; chmod +x " + name
-        _, exit_code = self._execute_shell_command(ssh_client,
-                                                   create_call,
-                                                   workdir=workdir,
-                                                   wait_result=True)
+        _, exit_code = ssh_client.execute_shell_command(
+            create_call,
+            workdir=workdir,
+            wait_result=True)
         if exit_code is not 0:
             logger.error(
                 "failed to create script: call '" + create_call +
@@ -382,21 +372,6 @@ class WorkloadManager(object):
             return False
 
         return True
-
-    def _execute_shell_command(self,
-                               ssh_client,
-                               cmd,
-                               workdir=None,
-                               wait_result=False):
-        if not workdir:
-            return ssh_client.send_command(cmd,
-                                           wait_result=wait_result)
-        else:
-            call = "export CURRENT_WORKDIR=" + workdir + " && "
-            call += "cd " + workdir + " && "
-            call += cmd
-            return ssh_client.send_command(call,
-                                           wait_result=wait_result)
 
     def _get_random_name(self, base_name):
         """ Get a random name with a prefix """
@@ -413,9 +388,9 @@ class WorkloadManager(object):
                        for _ in range(size))
 
     def _exists_path(self, ssh_client, path):
-        _, exit_code = self._execute_shell_command(ssh_client,
-                                                   '[ -d "' + path + '" ]',
-                                                   wait_result=True)
+        _, exit_code = ssh_client.execute_shell_command(
+            '[ -d "' + path + '" ]',
+            wait_result=True)
 
         if exit_code == 0:
             return True
