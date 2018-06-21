@@ -1,5 +1,5 @@
 ########
-# Copyright (c) 2017 MSO4SC - javier.carnero@atos.net
+# Copyright (c) 2017-2018 MSO4SC - javier.carnero@atos.net
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 """ Holds the plugin tasks """
 
 import requests
+import traceback
 from cloudify import ctx
 from cloudify.decorators import operation
 from cloudify.exceptions import NonRecoverableError
@@ -72,9 +73,9 @@ def prepare_hpc(config,
                 wm_type +
                 "' not supported.")
         client = SshClient(config['credentials'])
-        _, exit_code = wm._execute_shell_command(client,
-                                                 'uname',
-                                                 wait_result=True)
+        _, exit_code = client.execute_shell_command(
+            'uname',
+            wait_result=True)
 
         if exit_code is not 0:
             client.close_connection()
@@ -113,15 +114,14 @@ def cleanup_hpc(config, skip, simulate, **kwargs):  # pylint: disable=W0613
         wm_type = config['workload_manager']
         wm = WorkloadManager.factory(wm_type)
         if not wm:
-            client.close_connection()
             raise NonRecoverableError(
                 "Workload Manager '" +
                 wm_type +
                 "' not supported.")
         client = SshClient(config['credentials'])
-        _, exit_code = wm._execute_shell_command(client,
-                                                 'rm -r ' + workdir,
-                                                 wait_result=True)
+        _, exit_code = client.execute_shell_command(
+            'rm -r ' + workdir,
+            wait_result=True)
         client.close_connection()
         ctx.logger.info('..all clean.')
     else:
@@ -322,19 +322,19 @@ def deploy_job(script,
         call = "./" + name
         for dinput in inputs:
             call += ' ' + dinput
-        _, exit_code = wm._execute_shell_command(client,
-                                                 call,
-                                                 workdir=workdir,
-                                                 wait_result=True)
+        _, exit_code = client.execute_shell_command(
+            call,
+            workdir=workdir,
+            wait_result=True)
         if exit_code is not 0:
             logger.warning(
                 "failed to deploy job: call '" + call + "', exit code " +
                 str(exit_code))
 
         if not skip_cleanup:
-            if not wm._execute_shell_command(client,
-                                             "rm " + name,
-                                             workdir=workdir):
+            if not client.execute_shell_command(
+                    "rm " + name,
+                    workdir=workdir):
                 logger.warning("failed removing bootstrap script")
 
     client.close_connection()
@@ -393,6 +393,11 @@ def cleanup_job(job_options, skip, **kwargs):  # pylint: disable=W0613
 
     try:
         simulate = ctx.instance.runtime_properties['simulate']
+    except KeyError:
+        # The job wasn't configured properly, so no cleanup needed
+        ctx.logger.warning('Job was not cleaned up as it was not configured.')
+
+    try:
         name = kwargs['name']
         if not simulate:
             is_singularity = 'hpc.nodes.singularity_job' in ctx.node.\
@@ -402,7 +407,6 @@ def cleanup_job(job_options, skip, **kwargs):  # pylint: disable=W0613
 
             client = SshClient(ctx.instance.runtime_properties['credentials'])
 
-            # TODO: manage errors
             wm = WorkloadManager.factory(wm_type)
             if not wm:
                 client.close_connection()
@@ -428,9 +432,10 @@ def cleanup_job(job_options, skip, **kwargs):  # pylint: disable=W0613
         else:
             ctx.logger.error('Job ' + name + ' (' + ctx.instance.id +
                              ') not cleaned.')
-    except KeyError:
-        # The job wasn't configured properly, so no cleanup needed
-        ctx.logger.warning('Job was not cleaned up as it was not configured.')
+    except Exception as exp:
+        print(traceback.format_exc())
+        ctx.logger.error(
+            'Something happend when trying to clean up: ' + exp.message)
 
 
 @operation
@@ -438,7 +443,11 @@ def stop_job(job_options, **kwargs):  # pylint: disable=W0613
     """ Stops a job in the HPC """
     try:
         simulate = ctx.instance.runtime_properties['simulate']
+    except KeyError:
+        # The job wasn't configured properly, no need to be stopped
+        ctx.logger.warning('Job was not stopped as it was not configured.')
 
+    try:
         name = kwargs['name']
         is_singularity = 'hpc.nodes.singularity_job' in ctx.node.\
             type_hierarchy
@@ -448,7 +457,6 @@ def stop_job(job_options, **kwargs):  # pylint: disable=W0613
             wm_type = ctx.instance.runtime_properties['workload_manager']
             client = SshClient(ctx.instance.runtime_properties['credentials'])
 
-            # TODO: manage errors
             wm = WorkloadManager.factory(wm_type)
             if not wm:
                 client.close_connection()
@@ -476,9 +484,10 @@ def stop_job(job_options, **kwargs):  # pylint: disable=W0613
                              ') not stopped.')
             raise NonRecoverableError('Job ' + name + ' (' + ctx.instance.id +
                                       ') not stopped.')
-    except KeyError:
-        # The job wasn't configured properly, no need to be stopped
-        ctx.logger.warning('Job was not stopped as it was not configured.')
+    except Exception as exp:
+        print(traceback.format_exc())
+        ctx.logger.error(
+            'Something happend when trying to stop: ' + exp.message)
 
 
 @operation
@@ -486,38 +495,45 @@ def publish(publish_options, **kwargs):
     """ Publish the job outputs """
     try:
         simulate = ctx.instance.runtime_properties['simulate']
+    except KeyError as exp:
+        # The job wasn't configured properly, no need to publish
+        ctx.logger.warning(
+            'Job outputs where not published as' +
+            ' the job was not configured properly.')
+        return
 
+    try:
         name = kwargs['name']
-        is_singularity = 'hpc.nodes.singularity_job' in ctx.node.\
-            type_hierarchy
-
+        published = True
         if not simulate:
             workdir = ctx.instance.runtime_properties['workdir']
             client = SshClient(ctx.instance.runtime_properties['credentials'])
 
             for publish_item in publish_options:
+                if not published:
+                    break
                 er = ExternalRepository.factory(publish_item)
                 if not er:
                     client.close_connection()
                     raise NonRecoverableError(
                         "External repository '" +
-                        publish_item['type'] + # TODO: manage key error
+                        publish_item['type'] +
                         "' not supported.")
+                published = er.publish(client, ctx.logger, workdir)
 
             client.close_connection()
         else:
             ctx.logger.warning('Instance ' + ctx.instance.id + ' simulated')
-            is_stopped = True
 
-        if is_stopped:
+        if published:
             ctx.logger.info(
-                'Job ' + name + ' (' + ctx.instance.id + ') stopped.')
+                'Job ' + name + ' (' + ctx.instance.id + ') published.')
         else:
             ctx.logger.error('Job ' + name + ' (' + ctx.instance.id +
-                             ') not stopped.')
+                             ') not published.')
             raise NonRecoverableError('Job ' + name + ' (' + ctx.instance.id +
-                                      ') not stopped.')
-    except KeyError:
-        # The job wasn't configured properly, no need to be stopped
-        ctx.logger.warning(
-            'Job outputs where not published as it was not configured.')
+                                      ') not published.')
+    except Exception as exp:
+        print(traceback.format_exc())
+        ctx.logger.error(
+            'Cannot publish: ' + exp.message)

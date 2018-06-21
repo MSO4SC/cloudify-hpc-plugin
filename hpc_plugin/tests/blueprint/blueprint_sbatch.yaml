@@ -44,11 +44,18 @@ inputs:
     mso4sc_hpc_primary:
         description: Configuration for the primary HPC to be used
         default: {}
-    
-    # Second HPC configuration
-    mso4sc_hpc_secondary:
-        description: Configuration for the secondary HPC to be used
-        default: {}
+
+    mso4sc_datacatalogue_entrypoint:
+        description: entrypoint of the data catalogue
+        default: "http://193.144.35.207"
+
+    mso4sc_datacatalogue_key:
+        description: API Key to publish the outputs
+        default: ""
+
+    mso4sc_outdataset_outputs_at:
+        description: ID of the CKAN output dataset
+        default: ""
 
 node_templates:
     first_hpc:

@@ -22,18 +22,8 @@ mso4sc_hpc_primary:
     country_tz: "Europe/Madrid"
     workload_manager: "SLURM"
 
-# Second HPC configuration
-mso4sc_hpc_secondary:
-    credentials:
-        host: "HOST"
-        user: "USER"
-        password: "PASSWD"
-        tunnel:
-            host: "TUNNEL_HOST"
-            user: "TUNNEL_USER"
-            private_key: |
-                -----BEGIN RSA PRIVATE KEY-----
-                ....
-                -----END RSA PRIVATE KEY-----
-    country_tz: "Europe/Paris"
-    workload_manager: "SLURM"
+mso4sc_datacatalogue_entrypoint: "http://193.144.35.207"
+
+mso4sc_datacatalogue_key: "****"
+
+mso4sc_outdataset_outputs_at: "dataset_id"

@@ -1,5 +1,5 @@
 ########
-# Copyright (c) 2017 MSO4SC - javier.carnero@atos.net
+# Copyright (c) 2017-2018 MSO4SC - javier.carnero@atos.net
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ Todo:
 """
 import select
 import thread
+import logging
 import cStringIO
 
 try:
@@ -29,6 +30,8 @@ except ImportError:
     import socketserver as SocketServer
 
 from paramiko import client, RSAKey
+
+logging.getLogger("paramiko").setLevel(logging.WARNING)
 
 
 class SshClient(object):
@@ -94,14 +97,15 @@ class SshClient(object):
                               workdir=None,
                               wait_result=False):
         if not workdir:
-            return ssh_client.send_command(cmd,
-                                           wait_result=wait_result)
+            return self.send_command(cmd,
+                                     wait_result=wait_result)
         else:
+            # TODO: set scale variables as well
             call = "export CURRENT_WORKDIR=" + workdir + " && "
             call += "cd " + workdir + " && "
             call += cmd
-            return ssh_client.send_command(call,
-                                           wait_result=wait_result)
+            return self.send_command(call,
+                                     wait_result=wait_result)
 
     def send_command(self,
                      command,

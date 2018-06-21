@@ -202,9 +202,9 @@ class Slurm(WorkloadManager):
         # TODO(emepetres) set start time of consulting
         # (sacct only check current day)
         call = "sacct -n -o JobName,State -X -P --name=" + ','.join(names)
-        output, exit_code = self._execute_shell_command(ssh_client,
-                                                        call,
-                                                        wait_result=True)
+        output, exit_code = ssh_client.execute_shell_command(
+            call,
+            wait_result=True)
 
         states = {}
         if exit_code == 0:

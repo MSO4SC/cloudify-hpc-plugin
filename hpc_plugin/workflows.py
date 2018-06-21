@@ -123,6 +123,9 @@ class JobGraphInstance(object):
 
             self.completed = not self.parent_node.is_job or \
                 self._status == 'COMPLETED'
+            
+            if self.completed:
+                self.publish() # TODO: do it in another thread?
 
             if not self.parent_node.is_job:
                 self.failed = False
@@ -217,16 +220,16 @@ class JobGraphNode(object):
         self.status = 'QUEUED'
         return tasks_list
 
-    def publish(self):
-        """ Send all instances to the HPC queue if it represents a Job """
-        if not self.is_job:
-            return []
+    # def publish(self):
+    #     """ Send all instances to the HPC queue if it represents a Job """
+    #     if not self.is_job:
+    #         return []
 
-        tasks_list = []
-        for job_instance in self.instances:
-            tasks_list.append(job_instance.publish())
+    #     tasks_list = []
+    #     for job_instance in self.instances:
+    #         tasks_list.append(job_instance.publish())
 
-        return tasks_list
+    #     return tasks_list
 
     def is_ready(self):
         """ True if it has no more dependencies to satisfy """

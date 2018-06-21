@@ -44,20 +44,16 @@ inputs:
         description: Configuration for the primary HPC to be used
         default: {}
 
-    mso4sc_datacatalogue:
+    mso4sc_datacatalogue_entrypoint:
         description: entrypoint of the data catalogue
-        default: ""
+        default: "http://193.144.35.207"
 
-    mso4sc_publish_key:
+    mso4sc_datacatalogue_key:
         description: API Key to publish the outputs
         default: ""
 
-    publish_dataset_id:
-        description: ID of the CKAN dataset
-        default: ""
-
-    publish_outputs_path:
-        description: Local path to the outputs to be uploaded
+    mso4sc_outdataset_outputs_at:
+        description: ID of the CKAN output dataset
         default: ""
 
 node_templates:
@@ -85,10 +81,12 @@ node_templates:
                     - { get_input: partition }
             publish:
                 - type: "CKAN"
-                  entrypoint: { get_input: mso4sc_datacatalogue}
-                  api_key: { get_input: mso4sc_publish_key }
-                  dataset: { get_input: publish_dataset_id }
-                  file_path: { get_input: publish_outputs_path }
+                  entrypoint: { get_input: mso4sc_datacatalogue_entrypoint}
+                  api_key: { get_input: mso4sc_datacatalogue_key }
+                  dataset: { get_input: mso4sc_outdataset_outputs_at }
+                  file_path: "$CURRENT_WORKDIR/test_single.test"
+                  name: "test_single"
+                  description: "output test"
             skip_cleanup: True
         relationships:
             - type: job_contained_in_hpc
