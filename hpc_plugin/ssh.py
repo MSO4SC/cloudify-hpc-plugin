@@ -95,7 +95,18 @@ class SshClient(object):
     def execute_shell_command(self,
                               cmd,
                               workdir=None,
-                              wait_result=False):
+                              wait_result=False,
+                              detach=False):
+        """ Execute the command remotely
+        - if workdir is set: in the specific workdir
+        - if wait_result is set to True: blocks until it gather
+          the results
+        - if detach is set tu True: let the command running in the background.
+          it is incompatible with wait_result=True"""
+        if detach:
+            wait_result = False
+            cmd = "nohup " + cmd + " &"
+
         if not workdir:
             return self.send_command(cmd,
                                      wait_result=wait_result)

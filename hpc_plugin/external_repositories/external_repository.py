@@ -53,7 +53,7 @@ class ExternalRepository(object):
         return ssh_client.execute_shell_command(
             call,
             workdir=workdir,
-            wait_result=False)  # TODO: poner a true
+            wait_result=False)
 
     def _build_publish_call(self, logger):
         """

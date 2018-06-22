@@ -96,7 +96,6 @@ class JobGraphInstance(object):
             self.winstance.send_event('..HPC job queued')
             init_state = 'PENDING'
         self.set_status(init_state)
-        # print result.task.dump()
         return result.task
 
     def publish(self):
@@ -104,14 +103,13 @@ class JobGraphInstance(object):
         if not self.parent_node.is_job:
             return
 
-        self.winstance.send_event('Publishing HPC job..')
+        self.winstance.send_event('Publishing job outputs..')
         result = self.winstance.execute_operation('hpc.interfaces.'
                                                   'lifecycle.publish',
                                                   kwargs={"name": self.name})
-        # TODO: How to do it in non-blocking??
         result.task.wait_for_terminated()
         if result.task.get_state() != tasks.TASK_FAILED:
-            self.winstance.send_event('..HPC job published')
+            self.winstance.send_event('..outputs sent for publication')
 
         return result.task
 
@@ -125,7 +123,7 @@ class JobGraphInstance(object):
                 self._status == 'COMPLETED'
             
             if self.completed:
-                self.publish() # TODO: do it in another thread?
+                self.publish()
 
             if not self.parent_node.is_job:
                 self.failed = False

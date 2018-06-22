@@ -203,6 +203,15 @@ Use this tipe to describe a HPC job.
 ** `bootstrap`: Relative path to blueprint to the script that will be executed in the HPC at the install workflow to bootstrap the job (like data movements, binary download, etc.)
 ** `revert`: Relative path to blueprint to the script that will be executed in the HPC at the uninstall workflow, reverting the bootstrap or other clean up operations.
 ** `inputs`: List of inputs that will be passed to the scripts when executed in the HPC.
+* `publish`: A list of outputs to be published after job execution. Each list item is a dictionary containing:
+** `type`: Type of the external repository to be published. Only `CKAN` is supported for now. The rest of the parameters depends on the type.
+** `type: CKAN`
+*** `entrypoint`: ckan entrypoint
+*** `api_key`: Individual user ckan api key.
+*** `dataset`: Id of the dataset in which the file will be published.
+*** `file_path`: Local path of the output file in the computation node.
+*** `name`: Name used to publish the file in the repository.
+*** `description`: Text describing the data file.
 * `skip_cleanup`: Set to true to not clean up orchestrator auxiliar files. Default `False`.
 
 NOTE: The variable $CURRENT_WORKDIR is available in all operations and scripts. It points to the working directory of the execution in the HPC from the _HOME_ directory: `/home/user/$CURRENT_WORKDIR/`.
