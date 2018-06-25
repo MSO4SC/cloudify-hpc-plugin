@@ -30,7 +30,8 @@ setup(
 
     # This must correspond to the actual packages in the plugin.
     packages=['hpc_plugin',
-              'hpc_plugin.workload_managers'],
+              'hpc_plugin.workload_managers',
+              'hpc_plugin.external_repositories'],
 
     zip_safe=False,
     install_requires=[
