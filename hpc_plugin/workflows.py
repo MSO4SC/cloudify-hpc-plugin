@@ -121,7 +121,7 @@ class JobGraphInstance(object):
 
             self.completed = not self.parent_node.is_job or \
                 self._status == 'COMPLETED'
-            
+
             if self.completed:
                 self.publish()
 

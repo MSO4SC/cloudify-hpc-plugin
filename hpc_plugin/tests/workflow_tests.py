@@ -104,7 +104,7 @@ class TestPlugin(unittest.TestCase):
                              True)
         else:
             logging.warning('[WARNING] Login could not be tested')
-    
+
     @workflow_test(os.path.join('blueprint', 'blueprint_sbatch_output.yaml'),
                    resources_to_copy=[(os.path.join('blueprint', 'hpc_plugin',
                                                     'test_plugin.yaml'),
