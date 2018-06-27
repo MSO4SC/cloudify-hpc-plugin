@@ -72,7 +72,12 @@ def prepare_hpc(config,
                 "Workload Manager '" +
                 wm_type +
                 "' not supported.")
-        client = SshClient(config['credentials'])
+        try:
+            client = SshClient(config['credentials'])
+        except Exception as exp:
+            raise NonRecoverableError(
+                "Failed trying to connect to HPC: " + str(exp))
+
         _, exit_code = client.execute_shell_command(
             'uname',
             wait_result=True)
@@ -80,7 +85,7 @@ def prepare_hpc(config,
         if exit_code is not 0:
             client.close_connection()
             raise NonRecoverableError(
-                "failed to connect to HPC: exit code " + str(exit_code))
+                "Failed executing on the HPC: exit code " + str(exit_code))
 
         ctx.instance.runtime_properties['login'] = exit_code is 0
 
