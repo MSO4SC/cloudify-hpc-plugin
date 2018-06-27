@@ -22,7 +22,7 @@ Todo:
 import select
 import thread
 import logging
-import cStringIO
+import io
 
 try:
     import SocketServer
@@ -55,8 +55,8 @@ class SshClient(object):
         # Build the private key if provided
         private_key = None
         if 'private_key' in credentials:
-            key_file = cStringIO.StringIO()
-            key_file.write(credentials['private_key'])
+            key_file = io.StringIO()
+            key_file.write(unicode(credentials['private_key'], "utf-8"))
             key_file.seek(0)
             if 'private_key_password' in credentials and \
                     credentials['private_key_password'] != "":
