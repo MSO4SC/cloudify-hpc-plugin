@@ -54,7 +54,7 @@ class SshClient(object):
 
         # Build the private key if provided
         private_key = None
-        if 'private_key' in credentials:
+        if 'private_key' in credentials and credentials['private_key']:
             key_data = credentials['private_key']
             if not isinstance(key_data, unicode):
                 key_data = unicode(key_data, "utf-8")
