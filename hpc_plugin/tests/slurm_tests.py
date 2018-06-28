@@ -113,8 +113,7 @@ class TestSlurm(unittest.TestCase):
                                                        'memory': '4GB',
                                                        'qos': 'qos',
                                                        'reservation': 'mso4sc',
-                                                       'mail_user':
-                                                       'user@email.com',
+                                                       'mail_user': 'user@email.com',
                                                        'mail_type': 'ALL',
                                                        'max_time': '00:05:00'},
                                                       self.logger)
@@ -170,8 +169,7 @@ class TestSlurm(unittest.TestCase):
                                                        'memory': '4GB',
                                                        'qos': 'qos',
                                                        'reservation': 'mso4sc',
-                                                       'mail_user':
-                                                       'user@email.com',
+                                                       'mail_user': 'user@email.com',
                                                        'mail_type': 'ALL',
                                                        'max_time': '00:05:00'},
                                                       self.logger)

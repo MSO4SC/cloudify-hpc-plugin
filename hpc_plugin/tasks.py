@@ -290,13 +290,14 @@ def revert_job(deployment, skip_cleanup, **kwarsgs):  # pylint: disable=W0613
             workdir = ctx.instance.runtime_properties['workdir']
             name = "revert_" + ctx.instance.id + ".sh"
             wm_type = ctx.instance.runtime_properties['workload_manager']
-            job_output = ctx.instance.runtime_properties['job_output']
+            if job_output in ctx.instance.runtime_properties and ctx.instance.runtime_properties['job_output']:
+                job_output = ctx.instance.runtime_properties['job_output']
 
-            ctx.logger.info('revert_job: job_output=%s'%job_output)
-            client = SshClient(credentials)
-            wm = WorkloadManager.factory(wm_type)
-            wm.display_job_output(client, job_output, ctx.logger, workdir)
-            client.close_connection()
+                ctx.logger.info('revert_job: job_output=%s'%job_output)
+                client = SshClient(credentials)
+                wm = WorkloadManager.factory(wm_type)
+                wm.display_job_output(client, job_output, ctx.logger, workdir)
+                client.close_connection()
             
             is_reverted = deploy_job(
                 deployment['revert'],
@@ -400,6 +401,7 @@ def send_job(job_options, **kwargs):  # pylint: disable=W0613
 
     simulate = ctx.instance.runtime_properties['simulate']
 
+    slurm_job_id = None
     name = kwargs['name']
     is_singularity = 'hpc.nodes.singularity_job' in ctx.node.type_hierarchy
 
@@ -440,7 +442,8 @@ def send_job(job_options, **kwargs):  # pylint: disable=W0613
         raise NonRecoverableError('Job ' + name + ' (' + ctx.instance.id + ') not sent.')
 
     ctx.instance.runtime_properties['job_name'] = name
-    ctx.instance.runtime_properties['job_output'] = str(ctx.instance.runtime_properties['workload_manager']).lower() + '-' + slurm_job_id + '.out'
+    if slurm_job_id:
+        ctx.instance.runtime_properties['job_output'] = str(ctx.instance.runtime_properties['workload_manager']).lower() + '-' + slurm_job_id + '.out'
 
     ctx.logger.info("----send_job done-----------")
 
