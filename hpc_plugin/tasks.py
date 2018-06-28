@@ -290,7 +290,7 @@ def revert_job(deployment, skip_cleanup, **kwarsgs):  # pylint: disable=W0613
             workdir = ctx.instance.runtime_properties['workdir']
             name = "revert_" + ctx.instance.id + ".sh"
             wm_type = ctx.instance.runtime_properties['workload_manager']
-            if job_output in ctx.instance.runtime_properties and ctx.instance.runtime_properties['job_output']:
+            if 'job_output' in ctx.instance.runtime_properties and ctx.instance.runtime_properties['job_output']:
                 job_output = ctx.instance.runtime_properties['job_output']
 
                 ctx.logger.info('revert_job: job_output=%s'%job_output)

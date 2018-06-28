@@ -432,7 +432,7 @@ def run_jobs(**kwargs):  # pylint: disable=W0613
         new_exec_nodes = []
         for node_name, exec_node in monitor.get_executions_iterator():
             status = exec_node.check_status()
-            ctx.logger.info("node_name=%s status=%s"%(str(node_name), status))
+            # ctx.logger.info("node_name=%s status=%s"%(str(node_name), status))
             if status:
                 if exec_node.completed:
                     exec_node.clean_all_instances()
