@@ -256,6 +256,7 @@ class Slurm(WorkloadManager):
             states = self._parse_sacct(output)
         else:
             logger.error("failed to get_states with code " + str(exit_code) + ":\n" + output)
+        logger.info("----get_states states=%s"%states)
         return states
 
     def _parse_sacct(self, sacct_output):
