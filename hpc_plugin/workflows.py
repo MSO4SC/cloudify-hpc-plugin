@@ -216,6 +216,7 @@ class JobGraphNode(object):
             tasks_list.append(job_instance.queue())
 
         self.status = 'QUEUED'
+        # print "queue_all_instances"
         return tasks_list
 
     # def publish(self):
@@ -408,24 +409,31 @@ class Monitor(object):
 def run_jobs(**kwargs):  # pylint: disable=W0613
     """ Workflow to execute long running batch operations """
 
+    ctx.logger.info(
+        "------------------Run_JOBS-----------------------")
     root_nodes, job_instances_map = build_graph(ctx.nodes)
     monitor = Monitor(job_instances_map, ctx.logger)
 
     # Execution of first job instances
     tasks_list = []
+    # for i,root in enumerate(root_nodes):
     for root in root_nodes:
         tasks_list += root.queue_all_instances()
         monitor.add_node(root)
     wait_tasks_to_finish(tasks_list)
 
     # Monitoring and next executions loop
+    ctx.logger.info(
+        "------------------Monitoring_JOBS-----------------------")
     while monitor.is_something_executing() and not api.has_cancel_request():
         # Monitor the infrastructure
         monitor.update_status()
         exec_nodes_finished = []
         new_exec_nodes = []
         for node_name, exec_node in monitor.get_executions_iterator():
-            if exec_node.check_status():
+            status = exec_node.check_status()
+            ctx.logger.info("node_name=%s status=%s"%(str(node_name), status))
+            if status:
                 if exec_node.completed:
                     exec_node.clean_all_instances()
                     exec_nodes_finished.append(node_name)
@@ -447,6 +455,7 @@ def run_jobs(**kwargs):  # pylint: disable=W0613
             monitor.add_node(new_node)
         wait_tasks_to_finish(tasks_list)
 
+    # print "end while loop"
     if monitor.is_something_executing():
         cancel_all(monitor.get_executions_iterator())
 

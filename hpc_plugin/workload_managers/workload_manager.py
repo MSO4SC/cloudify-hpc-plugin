@@ -131,23 +131,43 @@ class WorkloadManager(object):
         @rtype string
         @return Slurm's job name sent. None if an error arise.
         """
+
+        logger.info("----WORKLOAD_MANAGER: SUBMIT_JOB-----------")
+        # logger.info("job_settings:" )
+        # for key, value in job_settings.iteritems() :
+        #     logger.info("job_settings[%s]=%s"%(key, value) )
+        # logger.info("is_singularity=%s"%(is_singularity) )
+
         if not SshClient.check_ssh_client(ssh_client, logger):
+            logger.error("check_ssh_client failed")
             return False
 
         if is_singularity:
             # generate script content for singularity
-            script_content = self._build_container_script(name,
-                                                          job_settings,
-                                                          logger)
+            hpc_partitions = self.get_partitions(ssh_client, logger)
+            if job_settings['partition'] and not job_settings['partition'] in hpc_partitions:
+                logger.error("inconherent partition name %s"%job_settings['partition'])
+                logger.error("valid partitions=%s"%(hpc_partitions))
+                return ("", False)
+
+            # check for consistent data
+            if job_settings['nodes'] != ''  and job_settings['tasks_per_node'] != '':
+                if int(job_settings['tasks_per_node']) * int(job_settings['nodes']) != int(job_settings['tasks']):
+                    logger.error("inconsistent tasks %d , nodes %d and tasks_per_node %d"%(int(job_settings['tasks']), int(job_settings['nodes']), int(job_settings['tasks_per_node'])))
+                    return ("", False)
+
+            script_content = self._build_container_script(name, job_settings, logger)
             if script_content is None:
-                return False
+                logger.error("submit_job: failed to create script_content")
+                return ("", False)
 
             if not self._create_shell_script(ssh_client,
                                              name + ".script",
                                              script_content,
                                              logger,
                                              workdir=workdir):
-                return False
+                logger.error("submit_job: create_shell_script %s failed"%(name + ".script"))
+                return ("", False)
 
             settings = {
                 "type": "SBATCH",
@@ -171,7 +191,7 @@ class WorkloadManager(object):
             logger.error(
                 "Couldn't build the call to send the job: " +
                 response['error'])
-            return False
+            return ("", False)
 
         # prepare the scale env variables
         if 'scale_env_mapping_call' in response:
@@ -185,19 +205,98 @@ class WorkloadManager(object):
                              scale_env_mapping_call +
                              "' failed with code " +
                              str(exit_code) + ":\n" + output)
-                return False
+                return ("", False)
 
         # submit the job
         call = response['call']
+        # logger.info("submit_job: call=%"%call)
         output, exit_code = ssh_client.execute_shell_command(
             call,
             workdir=workdir,
             wait_result=True)
+
+        # Get output of slurm and add to logger
+        slurm_job_id = output.replace("Submitted batch job ", '').strip()
+        # logger.info("submit_job: slurm_job_id=%s"%slurm_job_id)
+        # logger.info("output: slurm-%s.out"%slurm_job_id)
+        cmd = 'cat slurm-%s.out'%slurm_job_id
+        cmd_out, cmd_code = ssh_client.execute_shell_command(
+            cmd,
+            workdir=workdir,
+            wait_result=True)
+        if cmd_code is 0:
+            logger.info("output: slurm-%s.out\n%s"%(slurm_job_id, cmd_out))
+
         if exit_code is not 0:
             logger.error("Job submission '" + call + "' exited with code " +
                          str(exit_code) + ":\n" + output)
-            return False
+            return ("", False)
+
+        return (slurm_job_id, True)
+
+
+    def display_job_output(self,
+                         ssh_client,
+                         name,
+                         logger,
+                         workdir=None):
+        """
+        Add the content of name to logger
+        """
+        logger.info('wm: display_job_output.. name=%s/%s'%(workdir,name) )
+
+        output, exit_code = ssh_client.execute_shell_command('cat ' + name,
+                                                     workdir=workdir,
+                                                     wait_result=True)
+        logger.info('wm: display_job_output.. output=%s exit_code=%s'%(output,exit_code) )
+        if exit_code == 0 and output:
+            logger.info('job_output:\n%s'%output)
+        return exit_code
+
+    def send_notify_user(self,
+                         ssh_client,
+                         name,
+                         logger,
+                         workdir=None):
+        """
+        Execute sendmail.sh script to send after job is completed
+        """
+        # logger.info('wm: send_notify_user.. workdir=%s'%workdir)
+
+        exit_code = ssh_client.execute_shell_command('./sendmail.sh',
+                                                     workdir)
+        # logger.info('wm: send_notify_user..execute done exit_code=%s'%exit_code)
+        return exit_code
+
+    def notify_user(self,
+                    ssh_client,
+                    name,
+                    slurm_job_id,
+                    job_settings,
+                    logger,
+                    workdir=None):
+        """
+        Create a script to send after job is completed
+        """
+
+        # logger.info('wm: notify_user..')
+
+        if 'mail_user' in job_settings:
+            logger.info("----_send_email_notification: build script content-----------")
+            email_content = self._build_email_script(name,
+                                                     slurm_job_id,
+                                                     job_settings,
+                                                     logger)
+
+            # logger.info("----_send_email_notification: create script-----------")
+            code = self._create_shell_script(ssh_client,
+                                             "sendmail.sh",
+                                             email_content,
+                                             logger,
+                                             workdir=workdir)
+        # logger.info('wm: notify_user..done')
         return True
+
 
     def clean_job_aux_files(self,
                             ssh_client,
@@ -263,20 +362,29 @@ class WorkloadManager(object):
             call,
             workdir=workdir)
 
-    def create_new_workdir(self, ssh_client, base_dir, base_name):
+    def create_new_workdir(self, ssh_client, base_dir, base_name, logger):
+        # logger.info("---create_new_workdir---")
+        # logger.info("base_dir=%s"%base_dir)
+        # logger.info("base_name=%s"%base_name)
         workdir = self._get_time_name(base_name)
+        # logger.info("workdir=%s"%workdir)
 
         # we make sure that the workdir does not exists
         base_name = workdir
         while self._exists_path(ssh_client, base_dir + "/" + workdir):
             workdir = self._get_random_name(base_name)
 
+        # if workdir:
+        #     logger.info("randomize workdir=%s"%workdir)
         full_path = base_dir + "/" + workdir
-        if ssh_client.execute_shell_command(
-                "mkdir -p " + base_dir + "/" + workdir):
-            return full_path
-        else:
+        exit_code = ssh_client.execute_shell_command("mkdir -p " + base_dir + "/" + workdir)
+
+        if not exit_code:
+            logger.info("failed to create %s (error=%s)"%(base_dir + "+" + workdir, exit_code))
             return None
+
+        return full_path
+
 
     def get_states(self, ssh_client, names, logger):
         """
@@ -290,6 +398,24 @@ class WorkloadManager(object):
         @return a dictionary of job names and its states
         """
         raise NotImplementedError("'get_states' not implemented.")
+
+    def _build_email_script(self,
+                            name,
+                            job_id,
+                            settings,
+                            logger):
+        """
+        Creates a script to send slurm output by email
+
+        @type name: string
+        @param name: name of the job
+        @type job_id: integer
+        @type job_settings: dictionary
+        @param job_settings: dictionary with the container job options
+        @rtype string
+        @return string to with the email script. None if an error arise.
+        """
+        raise NotImplementedError("'_build_email_script' not implemented.")
 
     def _build_container_script(self,
                                 name,
@@ -352,6 +478,8 @@ class WorkloadManager(object):
                              script_content,
                              logger,
                              workdir=None):
+
+        logger.info('wm: _create_shell_script.. name=%s'%name)
         # escape for echo command
         script_data = script_content \
             .replace("\\", "\\\\") \
@@ -361,16 +489,27 @@ class WorkloadManager(object):
 
         create_call = "echo \"" + script_data + "\" >> " + name + \
             "; chmod +x " + name
-        _, exit_code = ssh_client.execute_shell_command(
-            create_call,
-            workdir=workdir,
-            wait_result=True)
+        # logger.info('wm: sshclient.execute_shell_command.. create_call=%s'%create_call)
+        output, exit_code = ssh_client.execute_shell_command(create_call,
+                                                             workdir=workdir,
+                                                             wait_result=True)
+        # logger.info('wm: sshclient.execute_shell_command.. output=%s'%output)
+        # cmd_output, cmd_code = ssh_client.execute_shell_command('cat ' + name + '.log',
+        #                                                 workdir=workdir,
+        #                                                 wait_result=True)
+        # logger.info('wm: sshclient.execute_shell_command.. cmd_output=%s'%cmd_output)
+
         if exit_code is not 0:
             logger.error(
                 "failed to create script: call '" + create_call +
                 "', exit code " + str(exit_code))
+            if output:
+                logger.error(
+                    "failed to create script: call '" + create_call +
+                    "', output " + str(output))
             return False
 
+        logger.info('wm: _execute_shell_command success..')
         return True
 
     def _get_random_name(self, base_name):
@@ -394,5 +533,5 @@ class WorkloadManager(object):
 
         if exit_code == 0:
             return True
-        else:
-            return False
+
+        return False

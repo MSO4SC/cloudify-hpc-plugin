@@ -55,6 +55,13 @@ def preconfigure_job(config,
     ctx.source.instance.runtime_properties['workdir'] = \
         ctx.target.instance.runtime_properties['workdir']
 
+    ctx.logger.info("credentials:" )
+    for key, value in config['credentials'].iteritems() :
+        if not 'password' in key:
+            ctx.logger.info("config['credentials'][%s]=%s"%(key, value) )
+        else:
+            ctx.logger.info("config['credentials'][%s]=%s"%(key, '******') )
+    ctx.logger.info("HPC host: %s"%config['credentials']['host'])
 
 @operation
 def prepare_hpc(config,
@@ -93,7 +100,7 @@ def prepare_hpc(config,
         if workdir_prefix is "":
             prefix = ctx.blueprint.id
 
-        workdir = wm.create_new_workdir(client, base_dir, prefix)
+        workdir = wm.create_new_workdir(client, base_dir, prefix, ctx.logger)
         client.close_connection()
         if workdir is None:
             raise NonRecoverableError(
@@ -237,10 +244,15 @@ def bootstrap_job(deployment,
     simulate = ctx.instance.runtime_properties['simulate']
 
     if not simulate and 'bootstrap' in deployment:
+        ctx.logger.info('Loading deployment inputs..')
         inputs = deployment['inputs'] if 'inputs' in deployment else []
+        ctx.logger.info('Loading credentials..')
         credentials = ctx.instance.runtime_properties['credentials']
+        ctx.logger.info('getting working credentials..')
         workdir = ctx.instance.runtime_properties['workdir']
         name = "bootstrap_" + ctx.instance.id + ".sh"
+        ctx.logger.info('script..%s'%name)
+        ctx.logger.info('workload_manager..')
         wm_type = ctx.instance.runtime_properties['workload_manager']
 
         is_bootstraped = deploy_job(
@@ -278,7 +290,14 @@ def revert_job(deployment, skip_cleanup, **kwarsgs):  # pylint: disable=W0613
             workdir = ctx.instance.runtime_properties['workdir']
             name = "revert_" + ctx.instance.id + ".sh"
             wm_type = ctx.instance.runtime_properties['workload_manager']
+            job_output = ctx.instance.runtime_properties['job_output']
 
+            ctx.logger.info('revert_job: job_output=%s'%job_output)
+            client = SshClient(credentials)
+            wm = WorkloadManager.factory(wm_type)
+            wm.display_job_output(client, job_output, ctx.logger, workdir)
+            client.close_connection()
+            
             is_reverted = deploy_job(
                 deployment['revert'],
                 inputs,
@@ -308,8 +327,9 @@ def deploy_job(script,
                name,
                logger,
                skip_cleanup):  # pylint: disable=W0613
-    """ Exec a eployment job script that receives SSH credentials as input """
+    """ Exec a deployment job script that receives SSH credentials as input """
 
+    ctx.logger.info('Deploying job..')
     wm = WorkloadManager.factory(wm_type)
     if not wm:
         raise NonRecoverableError(
@@ -318,7 +338,16 @@ def deploy_job(script,
             "' not supported.")
 
     # Execute the script and manage the output
+    ctx.logger.info('Creating shell script..')
     client = SshClient(credentials)
+    ctx.logger.info('deploy_job: script=%s'%script)
+    if 'revert' in script:
+        # ctx.logger.info('here we are in revert')
+        exit_code = wm.send_notify_user(client,
+                                        name,
+                                        logger,
+                                        workdir=workdir)
+
     if wm._create_shell_script(client,
                                name,
                                ctx.get_resource(script),
@@ -327,19 +356,33 @@ def deploy_job(script,
         call = "./" + name
         for dinput in inputs:
             call += ' ' + dinput
-        _, exit_code = client.execute_shell_command(
+        # ctx.logger.info('deploy_job: call=%s'%call)
+        output, exit_code = client.execute_shell_command(
             call,
             workdir=workdir,
             wait_result=True)
+        if output:
+            ctx.logger.info('deploy_job: output=%s'%output)
+        
+        # get output and add log to logger
+        cmd_out, cmd_code = client.execute_shell_command(
+            'cat ' + name + '.log',
+            workdir=workdir,
+            wait_result=True)
+        if cmd_out:
+            ctx.logger.info('deploy_job: cmd_out=%s'%cmd_out)
+        
         if exit_code is not 0:
             logger.warning(
                 "failed to deploy job: call '" + call + "', exit code " +
                 str(exit_code))
 
+        
         if not skip_cleanup:
-            if not client.execute_shell_command(
-                    "rm " + name,
-                    workdir=workdir):
+            logger.info("removing %s"%name)
+            if not wm._execute_shell_command(client,
+                                             "rm " + name,
+                                             workdir=workdir):
                 logger.warning("failed removing bootstrap script")
 
     client.close_connection()
@@ -350,17 +393,22 @@ def deploy_job(script,
 @operation
 def send_job(job_options, **kwargs):  # pylint: disable=W0613
     """ Sends a job to the HPC """
+    ctx.logger.info("----send_job-----------")
+    # ctx.logger.info("job_options:" )
+    # for key, value in job_options.iteritems() :
+    #     ctx.logger.info("job_options[%s]=%s"%(key, value) )
+
     simulate = ctx.instance.runtime_properties['simulate']
 
     name = kwargs['name']
-    is_singularity = 'hpc.nodes.singularity_job' in ctx.node.\
-        type_hierarchy
+    is_singularity = 'hpc.nodes.singularity_job' in ctx.node.type_hierarchy
 
     if not simulate:
         workdir = ctx.instance.runtime_properties['workdir']
         wm_type = ctx.instance.runtime_properties['workload_manager']
         client = SshClient(ctx.instance.runtime_properties['credentials'])
 
+        ctx.logger.info("----WORKLOAD_MANAGER-----------")
         wm = WorkloadManager.factory(wm_type)
         if not wm:
             client.close_connection()
@@ -368,12 +416,18 @@ def send_job(job_options, **kwargs):  # pylint: disable=W0613
                 "Workload Manager '" +
                 wm_type +
                 "' not supported.")
-        is_submitted = wm.submit_job(client,
+        slurm_job_id, is_submitted = wm.submit_job(client,
                                      name,
                                      job_options,
                                      is_singularity,
                                      ctx.logger,
                                      workdir=workdir)
+        ctx.logger.info("----WORKLOAD_MANAGER DONE-----------")
+        if slurm_job_id:
+            ctx.logger.info("send_job: slurm_job_id=%s"%slurm_job_id)
+            # ctx.logger.info("send_job: job_options=%s"%job_options)
+            wm.notify_user(client, name, slurm_job_id, job_options, ctx.logger, workdir=workdir)
+            
         client.close_connection()
     else:
         ctx.logger.warning('Instance ' + ctx.instance.id + ' simulated')
@@ -382,17 +436,18 @@ def send_job(job_options, **kwargs):  # pylint: disable=W0613
     if is_submitted:
         ctx.logger.info('Job ' + name + ' (' + ctx.instance.id + ') sent.')
     else:
-        ctx.logger.error('Job ' + name + ' (' + ctx.instance.id +
-                         ') not sent.')
-        raise NonRecoverableError('Job ' + name + ' (' + ctx.instance.id +
-                                  ') not sent.')
+        ctx.logger.error('Job ' + name + ' (' + ctx.instance.id + ') not sent.')
+        raise NonRecoverableError('Job ' + name + ' (' + ctx.instance.id + ') not sent.')
 
     ctx.instance.runtime_properties['job_name'] = name
+    ctx.instance.runtime_properties['job_output'] = str(ctx.instance.runtime_properties['workload_manager']).lower() + '-' + slurm_job_id + '.out'
 
+    ctx.logger.info("----send_job done-----------")
 
 @operation
 def cleanup_job(job_options, skip, **kwargs):  # pylint: disable=W0613
     """Clean the aux files of the job in the HPC"""
+    ctx.logger.info("----cleanup_job-----------")
     if skip:
         return
 
@@ -446,6 +501,7 @@ def cleanup_job(job_options, skip, **kwargs):  # pylint: disable=W0613
 @operation
 def stop_job(job_options, **kwargs):  # pylint: disable=W0613
     """ Stops a job in the HPC """
+    ctx.logger.info('------stop_job------')
     try:
         simulate = ctx.instance.runtime_properties['simulate']
     except KeyError:
@@ -498,6 +554,7 @@ def stop_job(job_options, **kwargs):  # pylint: disable=W0613
 @operation
 def publish(publish_options, **kwargs):
     """ Publish the job outputs """
+    ctx.logger.info('------publish------')
     try:
         simulate = ctx.instance.runtime_properties['simulate']
     except KeyError as exp:
