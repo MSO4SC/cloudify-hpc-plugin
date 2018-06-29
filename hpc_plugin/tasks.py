@@ -473,10 +473,7 @@ def cleanup_job(job_options, skip, **kwargs):  # pylint: disable=W0613
             wm = WorkloadManager.factory(wm_type)
             if not wm:
                 client.close_connection()
-                raise NonRecoverableError(
-                    "Workload Manager '" +
-                    wm_type +
-                    "' not supported.")
+                raise NonRecoverableError("Workload Manager '" + wm_type + "' not supported.")
             is_clean = wm.clean_job_aux_files(client,
                                               name,
                                               job_options,
@@ -490,11 +487,9 @@ def cleanup_job(job_options, skip, **kwargs):  # pylint: disable=W0613
             is_clean = True
 
         if is_clean:
-            ctx.logger.info(
-                'Job ' + name + ' (' + ctx.instance.id + ') cleaned.')
+            ctx.logger.info('Job ' + name + ' (' + ctx.instance.id + ') cleaned.')
         else:
-            ctx.logger.error('Job ' + name + ' (' + ctx.instance.id +
-                             ') not cleaned.')
+            ctx.logger.error('Job ' + name + ' (' + ctx.instance.id + ') not cleaned.')
     except Exception as exp:
         print(traceback.format_exc())
         ctx.logger.error(
@@ -524,10 +519,7 @@ def stop_job(job_options, **kwargs):  # pylint: disable=W0613
             wm = WorkloadManager.factory(wm_type)
             if not wm:
                 client.close_connection()
-                raise NonRecoverableError(
-                    "Workload Manager '" +
-                    wm_type +
-                    "' not supported.")
+                raise NonRecoverableError("Workload Manager '" + wm_type + "' not supported.")
             is_stopped = wm.stop_job(client,
                                      name,
                                      job_options,
@@ -541,13 +533,10 @@ def stop_job(job_options, **kwargs):  # pylint: disable=W0613
             is_stopped = True
 
         if is_stopped:
-            ctx.logger.info(
-                'Job ' + name + ' (' + ctx.instance.id + ') stopped.')
+            ctx.logger.info('Job ' + name + ' (' + ctx.instance.id + ') stopped.')
         else:
-            ctx.logger.error('Job ' + name + ' (' + ctx.instance.id +
-                             ') not stopped.')
-            raise NonRecoverableError('Job ' + name + ' (' + ctx.instance.id +
-                                      ') not stopped.')
+            ctx.logger.error('Job ' + name + ' (' + ctx.instance.id + ') not stopped.')
+            raise NonRecoverableError('Job ' + name + ' (' + ctx.instance.id + ') not stopped.')
     except Exception as exp:
         print(traceback.format_exc())
         ctx.logger.error(
@@ -580,10 +569,7 @@ def publish(publish_options, **kwargs):
                 er = ExternalRepository.factory(publish_item)
                 if not er:
                     client.close_connection()
-                    raise NonRecoverableError(
-                        "External repository '" +
-                        publish_item['type'] +
-                        "' not supported.")
+                    raise NonRecoverableError("External repository '" + publish_item['type'] + "' not supported.")
                 published = er.publish(client, ctx.logger, workdir)
 
             client.close_connection()
@@ -591,13 +577,10 @@ def publish(publish_options, **kwargs):
             ctx.logger.warning('Instance ' + ctx.instance.id + ' simulated')
 
         if published:
-            ctx.logger.info(
-                'Job ' + name + ' (' + ctx.instance.id + ') published.')
+            ctx.logger.info('Job ' + name + ' (' + ctx.instance.id + ') published.')
         else:
-            ctx.logger.error('Job ' + name + ' (' + ctx.instance.id +
-                             ') not published.')
-            raise NonRecoverableError('Job ' + name + ' (' + ctx.instance.id +
-                                      ') not published.')
+            ctx.logger.error('Job ' + name + ' (' + ctx.instance.id + ') not published.')
+            raise NonRecoverableError('Job ' + name + ' (' + ctx.instance.id + ') not published.')
     except Exception as exp:
         print(traceback.format_exc())
         ctx.logger.error(
