@@ -75,7 +75,7 @@ class Slurm(WorkloadManager):
 
     def _build_container_script(self, name, job_settings, logger):
         # check input information correctness
-        logger.info("----_slurm: _build_container_script-----------")
+        # logger.info("----_slurm: _build_container_script-----------")
         # logger.info("job_settings:" )
         # for key, value in job_settings.iteritems() :
         #     logger.info("job_settings[%s]=%s"%(key, str(value)) )
@@ -163,7 +163,7 @@ class Slurm(WorkloadManager):
         if 'max_time' not in job_settings and job_settings['type'] == 'SRUN':
             return {'error': "'SRUN' jobs must define the 'max_time' property"}
 
-        logger.info("_build_job_submission_call: parse_slurm_job_settings")
+        # logger.info("_build_job_submission_call: parse_slurm_job_settings")
         slurm_call += self._parse_slurm_job_settings(name,
                                                      job_settings,
                                                      None, None, logger)
