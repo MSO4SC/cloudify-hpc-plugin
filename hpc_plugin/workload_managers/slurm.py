@@ -49,11 +49,11 @@ class Slurm(WorkloadManager):
         if self.check_job_settings_key(job_settings, 'nodes'):
             _settings += _prefix + ' -N ' +  str(job_settings['nodes']) + _suffix
 
-        if self.check_job_settings_key(job_settings, 'tasks_per_node'):
-            _settings += _prefix + ' --ntasks-per-node=' + str(job_settings['tasks_per_node']) + _suffix
-
         if self.check_job_settings_key(job_settings, 'tasks'):
             _settings += _prefix + ' -n ' + str(job_settings['tasks']) + _suffix
+
+        if self.check_job_settings_key(job_settings, 'tasks_per_node'):
+            _settings += _prefix + ' --ntasks-per-node=' + str(job_settings['tasks_per_node']) + _suffix
 
         if self.check_job_settings_key(job_settings, 'memory'):
             _settings += _prefix + ' --mem=' + str(job_settings['memory']) + _suffix
@@ -134,7 +134,7 @@ class Slurm(WorkloadManager):
         return script
 
     def _build_job_submission_call(self, name, job_settings, logger):
-        logger.info("----_slurm: _build_job_submission_call-----------")
+        # logger.info("----_slurm: _build_job_submission_call-----------")
         # check input information correctness
         if not isinstance(job_settings, dict) or not isinstance(name,
                                                                 basestring):
