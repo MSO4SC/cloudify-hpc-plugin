@@ -383,6 +383,7 @@ class Monitor(object):
 
         # then look for the status of the instances through its name
         states = monitors.get_states(monitor_jobs, self.logger)
+        self.logger.debug("workflows: states=%s"%states)
 
         # finally set job status
         for inst_name, state in states.iteritems():
@@ -432,9 +433,9 @@ def run_jobs(**kwargs):  # pylint: disable=W0613
         new_exec_nodes = []
         for node_name, exec_node in monitor.get_executions_iterator():
             status = exec_node.check_status()
-            ctx.logger.info("node_name=%s status=%s"%(str(node_name), status))
+            ctx.logger.info("run_jobs: node_name=%s status=%s"%(str(node_name), status))
             if status:
-                ctx.logger.info("exec_node=%s"%str(exec_node))
+                ctx.logger.info("run_jobs: exec_node=%s"%str(exec_node))
                 if exec_node.completed:
                     exec_node.clean_all_instances()
                     exec_nodes_finished.append(node_name)
@@ -443,13 +444,16 @@ def run_jobs(**kwargs):  # pylint: disable=W0613
                         new_exec_nodes.append(new_node)
             else:
                 # Something went wrong in the node, cancel execution
+                ctx.logger.info("run_jobs: Something went wrong in the node, cancel execution")
                 cancel_all(monitor.get_executions_iterator())
                 return
 
         # remove finished nodes
+        ctx.logger.info("run_jobs: remove finished nodes")
         for node_name in exec_nodes_finished:
             monitor.finish_node(node_name)
         # perform new executions
+        ctx.logger.info("run_jobs: perform new executions")
         tasks_list = []
         for new_node in new_exec_nodes:
             tasks_list += new_node.queue_all_instances()
@@ -457,6 +461,7 @@ def run_jobs(**kwargs):  # pylint: disable=W0613
         wait_tasks_to_finish(tasks_list)
 
     # print "end while loop"
+    ctx.logger.info("run_jobs: end while loop")
     if monitor.is_something_executing():
         cancel_all(monitor.get_executions_iterator())
 
