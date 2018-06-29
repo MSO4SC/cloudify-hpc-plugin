@@ -55,13 +55,6 @@ def preconfigure_job(config,
     ctx.source.instance.runtime_properties['workdir'] = \
         ctx.target.instance.runtime_properties['workdir']
 
-    ctx.logger.info("credentials:" )
-    for key, value in config['credentials'].iteritems() :
-        if not 'password' in key:
-            ctx.logger.info("config['credentials'][%s]=%s"%(key, value) )
-        else:
-            ctx.logger.info("config['credentials'][%s]=%s"%(key, '******') )
-    ctx.logger.info("HPC host: %s"%config['credentials']['host'])
 
 @operation
 def prepare_hpc(config,
@@ -150,7 +143,7 @@ def start_monitoring_hpc(config,
     """ Starts monitoring using the Monitor orchestrator """
     external_monitor_entrypoint = None  # FIXME: external monitor disabled
     if external_monitor_entrypoint:
-        ctx.logger.info('Starting infrastructure monitor..')
+        ctx.logger.debug('Starting infrastructure monitor..')
 
         if not simulate:
             credentials = config['credentials']
@@ -251,7 +244,7 @@ def bootstrap_job(deployment,
         ctx.logger.info('getting working credentials..')
         workdir = ctx.instance.runtime_properties['workdir']
         name = "bootstrap_" + ctx.instance.id + ".sh"
-        ctx.logger.info('script..%s'%name)
+        ctx.logger.info('script..%s' % name)
         ctx.logger.info('workload_manager..')
         wm_type = ctx.instance.runtime_properties['workload_manager']
 
@@ -293,12 +286,11 @@ def revert_job(deployment, skip_cleanup, **kwarsgs):  # pylint: disable=W0613
             if 'job_output' in ctx.instance.runtime_properties and ctx.instance.runtime_properties['job_output']:
                 job_output = ctx.instance.runtime_properties['job_output']
 
-                ctx.logger.info('revert_job: job_output=%s'%job_output)
                 client = SshClient(credentials)
                 wm = WorkloadManager.factory(wm_type)
                 wm.display_job_output(client, job_output, ctx.logger, workdir)
                 client.close_connection()
-            
+
             is_reverted = deploy_job(
                 deployment['revert'],
                 inputs,
@@ -341,9 +333,7 @@ def deploy_job(script,
     # Execute the script and manage the output
     ctx.logger.info('Creating shell script..')
     client = SshClient(credentials)
-    ctx.logger.info('deploy_job: script=%s'%script)
     if 'revert' in script:
-        # ctx.logger.info('here we are in revert')
         exit_code = wm.send_notify_user(client,
                                         name,
                                         logger,
@@ -357,30 +347,27 @@ def deploy_job(script,
         call = "./" + name
         for dinput in inputs:
             call += ' ' + dinput
-        # ctx.logger.info('deploy_job: call=%s'%call)
         output, exit_code = client.execute_shell_command(
             call,
             workdir=workdir,
             wait_result=True)
         if output:
-            ctx.logger.info('deploy_job: output=%s'%output)
-        
+            ctx.logger.info('deploy_job: output=%s' % output)
+
         # get output and add log to logger
         cmd_out, cmd_code = client.execute_shell_command(
             'cat ' + name + '.log',
             workdir=workdir,
             wait_result=True)
         if cmd_out:
-            ctx.logger.info('deploy_job: cmd_out=%s'%cmd_out)
-        
+            ctx.logger.info('deploy_job: cmd_out=%s' % cmd_out)
+
         if exit_code is not 0:
             logger.warning(
                 "failed to deploy job: call '" + call + "', exit code " +
                 str(exit_code))
 
-        
         if not skip_cleanup:
-            logger.info("removing %s"%name)
             if not wm._execute_shell_command(client,
                                              "rm " + name,
                                              workdir=workdir):
@@ -394,10 +381,6 @@ def deploy_job(script,
 @operation
 def send_job(job_options, **kwargs):  # pylint: disable=W0613
     """ Sends a job to the HPC """
-    ctx.logger.info("----send_job-----------")
-    # ctx.logger.info("job_options:" )
-    # for key, value in job_options.iteritems() :
-    #     ctx.logger.info("job_options[%s]=%s"%(key, value) )
 
     simulate = ctx.instance.runtime_properties['simulate']
 
@@ -410,7 +393,6 @@ def send_job(job_options, **kwargs):  # pylint: disable=W0613
         wm_type = ctx.instance.runtime_properties['workload_manager']
         client = SshClient(ctx.instance.runtime_properties['credentials'])
 
-        ctx.logger.info("----WORKLOAD_MANAGER-----------")
         wm = WorkloadManager.factory(wm_type)
         if not wm:
             client.close_connection()
@@ -419,17 +401,14 @@ def send_job(job_options, **kwargs):  # pylint: disable=W0613
                 wm_type +
                 "' not supported.")
         slurm_job_id, is_submitted = wm.submit_job(client,
-                                     name,
-                                     job_options,
-                                     is_singularity,
-                                     ctx.logger,
-                                     workdir=workdir)
-        ctx.logger.info("----WORKLOAD_MANAGER DONE-----------")
+                                                   name,
+                                                   job_options,
+                                                   is_singularity,
+                                                   ctx.logger,
+                                                   workdir=workdir)
         if slurm_job_id:
-            ctx.logger.info("send_job: slurm_job_id=%s"%slurm_job_id)
-            # ctx.logger.info("send_job: job_options=%s"%job_options)
             wm.notify_user(client, name, slurm_job_id, job_options, ctx.logger, workdir=workdir)
-            
+
         client.close_connection()
     else:
         ctx.logger.warning('Instance ' + ctx.instance.id + ' simulated')
@@ -445,12 +424,10 @@ def send_job(job_options, **kwargs):  # pylint: disable=W0613
     if slurm_job_id:
         ctx.instance.runtime_properties['job_output'] = str(ctx.instance.runtime_properties['workload_manager']).lower() + '-' + slurm_job_id + '.out'
 
-    ctx.logger.info("----send_job done-----------")
 
 @operation
 def cleanup_job(job_options, skip, **kwargs):  # pylint: disable=W0613
     """Clean the aux files of the job in the HPC"""
-    ctx.logger.info("----cleanup_job-----------")
     if skip:
         return
 
@@ -499,7 +476,6 @@ def cleanup_job(job_options, skip, **kwargs):  # pylint: disable=W0613
 @operation
 def stop_job(job_options, **kwargs):  # pylint: disable=W0613
     """ Stops a job in the HPC """
-    ctx.logger.info('------stop_job------')
     try:
         simulate = ctx.instance.runtime_properties['simulate']
     except KeyError:
@@ -546,7 +522,6 @@ def stop_job(job_options, **kwargs):  # pylint: disable=W0613
 @operation
 def publish(publish_options, **kwargs):
     """ Publish the job outputs """
-    ctx.logger.info('------publish------')
     try:
         simulate = ctx.instance.runtime_properties['simulate']
     except KeyError as exp:

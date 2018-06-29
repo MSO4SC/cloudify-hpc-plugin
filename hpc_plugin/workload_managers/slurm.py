@@ -17,6 +17,7 @@
 
 from workload_manager import WorkloadManager, get_prevailing_state
 
+
 class Slurm(WorkloadManager):
 
     # Check if exists and has content
@@ -44,10 +45,10 @@ class Slurm(WorkloadManager):
             _settings += _prefix + ' -t ' + str(job_settings['max_time']) + _suffix
 
         if self.check_job_settings_key(job_settings, 'partition'):
-            _settings += _prefix + ' -p ' +  str(job_settings['partition']) + _suffix
+            _settings += _prefix + ' -p ' + str(job_settings['partition']) + _suffix
 
         if self.check_job_settings_key(job_settings, 'nodes'):
-            _settings += _prefix + ' -N ' +  str(job_settings['nodes']) + _suffix
+            _settings += _prefix + ' -N ' + str(job_settings['nodes']) + _suffix
 
         if self.check_job_settings_key(job_settings, 'tasks'):
             _settings += _prefix + ' -n ' + str(job_settings['tasks']) + _suffix
@@ -69,24 +70,15 @@ class Slurm(WorkloadManager):
 
         if self.check_job_settings_key(job_settings, 'mail_type'):
             _settings += _prefix + ' --mail-type=' + str(job_settings['mail_type']) + _suffix
-        # logger.info("settings=%s"%_settings)
 
         return _settings
 
     def _build_container_script(self, name, job_settings, logger):
         # check input information correctness
-        # logger.info("----_slurm: _build_container_script-----------")
-        # logger.info("job_settings:" )
-        # for key, value in job_settings.iteritems() :
-        #     logger.info("job_settings[%s]=%s"%(key, str(value)) )
-
-        # logger.info("check job_settings type:%s"%isinstance(job_settings, dict) )
-        # logger.info("name=%s is_string=%s"%(name,isinstance(name, basestring)) )
         if not isinstance(job_settings, dict) or not isinstance(name, basestring):
             logger.error("Singularity Script malformed")
             return None
 
-        # logger.info("check for image and command key in job_settings" )
         if 'image' not in job_settings or 'command' not in job_settings or 'max_time' not in job_settings:
             logger.error("Singularity Script malformed")
             return None
@@ -95,7 +87,7 @@ class Slurm(WorkloadManager):
         script += self._parse_slurm_job_settings(name,
                                                  job_settings,
                                                  '#SBATCH', '\n', logger)
-        
+
         script += '\n# DYNAMIC VARIABLES\n\n'
 
         # first set modules
@@ -117,12 +109,10 @@ class Slurm(WorkloadManager):
 
         # add executable and arguments
         script += job_settings['image'] + ' ' + job_settings['command'] + '\n'
-        # logger.info("script=%s"%script)
 
         return script
 
     def _build_email_script(self, name, slurm_job_id, job_settings, logger):
-        # logger.info("_build_email_script")
         script = '#!/bin/bash -l\n\n'
         if 'mail_user' in job_settings:
             script += 'if [ -f slurm-' + slurm_job_id + '.out ]; then'
@@ -130,11 +120,9 @@ class Slurm(WorkloadManager):
             script += ' \" -a slurm-' + slurm_job_id + '.out '
             script += job_settings['mail_user'] + '\n'
             script += 'fi\n'
-            # logger.info("_build_email_script: email_content=%s"%script)
         return script
 
     def _build_job_submission_call(self, name, job_settings, logger):
-        # logger.info("----_slurm: _build_job_submission_call-----------")
         # check input information correctness
         if not isinstance(job_settings, dict) or not isinstance(name,
                                                                 basestring):
@@ -163,7 +151,6 @@ class Slurm(WorkloadManager):
         if 'max_time' not in job_settings and job_settings['type'] == 'SRUN':
             return {'error': "'SRUN' jobs must define the 'max_time' property"}
 
-        # logger.info("_build_job_submission_call: parse_slurm_job_settings")
         slurm_call += self._parse_slurm_job_settings(name,
                                                      job_settings,
                                                      None, None, logger)
@@ -208,7 +195,6 @@ class Slurm(WorkloadManager):
     def get_partitions(self, ssh_client, logger):
         # TODO(emepetres) set start time of consulting
         # (sacct only check current day)
-        # logger.info("----getting partitions")
         call = "sinfo -h -a -o \"%R\" "
         output, exit_code = ssh_client.execute_shell_command(call,
                                                              wait_result=True)
@@ -216,28 +202,27 @@ class Slurm(WorkloadManager):
         partitions = []
         if exit_code == 0:
             data = output.split('\n')
-            data.pop() # last item is an empty string
-            partitions = data #self._parse_partitions(output)
-            # logger.info("partitions=%s"%partitions)
+            if data:
+                # data.pop() # last item is an empty string
+                partitions = data
         else:
             logger.error("failed to get_partitions with code " + str(exit_code) + ":\n" + output)
 
-        # logger.info("----getting partitions done")
+        logger.debug("partitions=%s" % partitions)
         return partitions
 
     def get_reservations(self, ssh_client, logger):
         # TODO(emepetres) set start time of consulting
         # (sacct only check current day)
-        # logger.info("----getting reservations")
         call = "sinfo -h -T "
         output, exit_code = ssh_client.execute_shell_command(call,
                                                              wait_result=True)
 
         partitions = []
         if exit_code == 0:
-            data = output.split('\n') # should read only the 1srt item per lines
-            data.pop() # last item is an empty string
-            partitions = data #self._parse_partitions(output)
+            data = output.split('\n')[0]
+            if data:
+                partitions = data
         else:
             logger.error("failed to get_reservations with code " + str(exit_code) + ":\n" + output)
 
@@ -246,17 +231,14 @@ class Slurm(WorkloadManager):
     def get_states(self, ssh_client, names, logger):
         # TODO(emepetres) set start time of consulting
         # (sacct only check current day)
-        # logger.info("----get_states (names=%s)"%names)
         call = "sacct -n -o JobName,State -X -P --name=" + ','.join(names)
         output, exit_code = ssh_client.execute_shell_command(call, wait_result=True)
-        # logger.info("----get_states output=%s, exit_code=%s"%(output, exit_code))
 
         states = {}
         if exit_code == 0:
             states = self._parse_sacct(output)
         else:
             logger.error("failed to get_states with code " + str(exit_code) + ":\n" + output)
-        logger.info("----get_states states=%s"%states)
         return states
 
     def _parse_sacct(self, sacct_output):
