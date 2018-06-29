@@ -441,6 +441,7 @@ def run_jobs(**kwargs):  # pylint: disable=W0613
                     exec_nodes_finished.append(node_name)
                     new_nodes_to_execute = exec_node.get_children_ready()
                     for new_node in new_nodes_to_execute:
+                        ctx.logger.info("run_jobs: new_job: %s"%str(new_node))
                         new_exec_nodes.append(new_node)
             else:
                 # Something went wrong in the node, cancel execution
