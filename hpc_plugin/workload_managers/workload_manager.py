@@ -106,6 +106,9 @@ class WorkloadManager(object):
         if workload_manager == "SLURM":
             from slurm import Slurm
             return Slurm()
+        if workload_manager == "BASH":
+            from bash import Bash
+            return Bash()
         else:
             return None
     factory = staticmethod(factory)
@@ -290,6 +293,28 @@ class WorkloadManager(object):
         @return a dictionary of job names and its states
         """
         raise NotImplementedError("'get_states' not implemented.")
+
+    def build_raw_states_call(self, names, logger):
+        """
+        Builds the call to get the states in its raw value
+
+        @type names: list
+        @param names: list of the job names to retrieve their states
+        @rtype string
+        @return command that will output the states in raw format
+        """
+        raise NotImplementedError("'build_raw_states_call' not implemented.")
+
+    def parse_states(self, raw_states, logger):
+        """
+        Parse the raw states values to our common format
+
+        @type raw_states: string
+        @param names: states value in raw format
+        @rtype dict
+        @return a dictionary of job names and its states
+        """
+        raise NotImplementedError("'parse_states' not implemented.")
 
     def _build_container_script(self,
                                 name,

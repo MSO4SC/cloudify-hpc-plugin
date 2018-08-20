@@ -50,6 +50,7 @@ class JobGraphInstance(object):
                                     "workload_manager"])
             prefix = (instance._node_instance.  # pylint: disable=W0212
                       runtime_properties["job_prefix"])
+            self.workdir = instance.runtime_properties['workdir']
             external_monitor_type = (instance.  # pylint: disable=W0212
                                      _node_instance.runtime_properties[
                                          "external_monitor_type"])
@@ -175,7 +176,7 @@ class JobGraphNode(object):
         self.name = node.id
         self.type = node.type
         self.cfy_node = node
-        self.is_job = 'hpc.nodes.job' in node.type_hierarchy
+        self.is_job = 'hpc.nodes.Job' in node.type_hierarchy
 
         if self.is_job:
             self.status = 'WAITING'
@@ -362,6 +363,7 @@ class Monitor(object):
                             monitor_jobs[job_instance.host] = {
                                 'config': job_instance.monitor_config,
                                 'type': job_instance.monitor_type,
+                                'workdir': job_instance.workdir,
                                 'names': [job_instance.name]
                             }
                     else:

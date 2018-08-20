@@ -65,7 +65,7 @@ It adds a new resource type, <<hpc.nodes.Compute>>, that represents a HPC infras
 
 In order to Cloudify orchestrates properly the HPC resources, the help of an external monitor system is needed, from which the job status is retrieved. In the next release the plugin will also use the monitor to predict the overall state of the HPC and take best decisions about which partition and infrastructure to use for each job.
 
-IMPORTANT: Only {uri-slurm}[Slurm] based HPCs are supported for now as well as only {uri-prometheus}[Prometheus] is supported as monitoring system.
+IMPORTANT: Only {uri-slurm}[Slurm] based HPCs are supported for now as well as only {uri-prometheus}[Prometheus] is supported as external monitoring system.
 
 
 
@@ -352,6 +352,8 @@ The following plugin relationship operations are defined in the HPC plugin:
 To run the tests Cloudify CLI has to be installed locally. Example blueprints can be found at _tests/blueprint_ folder and have the `simulate` option active by default. Blueprint to be tested can be changed at _workflows_tests.py_ in the _tests_ folder.
 
 To run the tests against a real HPC / Monitor system, copy the file _blueprint-inputs.yaml_ to _local-blueprint-inputs.yaml_ and edit with your credentials. Then edit the blueprint commenting the simulate option, and other parameters as you wish (e.g change the name ft2_node for your own hpc name).
+
+TODO: keys file (añadir id_rsa)
 
 [NOTE]
 ==========================

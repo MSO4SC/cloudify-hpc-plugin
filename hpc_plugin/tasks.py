@@ -26,44 +26,38 @@ from external_repositories.external_repository import ExternalRepository
 
 
 @operation
-def preconfigure_job(config,
-                     external_monitor_entrypoint,
-                     external_monitor_port,
-                     external_monitor_type,
-                     external_monitor_orchestrator_port,
-                     job_prefix,
-                     simulate,
-                     **kwargs):  # pylint: disable=W0613
-    """ Set the job with the HPC credentials """
-    ctx.logger.info('Preconfiguring HPC job..')
+def preconfigure_wm(config,
+                    simulate,
+                    **kwargs):  # pylint: disable=W0613
+    """ Get workload manager config from infrastructure """
+    ctx.logger.info('Preconfiguring workload manager..')
 
-    ctx.source.instance.runtime_properties['credentials'] = \
-        config['credentials']
-    ctx.source.instance.runtime_properties['external_monitor_entrypoint'] = \
-        external_monitor_entrypoint
-    ctx.source.instance.runtime_properties['external_monitor_port'] = \
-        external_monitor_port
-    ctx.source.instance.runtime_properties['external_monitor_type'] = \
-        external_monitor_type
-    ctx.source.instance.runtime_properties['monitor_orchestrator_port'] = \
-        external_monitor_orchestrator_port
-    ctx.source.instance.runtime_properties['workload_manager'] = \
-        config['workload_manager']
-    ctx.source.instance.runtime_properties['simulate'] = simulate
-    ctx.source.instance.runtime_properties['job_prefix'] = job_prefix
+    if not simulate:
+        credentials = config['credentials']
+        if 'ip' in ctx.target.instance.runtime_properties:
+            credentials['host'] = \
+                ctx.target.instance.runtime_properties['ip']
+            ctx.source.instance.runtime_properties['credentials'] = \
+                credentials
 
-    ctx.source.instance.runtime_properties['workdir'] = \
-        ctx.target.instance.runtime_properties['workdir']
+        if 'networks' in ctx.source.instance.runtime_properties:
+            ctx.source.instance.runtime_properties['networks'] = \
+                ctx.target.instance.runtime_properties['networks']
+        else:
+            ctx.source.instance.runtime_properties['networks'] = {}
+        ctx.logger.info('..preconfigured ')
+    else:
+        ctx.logger.warning('Workload manager simulated')
 
 
 @operation
-def prepare_hpc(config,
-                base_dir,
-                workdir_prefix,
-                simulate,
-                **kwargs):  # pylint: disable=W0613
-    """ Tries to connect to a login node """
-    ctx.logger.info('Connecting to login node..')
+def configure_execution(config,
+                        base_dir,
+                        workdir_prefix,
+                        simulate,
+                        **kwargs):  # pylint: disable=W0613
+    """ Creates the working directory for the execution """
+    ctx.logger.info('Connecting to workload manager..')
     if not simulate:
         wm_type = config['workload_manager']
         wm = WorkloadManager.factory(wm_type)
@@ -72,12 +66,17 @@ def prepare_hpc(config,
                 "Workload Manager '" +
                 wm_type +
                 "' not supported.")
+
+        credentials = config['credentials']
+        if 'credentials' in ctx.instance.runtime_properties:
+            credentials = ctx.instance.runtime_properties['credentials']
         try:
-            client = SshClient(config['credentials'])
+            client = SshClient(credentials)
         except Exception as exp:
             raise NonRecoverableError(
-                "Failed trying to connect to HPC: " + str(exp))
+                "Failed trying to connect to workload manager: " + str(exp))
 
+        # TODO: use command according to wm
         _, exit_code = client.execute_shell_command(
             'uname',
             wait_result=True)
@@ -85,7 +84,8 @@ def prepare_hpc(config,
         if exit_code is not 0:
             client.close_connection()
             raise NonRecoverableError(
-                "Failed executing on the HPC: exit code " + str(exit_code))
+                "Failed executing on the workload manager: exit code " +
+                str(exit_code))
 
         ctx.instance.runtime_properties['login'] = exit_code is 0
 
@@ -100,16 +100,19 @@ def prepare_hpc(config,
                 "failed to create the working directory, base dir: " +
                 base_dir)
         ctx.instance.runtime_properties['workdir'] = workdir
-        ctx.logger.info('..HPC ready on ' + workdir)
+        ctx.logger.info('..workload manager ready to be used on ' + workdir)
     else:
         ctx.instance.runtime_properties['login'] = True
         ctx.instance.runtime_properties['workdir'] = "simulation"
-        ctx.logger.warning('HPC login connection simulated')
+        ctx.logger.warning('Workload manager connection simulated')
 
 
 @operation
-def cleanup_hpc(config, skip, simulate, **kwargs):  # pylint: disable=W0613
-    """ Tries to connect to a login node """
+def cleanup_execution(config,
+                      skip,
+                      simulate,
+                      **kwargs):  # pylint: disable=W0613
+    """ Cleans execution working directory """
     if skip:
         return
 
@@ -123,14 +126,18 @@ def cleanup_hpc(config, skip, simulate, **kwargs):  # pylint: disable=W0613
                 "Workload Manager '" +
                 wm_type +
                 "' not supported.")
-        client = SshClient(config['credentials'])
+
+        credentials = config['credentials']
+        if 'credentials' in ctx.instance.runtime_properties:
+            credentials = ctx.instance.runtime_properties['credentials']
+        client = SshClient(credentials)
         _, exit_code = client.execute_shell_command(
             'rm -r ' + workdir,
             wait_result=True)
         client.close_connection()
         ctx.logger.info('..all clean.')
     else:
-        ctx.logger.warning('HPC clean up simulated.')
+        ctx.logger.warning('clean up simulated.')
 
 
 @operation
@@ -147,6 +154,8 @@ def start_monitoring_hpc(config,
 
         if not simulate:
             credentials = config['credentials']
+            if 'credentials' in ctx.instance.runtime_properties:
+                credentials = ctx.instance.runtime_properties['credentials']
             workload_manager = config['workload_manager']
             country_tz = config['country_tz']
 
@@ -191,6 +200,8 @@ def stop_monitoring_hpc(config,
 
         if not simulate:
             credentials = config['credentials']
+            if 'credentials' in ctx.instance.runtime_properties:
+                credentials = ctx.instance.runtime_properties['credentials']
             workload_manager = config['workload_manager']
             country_tz = config['country_tz']
 
@@ -223,6 +234,42 @@ def stop_monitoring_hpc(config,
                                                               .status_code))
         else:
             ctx.logger.warning('HPC monitor simulated')
+
+
+@operation
+def preconfigure_job(config,
+                     external_monitor_entrypoint,
+                     external_monitor_port,
+                     external_monitor_type,
+                     external_monitor_orchestrator_port,
+                     job_prefix,
+                     simulate,
+                     **kwargs):  # pylint: disable=W0613
+    """ Set the job with the HPC credentials """
+    ctx.logger.info('Preconfiguring HPC job..')
+
+    if 'credentials' not in ctx.target.instance.runtime_properties:
+        ctx.source.instance.runtime_properties['credentials'] = \
+            config['credentials']
+    else:
+        ctx.source.instance.runtime_properties['credentials'] = \
+            ctx.target.instance.runtime_properties['credentials']
+
+    ctx.source.instance.runtime_properties['external_monitor_entrypoint'] = \
+        external_monitor_entrypoint
+    ctx.source.instance.runtime_properties['external_monitor_port'] = \
+        external_monitor_port
+    ctx.source.instance.runtime_properties['external_monitor_type'] = \
+        external_monitor_type
+    ctx.source.instance.runtime_properties['monitor_orchestrator_port'] = \
+        external_monitor_orchestrator_port
+    ctx.source.instance.runtime_properties['workload_manager'] = \
+        config['workload_manager']
+    ctx.source.instance.runtime_properties['simulate'] = simulate
+    ctx.source.instance.runtime_properties['job_prefix'] = job_prefix
+
+    ctx.source.instance.runtime_properties['workdir'] = \
+        ctx.target.instance.runtime_properties['workdir']
 
 
 @operation

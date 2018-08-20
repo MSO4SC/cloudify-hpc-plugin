@@ -199,23 +199,14 @@ class Slurm(WorkloadManager):
         return "scancel --name " + name
 
 # Monitor
-    def get_states(self, ssh_client, names, logger):
+    def build_raw_states_call(self, ssh_client, names, logger):
         # TODO(emepetres) set start time of consulting
         # (sacct only check current day)
-        call = "sacct -n -o JobName,State -X -P --name=" + ','.join(names)
-        output, exit_code = ssh_client.execute_shell_command(
-            call,
-            wait_result=True)
+        return "sacct -n -o JobName,State -X -P --name=" + ','.join(names)
 
-        states = {}
-        if exit_code == 0:
-            states = self._parse_sacct(output)
-
-        return states
-
-    def _parse_sacct(self, sacct_output):
+    def parse_states(self, raw_states, logger):
         """ Parse two colums sacct entries into a dict """
-        jobs = sacct_output.splitlines()
+        jobs = raw_states.splitlines()
         parsed = {}
         if jobs and (len(jobs) > 1 or jobs[0] is not ''):
             for job in jobs:

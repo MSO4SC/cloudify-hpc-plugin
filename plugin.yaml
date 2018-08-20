@@ -10,14 +10,14 @@ plugins:
         # "plugins" directory.
         source: https://github.com/MSO4SC/cloudify-hpc-plugin/archive/canary.zip
         package_name: cloudify-hpc-plugin
-        package_version: '1.3.1'
+        package_version: '1.4'
 
 workflows:
     run_jobs:
         mapping: hpc.hpc_plugin.workflows.run_jobs
 
 node_types:
-    hpc.nodes.Compute:
+    hpc.nodes.WorkloadManager:
         derived_from: cloudify.nodes.Compute
         properties:
             config:
@@ -63,8 +63,8 @@ node_types:
                     install_method: none
         interfaces:
             cloudify.interfaces.lifecycle:
-                start:
-                    implementation: hpc.hpc_plugin.tasks.prepare_hpc
+                configure:
+                    implementation: hpc.hpc_plugin.tasks.configure_execution
                     inputs:
                         config:
                             default: { get_property: [SELF, config] }
@@ -74,8 +74,8 @@ node_types:
                             default: { get_property: [SELF, workdir_prefix] }
                         simulate:
                             default: { get_property: [SELF, simulate] }
-                stop:
-                    implementation: hpc.hpc_plugin.tasks.cleanup_hpc
+                delete:
+                    implementation: hpc.hpc_plugin.tasks.cleanup_execution
                     inputs:
                         config:
                             default: { get_property: [SELF, config] }
@@ -111,7 +111,7 @@ node_types:
                         simulate:
                             default: { get_property: [SELF, simulate] }
 
-    hpc.nodes.job:
+    hpc.nodes.Job:
         derived_from: cloudify.nodes.Root
         properties:
             deployment:
@@ -168,11 +168,22 @@ node_types:
                         job_options:
                             default: { get_property: [SELF, job_options] }
     
-    hpc.nodes.singularity_job:
-        derived_from: hpc.nodes.job
+    hpc.nodes.SingularityJob:
+        derived_from: hpc.nodes.Job
 
 relationships:
-    job_contained_in_hpc:
+    wm_contained_in:
+        derived_from: cloudify.relationships.contained_in
+        source_interfaces:
+            cloudify.interfaces.relationship_lifecycle:
+                preconfigure:
+                    implementation: hpc.hpc_plugin.tasks.preconfigure_wm
+                    inputs:
+                        config: 
+                            default: { get_property: [SOURCE, config] }
+                        simulate:
+                            default: { get_property: [SOURCE, simulate] }
+    job_managed_by_wm:
         derived_from: cloudify.relationships.contained_in
         source_interfaces:
             cloudify.interfaces.relationship_lifecycle:
@@ -193,6 +204,5 @@ relationships:
                             default: { get_property: [TARGET, job_prefix] }
                         simulate:
                             default: { get_property: [TARGET, simulate] }
-
     job_depends_on:
         derived_from: cloudify.relationships.depends_on

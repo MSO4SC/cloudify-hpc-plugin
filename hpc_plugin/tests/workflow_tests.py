@@ -31,13 +31,13 @@ class TestPlugin(unittest.TestCase):
         inputs_file = 'blueprint-inputs.yaml'
         if os.path.isfile(os.path.join('hpc_plugin',
                                        'tests',
-                                       'blueprint',
+                                       'inputs',
                                        'local-blueprint-inputs.yaml')):
             inputs_file = 'local-blueprint-inputs.yaml'
         inputs = {}
         with open(os.path.join('hpc_plugin',
                                'tests',
-                               'blueprint',
+                               'inputs',
                                inputs_file),
                   'r') as stream:
             try:
@@ -47,14 +47,12 @@ class TestPlugin(unittest.TestCase):
 
         return inputs
 
-    @workflow_test(os.path.join('blueprint', 'blueprint_srun.yaml'),
-                   resources_to_copy=[(os.path.join('blueprint', 'hpc_plugin',
-                                                    'test_plugin.yaml'),
-                                       'hpc_plugin'),
-                                      (os.path.join('blueprint', 'scripts',
+    @workflow_test(os.path.join('blueprints', 'blueprint_srun.yaml'),
+                   copy_plugin_yaml=True,
+                   resources_to_copy=[(os.path.join('blueprints', 'scripts',
                                                     'bootstrap_example.sh'),
                                        'scripts'),
-                                      (os.path.join('blueprint', 'scripts',
+                                      (os.path.join('blueprints', 'scripts',
                                                     'revert_example.sh'),
                                        'scripts')],
                    inputs='set_inputs')
@@ -75,15 +73,13 @@ class TestPlugin(unittest.TestCase):
         else:
             logging.warning('[WARNING] Login could not be tested')
 
-    @workflow_test(os.path.join('blueprint', 'blueprint_sbatch.yaml'),
-                   resources_to_copy=[(os.path.join('blueprint', 'hpc_plugin',
-                                                    'test_plugin.yaml'),
-                                       'hpc_plugin'),
-                                      (os.path.join('blueprint', 'scripts',
+    @workflow_test(os.path.join('blueprints', 'blueprint_sbatch.yaml'),
+                   copy_plugin_yaml=True,
+                   resources_to_copy=[(os.path.join('blueprints', 'scripts',
                                                     'bootstrap_' +
                                                     'sbatch_example.sh'),
                                        'scripts'),
-                                      (os.path.join('blueprint', 'scripts',
+                                      (os.path.join('blueprints', 'scripts',
                                                     'revert_' +
                                                     'sbatch_example.sh'),
                                        'scripts')],
@@ -105,15 +101,13 @@ class TestPlugin(unittest.TestCase):
         else:
             logging.warning('[WARNING] Login could not be tested')
 
-    @workflow_test(os.path.join('blueprint', 'blueprint_sbatch_output.yaml'),
-                   resources_to_copy=[(os.path.join('blueprint', 'hpc_plugin',
-                                                    'test_plugin.yaml'),
-                                       'hpc_plugin'),
-                                      (os.path.join('blueprint', 'scripts',
+    @workflow_test(os.path.join('blueprints', 'blueprint_sbatch_output.yaml'),
+                   copy_plugin_yaml=True,
+                   resources_to_copy=[(os.path.join('blueprints', 'scripts',
                                                     'bootstrap_' +
                                                     'sbatch_example.sh'),
                                        'scripts'),
-                                      (os.path.join('blueprint', 'scripts',
+                                      (os.path.join('blueprints', 'scripts',
                                                     'revert_' +
                                                     'sbatch_example.sh'),
                                        'scripts')],
@@ -135,15 +129,13 @@ class TestPlugin(unittest.TestCase):
         else:
             logging.warning('[WARNING] Login could not be tested')
 
-    @workflow_test(os.path.join('blueprint', 'blueprint_sbatch_scale.yaml'),
-                   resources_to_copy=[(os.path.join('blueprint', 'hpc_plugin',
-                                                    'test_plugin.yaml'),
-                                       'hpc_plugin'),
-                                      (os.path.join('blueprint', 'scripts',
+    @workflow_test(os.path.join('blueprints', 'blueprint_sbatch_scale.yaml'),
+                   copy_plugin_yaml=True,
+                   resources_to_copy=[(os.path.join('blueprints', 'scripts',
                                                     'bootstrap_' +
                                                     'sbatch_scale_example.sh'),
                                        'scripts'),
-                                      (os.path.join('blueprint', 'scripts',
+                                      (os.path.join('blueprints', 'scripts',
                                                     'revert_' +
                                                     'sbatch_example.sh'),
                                        'scripts')],
@@ -165,15 +157,13 @@ class TestPlugin(unittest.TestCase):
         else:
             logging.warning('[WARNING] Login could not be tested')
 
-    @workflow_test(os.path.join('blueprint', 'blueprint_singularity.yaml'),
-                   resources_to_copy=[(os.path.join('blueprint', 'hpc_plugin',
-                                                    'test_plugin.yaml'),
-                                       'hpc_plugin'),
-                                      (os.path.join('blueprint', 'scripts',
+    @workflow_test(os.path.join('blueprints', 'blueprint_singularity.yaml'),
+                   copy_plugin_yaml=True,
+                   resources_to_copy=[(os.path.join('blueprints', 'scripts',
                                                     'singularity_' +
                                                     'bootstrap_example.sh'),
                                        'scripts'),
-                                      (os.path.join('blueprint', 'scripts',
+                                      (os.path.join('blueprints', 'scripts',
                                                     'singularity_' +
                                                     'revert_example.sh'),
                                        'scripts')],
@@ -195,16 +185,14 @@ class TestPlugin(unittest.TestCase):
         else:
             logging.warning('[WARNING] Login could not be tested')
 
-    @workflow_test(os.path.join('blueprint',
+    @workflow_test(os.path.join('blueprints',
                                 'blueprint_singularity_scale.yaml'),
-                   resources_to_copy=[(os.path.join('blueprint', 'hpc_plugin',
-                                                    'test_plugin.yaml'),
-                                       'hpc_plugin'),
-                                      (os.path.join('blueprint', 'scripts',
+                   copy_plugin_yaml=True,
+                   resources_to_copy=[(os.path.join('blueprints', 'scripts',
                                                     'singularity_' +
                                                     'bootstrap_example.sh'),
                                        'scripts'),
-                                      (os.path.join('blueprint', 'scripts',
+                                      (os.path.join('blueprints', 'scripts',
                                                     'singularity_' +
                                                     'revert_example.sh'),
                                        'scripts')],
@@ -226,29 +214,27 @@ class TestPlugin(unittest.TestCase):
         else:
             logging.warning('[WARNING] Login could not be tested')
 
-    @workflow_test(os.path.join('blueprint', 'blueprint_four.yaml'),
-                   resources_to_copy=[(os.path.join('blueprint', 'hpc_plugin',
-                                                    'test_plugin.yaml'),
-                                       'hpc_plugin'),
-                                      (os.path.join('blueprint', 'scripts',
+    @workflow_test(os.path.join('blueprints', 'blueprint_four.yaml'),
+                   copy_plugin_yaml=True,
+                   resources_to_copy=[(os.path.join('blueprints', 'scripts',
                                                     'bootstrap_example.sh'),
                                        'scripts'),
-                                      (os.path.join('blueprint', 'scripts',
+                                      (os.path.join('blueprints', 'scripts',
                                                     'revert_example.sh'),
                                        'scripts'),
-                                      (os.path.join('blueprint', 'scripts',
+                                      (os.path.join('blueprints', 'scripts',
                                                     'singularity_' +
                                                     'bootstrap_example.sh'),
                                        'scripts'),
-                                      (os.path.join('blueprint', 'scripts',
+                                      (os.path.join('blueprints', 'scripts',
                                                     'singularity_' +
                                                     'revert_example.sh'),
                                        'scripts'),
-                                      (os.path.join('blueprint', 'scripts',
+                                      (os.path.join('blueprints', 'scripts',
                                                     'bootstrap_' +
                                                     'sbatch_example.sh'),
                                        'scripts'),
-                                      (os.path.join('blueprint', 'scripts',
+                                      (os.path.join('blueprints', 'scripts',
                                                     'revert_' +
                                                     'sbatch_example.sh'),
                                        'scripts')],
@@ -270,29 +256,27 @@ class TestPlugin(unittest.TestCase):
         else:
             logging.warning('[WARNING] Login could not be tested')
 
-    @workflow_test(os.path.join('blueprint', 'blueprint_four_scale.yaml'),
-                   resources_to_copy=[(os.path.join('blueprint', 'hpc_plugin',
-                                                    'test_plugin.yaml'),
-                                       'hpc_plugin'),
-                                      (os.path.join('blueprint', 'scripts',
+    @workflow_test(os.path.join('blueprints', 'blueprint_four_scale.yaml'),
+                   copy_plugin_yaml=True,
+                   resources_to_copy=[(os.path.join('blueprints', 'scripts',
                                                     'bootstrap_example.sh'),
                                        'scripts'),
-                                      (os.path.join('blueprint', 'scripts',
+                                      (os.path.join('blueprints', 'scripts',
                                                     'revert_example.sh'),
                                        'scripts'),
-                                      (os.path.join('blueprint', 'scripts',
+                                      (os.path.join('blueprints', 'scripts',
                                                     'singularity_' +
                                                     'bootstrap_example.sh'),
                                        'scripts'),
-                                      (os.path.join('blueprint', 'scripts',
+                                      (os.path.join('blueprints', 'scripts',
                                                     'singularity_' +
                                                     'revert_example.sh'),
                                        'scripts'),
-                                      (os.path.join('blueprint', 'scripts',
+                                      (os.path.join('blueprints', 'scripts',
                                                     'bootstrap_' +
                                                     'sbatch_example.sh'),
                                        'scripts'),
-                                      (os.path.join('blueprint', 'scripts',
+                                      (os.path.join('blueprints', 'scripts',
                                                     'revert_' +
                                                     'sbatch_example.sh'),
                                        'scripts')],
@@ -300,6 +284,34 @@ class TestPlugin(unittest.TestCase):
     def test_four_scale(self, cfy_local):
         """ Install & Run workflows. """
         cfy_local.execute('install', task_retries=0)
+        cfy_local.execute('run_jobs', task_retries=0)
+        cfy_local.execute('uninstall', task_retries=0)
+
+        # extract single node instance
+        instance = cfy_local.storage.get_node_instances()[0]
+
+        # due to a cfy bug sometimes login keyword is not ready in the tests
+        if 'login' in instance.runtime_properties:
+            # assert runtime properties is properly set in node instance
+            self.assertEqual(instance.runtime_properties['login'],
+                             True)
+        else:
+            logging.warning('[WARNING] Login could not be tested')
+
+    @workflow_test(os.path.join('blueprints', 'blueprint_openstack.yaml'),
+                   copy_plugin_yaml=True,
+                   resources_to_copy=[(os.path.join('blueprints', 'scripts',
+                                                    'bootstrap_' +
+                                                    'sbatch_example.sh'),
+                                       'scripts'),
+                                      (os.path.join('blueprints', 'scripts',
+                                                    'revert_' +
+                                                    'sbatch_example.sh'),
+                                       'scripts')],
+                   inputs='set_inputs')
+    def test_openstack(self, cfy_local):
+        """ Install & Run workflows. """
+        cfy_local.execute('install', task_retries=5)
         cfy_local.execute('run_jobs', task_retries=0)
         cfy_local.execute('uninstall', task_retries=0)
 
