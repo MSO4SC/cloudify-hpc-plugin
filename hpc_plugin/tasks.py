@@ -326,7 +326,7 @@ def deploy_job(script,
                                workdir=workdir):
         call = "./" + name
         for dinput in inputs:
-            if '\n' in dinput and dinput[0] != '"':
+            if ('\n' in dinput or ' ' in dinput) and dinput[0] != '"':
                 call += ' "' + dinput + '"'
             else:
                 call += ' ' + dinput
