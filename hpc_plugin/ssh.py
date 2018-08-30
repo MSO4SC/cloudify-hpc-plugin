@@ -23,13 +23,14 @@ import select
 import thread
 import logging
 import io
+import socket
 
 try:
     import SocketServer
 except ImportError:
     import socketserver as SocketServer
 
-from paramiko import client, RSAKey
+from paramiko import client, RSAKey, ssh_exception
 
 logging.getLogger("paramiko").setLevel(logging.WARNING)
 
@@ -70,15 +71,28 @@ class SshClient(object):
                 key_file,
                 password=private_key_password)
 
-        self._client.connect(
-            self._host,
-            port=self._port,
-            username=credentials['user'],
-            pkey=private_key,
-            password=credentials['password'] if 'password' in credentials
-            else None,
-            look_for_keys=False
-        )
+        retries = 5
+        passwd = credentials['password'] if 'password' in credentials else None
+        while True:
+            try:
+                self._client.connect(
+                    self._host,
+                    port=self._port,
+                    username=credentials['user'],
+                    pkey=private_key,
+                    password=passwd,
+                    look_for_keys=False
+                )
+            except ssh_exception.SSHException as err:
+                if retries > 0 and \
+                        str(err) == "Error reading SSH protocol banner":
+                    retries -= 1
+                    logging.getLogger("paramiko").\
+                        warning("Retrying SSH connection: "+str(err))
+                    continue
+                else:
+                    raise err
+            break
 
     def get_transport(self):
         """Gets the transport object of the client (paramiko)"""
@@ -285,7 +299,12 @@ class Handler(SocketServer.BaseRequestHandler):
         while True:
             r, w, x = select.select([self.request, chan], [], [])
             if self.request in r:
-                data = self.request.recv(1024)
+                try:
+                    data = self.request.recv(1024)
+                except socket.error as err:
+                    data = bytes('')
+                    logging.getLogger("paramiko").\
+                        warning("Waiting for data: "+str(err))
                 if len(data) == 0:
                     break
                 chan.send(data)

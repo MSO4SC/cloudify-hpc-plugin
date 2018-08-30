@@ -37,7 +37,7 @@ class Bash(workload_manager.WorkloadManager):
         # add executable and arguments, and save exit code on env
         slurm_call = 'nohup bash -c "' + \
             job_settings['command'] + ' ' +\
-            '; echo ' + name + '=$? >> msomonitor.data" ' + \
+            '; echo ' + name + ',$? >> msomonitor.data" ' + \
             '&'
 
         response = {}
@@ -48,7 +48,7 @@ class Bash(workload_manager.WorkloadManager):
         return "pkill -f " + name
 
 # Monitor
-    def build_raw_states_call(self, ssh_client, names, logger):
+    def build_raw_states_call(self, names, logger):
         return "cat msomonitor.data"
 
     def parse_states(self, raw_states, logger):

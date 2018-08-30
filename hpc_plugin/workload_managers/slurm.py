@@ -199,7 +199,7 @@ class Slurm(WorkloadManager):
         return "scancel --name " + name
 
 # Monitor
-    def build_raw_states_call(self, ssh_client, names, logger):
+    def build_raw_states_call(self, names, logger):
         # TODO(emepetres) set start time of consulting
         # (sacct only check current day)
         return "sacct -n -o JobName,State -X -P --name=" + ','.join(names)

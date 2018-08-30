@@ -50,7 +50,7 @@ class JobGraphInstance(object):
                                     "workload_manager"])
             prefix = (instance._node_instance.  # pylint: disable=W0212
                       runtime_properties["job_prefix"])
-            self.workdir = instance.runtime_properties['workdir']
+            self.workdir = instance._node_instance.runtime_properties['workdir']
             external_monitor_type = (instance.  # pylint: disable=W0212
                                      _node_instance.runtime_properties[
                                          "external_monitor_type"])
