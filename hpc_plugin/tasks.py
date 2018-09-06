@@ -350,7 +350,7 @@ def deploy_job(script,
                 call += ' "' + dinput + '"'
             else:
                 call += ' ' + dinput
-        _, exit_code = client.execute_shell_command(
+        output, exit_code = client.execute_shell_command(
             call,
             workdir=workdir,
             wait_result=True)
