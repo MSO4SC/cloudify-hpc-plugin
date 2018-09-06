@@ -346,8 +346,11 @@ def deploy_job(script,
                                workdir=workdir):
         call = "./" + name
         for dinput in inputs:
-            call += ' ' + dinput
-        output, exit_code = client.execute_shell_command(
+            if ('\n' in dinput or ' ' in dinput) and dinput[0] != '"':
+                call += ' "' + dinput + '"'
+            else:
+                call += ' ' + dinput
+        _, exit_code = client.execute_shell_command(
             call,
             workdir=workdir,
             wait_result=True)
