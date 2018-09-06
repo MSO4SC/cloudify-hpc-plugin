@@ -93,9 +93,10 @@ class Slurm(WorkloadManager):
         # first set modules
         if 'modules' and 'modules' in job_settings:
             modules_lst = ''
+            logger.error("modules to be loaded: %s" % str(job_settings['modules']) )
             for module in job_settings['modules']:
                 modules_lst += ' ' + module
-            if len(modules_lst) != 0:
+            if modules_lst.strip():
                 script += 'module load' + modules_lst + '\n'
 
         script += '\nmpirun singularity exec '
@@ -104,7 +105,10 @@ class Slurm(WorkloadManager):
             script += '-H ' + job_settings['home'] + ' '
 
         if 'volumes' in job_settings:
+            volumes_lst = ''
             for volume in job_settings['volumes']:
+                volumes_lst += ' ' + volume
+            if volumes_lst.strip():
                 script += '-B ' + volume + ' '
 
         # add executable and arguments
