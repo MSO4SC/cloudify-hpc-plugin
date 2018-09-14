@@ -41,4 +41,5 @@ class Ckan(ExternalRepository):
             "--form package_id=" + self.dataset + " " + \
             "--form name=" + self.name + " " + \
             "--form description='" + self.description + "'"
+        logger.info('Ckan/_build_publish_callJob: ' + call)
         return call
