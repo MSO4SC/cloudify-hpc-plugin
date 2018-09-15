@@ -105,11 +105,9 @@ class Slurm(WorkloadManager):
             script += '-H ' + job_settings['home'] + ' '
 
         if 'volumes' in job_settings:
-            volumes_lst = ''
             for volume in job_settings['volumes']:
-                volumes_lst += ' ' + volume
-            if volumes_lst.strip():
-                script += '-B ' + volume + ' '
+                if volume.strip():
+                    script += '-B ' + volume + ' '
 
         # add executable and arguments
         script += job_settings['image'] + ' ' + job_settings['command'] + '\n'
