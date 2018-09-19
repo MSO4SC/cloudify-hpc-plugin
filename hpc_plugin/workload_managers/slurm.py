@@ -111,7 +111,12 @@ class Slurm(WorkloadManager):
             script += 'module load'
             for module in job_settings['modules']:
                 script += ' ' + module
-            script += '\n'
+            script += '\n\n'
+
+        # TODO: use also an uploaded script
+        if 'pre' in job_settings:
+            for entry in job_settings['pre']:
+                script += entry+'\n'
 
         script += '\nmpirun singularity exec '
 
@@ -124,6 +129,11 @@ class Slurm(WorkloadManager):
 
         # add executable and arguments
         script += job_settings['image'] + ' ' + job_settings['command'] + '\n'
+
+        # TODO: use also an uploaded script
+        if 'post' in job_settings:
+            for entry in job_settings['post']:
+                script += entry+'\n'
 
         return script
 

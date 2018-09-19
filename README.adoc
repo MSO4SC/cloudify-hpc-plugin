@@ -266,6 +266,8 @@ Use this tipe to describe a HPC job executed from a {uri-singularity}[Singularit
 
 * `job_options`: Job parameters and needed resources.
 ** `modules`: List of modules that will be load before executing the job. Optional.
+** `pre`: List of commands to be executed before running singularity container. Optional.
+** `post`: List of commands to be executed after running singularity container.
 ** `image`: {uri-singularity}[Singularity] image file.
 ** `home`: Home volume that will be bind with the image instance (Optional).
 ** `volumes`: List of volumes that will be bind with the image instance.
@@ -308,6 +310,10 @@ This example demonstrates how to describe a new job executed in a {uri-singulari
                     - openmpi/1.10.2
                     - singularity/2.3.1
                 partition: 'thin-shared'
+                pre:
+                    - touch pre.output
+                post:
+                    - touch post.output
                 image: '$LUSTRE/openmpi_1.10.7_ring.img'
                 home: '$HOME:/home/$USER'
                 volumes:
