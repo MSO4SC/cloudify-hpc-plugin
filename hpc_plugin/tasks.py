@@ -416,7 +416,6 @@ def send_job(job_options, **kwargs):  # pylint: disable=W0613
                 wm_type +
                 "' not supported.")
         context_vars = {
-            'CFY_INSTANCE_ID': ctx.instance.id,
             'CFY_EXECUTION_ID': ctx.execution_id,
             'CFY_JOB_NAME': name
         }

@@ -14,7 +14,5 @@ cat > $FILE <<- EOM
 # DYNAMIC VARIABLES
 
 touch test_$1.test
-echo \$CFY_INSTANCE_ID >> test_$1.test
-echo \$CFY_EXECUTION_ID >> test_$1.test
-echo \$CFY_JOB_NAME >> test_$1.test
+
 EOM
