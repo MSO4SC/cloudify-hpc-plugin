@@ -119,7 +119,8 @@ class WorkloadManager(object):
                    job_settings,
                    is_singularity,
                    logger,
-                   workdir=None):
+                   workdir=None,
+                   context=None):
         """
         Sends a job to the HPC
 
@@ -132,6 +133,12 @@ class WorkloadManager(object):
         @type is_singularity: bool
         @param is_singularity: True if the job is in a container
         @rtype string
+        @param logger: Logger object to print log messages
+        @rtype logger
+        @param workdir: Path of the working directory of the job
+        @rtype string
+        @param context: Dictionary containing context env vars
+        @rtype dictionary of strings
         @return Slurm's job name sent. None if an error arise.
         """
         if not SshClient.check_ssh_client(ssh_client, logger):
@@ -194,6 +201,7 @@ class WorkloadManager(object):
         call = response['call']
         output, exit_code = ssh_client.execute_shell_command(
             call,
+            env=context,
             workdir=workdir,
             wait_result=True)
         if exit_code is not 0:

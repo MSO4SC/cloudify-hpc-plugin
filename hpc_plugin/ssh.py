@@ -112,10 +112,12 @@ class SshClient(object):
     def execute_shell_command(self,
                               cmd,
                               workdir=None,
+                              env=None,
                               wait_result=False,
                               detach=False):
         """ Execute the command remotely
         - if workdir is set: in the specific workdir
+        - if defined, env is a list of string keypairs to set env variables.
         - if wait_result is set to True: blocks until it gather
           the results
         - if detach is set tu True: let the command running in the background.
@@ -124,12 +126,18 @@ class SshClient(object):
             wait_result = False
             cmd = "nohup " + cmd + " &"
 
+        call = ""
+        if env is not None:
+            for key, value in env.iteritems():
+                call += "export "+key+"=" + value + " && "
+
         if not workdir:
-            return self.send_command(cmd,
+            call += cmd
+            return self.send_command(call,
                                      wait_result=wait_result)
         else:
             # TODO: set scale variables as well
-            call = "export CURRENT_WORKDIR=" + workdir + " && "
+            call += "export CURRENT_WORKDIR=" + workdir + " && "
             call += "cd " + workdir + " && "
             call += cmd
             return self.send_command(call,

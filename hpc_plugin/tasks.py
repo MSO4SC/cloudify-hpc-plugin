@@ -415,12 +415,18 @@ def send_job(job_options, **kwargs):  # pylint: disable=W0613
                 "Workload Manager '" +
                 wm_type +
                 "' not supported.")
+        context_vars = {
+            'CFY_INSTANCE_ID': ctx.instance.id,
+            'CFY_EXECUTION_ID': ctx.execution_id,
+            'CFY_JOB_NAME': name
+        }
         is_submitted = wm.submit_job(client,
                                      name,
                                      job_options,
                                      is_singularity,
                                      ctx.logger,
-                                     workdir=workdir)
+                                     workdir=workdir,
+                                     context=context_vars)
         client.close_connection()
     else:
         ctx.logger.warning('Instance ' + ctx.instance.id + ' simulated')
