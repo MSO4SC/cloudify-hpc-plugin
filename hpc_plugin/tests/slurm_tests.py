@@ -91,7 +91,7 @@ class TestSlurm(unittest.TestCase):
 
         call = response['call']
         self.assertEqual(call, "nohup srun -J 'test' " +
-                               "-e test.err -e test.out " +
+                               "-e test.err -o test.out " +
                                "-t 00:05:00 cmd &")
 
     def test_complete_srun_call(self):
@@ -149,7 +149,7 @@ class TestSlurm(unittest.TestCase):
 
         call = response['call']
         self.assertEqual(call, "sbatch --parsable -J 'test' " +
-                               "-e test.err -e test.out cmd")
+                               "-e test.err -o test.out cmd")
 
     def test_complete_sbatch_call(self):
         """ Complete sbatch command. """
