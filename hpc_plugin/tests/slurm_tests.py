@@ -210,9 +210,9 @@ class TestSlurm(unittest.TestCase):
 
         self.assertEqual(len(names), len(set(names)))
 
-    def test_parse_sacct_jobid(self):
+    def test_parse_jobid(self):
         """ Parse JobID from sacct """
-        parsed = self.wm._parse_sacct("test1|012345\n"
+        parsed = self.wm.parse_states("test1|012345\n"
                                       "test2|123456\n"
                                       "test3|234567\n")
 
@@ -222,6 +222,6 @@ class TestSlurm(unittest.TestCase):
 
     def test_parse_clean_sacct(self):
         """ Parse no output from sacct """
-        parsed = self.wm._parse_sacct("\n")
+        parsed = self.wm.parse_states("\n")
 
         self.assertDictEqual(parsed, {})

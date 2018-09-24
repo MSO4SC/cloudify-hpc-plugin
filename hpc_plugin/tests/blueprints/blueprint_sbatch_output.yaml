@@ -1,5 +1,5 @@
 ########
-# Copyright (c) 2017 MSO4SC - javier.carnero@atos.net
+# Copyright (c) 2017-2018 MSO4SC - javier.carnero@atos.net
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,33 +17,36 @@ tosca_definitions_version: cloudify_dsl_1_3
 
 imports:
     # to speed things up, it is possible downloading this file,
-    # - http://www.getcloudify.org/spec/cloudify/4.1/types.yaml
     - http://raw.githubusercontent.com/mso4sc/cloudify-hpc-plugin/master/resources/types/cfy_types.yaml
+    - http://www.getcloudify.org/spec/openstack-plugin/2.9.0/plugin.yaml
     # relative import of plugin.yaml that resides in the blueprint directory
-    - hpc_plugin/test_plugin.yaml
+    - plugin.yaml
 
 inputs:
-    # Monitor
     monitor_entrypoint:
         description: Monitor entrypoint IP
         default: ""
         type: string
 
-    # Job prefix name
     job_prefix:
         description: Job name prefix in HPCs
         default: "cfyhpc"
         type: string
+
+    mso4sc_wm_hpc:
+        description: Configuration of the workload manager for the  HPC to be used
+        default: {}
 
     partition:
         description: Partition in which the jobs will run
         default: "public"
         type: string
 
-    mso4sc_hpc_primary:
-        description: Configuration for the primary HPC to be used
+    mso4sc_wm_openstack:
+        description: Configuration of the workload manager for the VM to be used
         default: {}
 
+    ################### DATA PUBLISH ##################
     mso4sc_datacatalogue_entrypoint:
         description: entrypoint of the data catalogue
         default: "http://193.144.35.207"
@@ -56,11 +59,32 @@ inputs:
         description: ID of the CKAN output dataset
         default: ""
 
+    #################### OPENSTACK ####################
+    openstack_config:
+        default: {}
+
+    openstack_network:
+        default: ""
+
+    openstack_keypair:
+        default: ""
+
+    openstack_floatingip:
+        default: ""
+    
+    openstack_image:
+        default: ""
+    
+    openstack_flavor:
+        default: ""
+
+    ###################################################
+
 node_templates:
-    first_hpc:
-        type: hpc.nodes.Compute
+    hpc_wm:
+        type: hpc.nodes.WorkloadManager
         properties:
-            config: { get_input: mso4sc_hpc_primary }
+            config: { get_input: mso4sc_wm_hpc }
             external_monitor_entrypoint: { get_input: monitor_entrypoint }
             job_prefix: { get_input: job_prefix }
             workdir_prefix: "single_sbatch"
@@ -68,7 +92,7 @@ node_templates:
             simulate: True  # COMMENT to test against a real HPC
 
     single_job:
-        type: hpc.nodes.job
+        type: hpc.nodes.Job
         properties:
             job_options:
                 type: 'SBATCH'
@@ -89,8 +113,8 @@ node_templates:
                   description: "output test"
             skip_cleanup: True
         relationships:
-            - type: job_contained_in_hpc
-              target: first_hpc
+            - type: job_managed_by_wm
+              target: hpc_wm
 
 outputs:
     single_job_name:

@@ -62,9 +62,6 @@ inputs:
     openstack_config:
         default: {}
 
-    openstack_config2:
-        default: {}
-
     openstack_network:
         default: ""
 
