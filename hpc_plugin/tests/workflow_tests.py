@@ -298,7 +298,7 @@ class TestPlugin(unittest.TestCase):
         else:
             logging.warning('[WARNING] Login could not be tested')
 
-    ## It doesn't allow "simulate" property. Code is left for manual testing.
+    # It doesn't allow "simulate" property. Code is left for manual testing.
     # @workflow_test(os.path.join('blueprints', 'blueprint_openstack.yaml'),
     #                copy_plugin_yaml=True,
     #                resources_to_copy=[(os.path.join('blueprints', 'scripts',
