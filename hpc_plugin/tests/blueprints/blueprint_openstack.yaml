@@ -92,9 +92,8 @@ node_templates:
     keypair:
         type: cloudify.openstack.nodes.KeyPair
         properties:
-            use_external_resource: true
             resource_id: { get_input: openstack_keypair }
-            private_key_path: keys/id_rsa
+            private_key_path: { concat: [keys_repo/, { get_property: [SELF,resource_id] }] }
             openstack_config: { get_input: openstack_config }
 
     #my_floating_ip:

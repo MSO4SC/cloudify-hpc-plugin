@@ -34,9 +34,24 @@ def preconfigure_wm(config,
 
     if not simulate:
         credentials = config['credentials']
+        credentials_modified = False
+
         if 'ip' in ctx.target.instance.runtime_properties:
             credentials['host'] = \
                 ctx.target.instance.runtime_properties['ip']
+            credentials_modified = True
+
+        for rel in ctx.target.instance.relationships:
+            node = rel.target.node
+            if node.type == 'cloudify.openstack.nodes.KeyPair':
+                if 'private_key_path' in node.properties:
+                    with open(node.properties['private_key_path'], 'r') \
+                            as keyfile:
+                        private_key = keyfile.read()
+                        credentials['private_key'] = private_key
+                        credentials_modified = True
+
+        if credentials_modified:
             ctx.source.instance.runtime_properties['credentials'] = \
                 credentials
 
