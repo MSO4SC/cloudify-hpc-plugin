@@ -19,6 +19,7 @@ mso4sc_hpc_primary:
             -----BEGIN RSA PRIVATE KEY-----
             ....
             -----END RSA PRIVATE KEY-----
+        login_shell: true
     country_tz: "Europe/Madrid"
     workload_manager: "SLURM"
 

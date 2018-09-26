@@ -16,7 +16,7 @@
 """ Holds the Slurm unit tests """
 import logging
 import unittest
-from hpc_plugin.workload_managers.slurm import WorkloadManager
+from hpc_plugin.workload_managers.workload_manager import WorkloadManager
 
 
 class TestSlurm(unittest.TestCase):
@@ -225,3 +225,7 @@ class TestSlurm(unittest.TestCase):
         parsed = self.wm._parse_sacct("\n")
 
         self.assertDictEqual(parsed, {})
+
+
+if __name__ == '__main__':
+    unittest.main()

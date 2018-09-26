@@ -63,9 +63,11 @@ def prepare_hpc(config,
                 simulate,
                 **kwargs):  # pylint: disable=W0613
     """ Tries to connect to a login node """
-    ctx.logger.info('Connecting to login node..')
+    ctx.logger.info('Connecting to login node:')
     if not simulate:
         wm_type = config['workload_manager']
+        ctx.logger.info(' - manager: {wm_type}'.format(wm_type=wm_type))
+
         wm = WorkloadManager.factory(wm_type)
         if not wm:
             raise NonRecoverableError(
@@ -102,6 +104,7 @@ def prepare_hpc(config,
         ctx.instance.runtime_properties['workdir'] = workdir
         ctx.logger.info('..HPC ready on ' + workdir)
     else:
+        ctx.logger.info(' - [simulation]..')
         ctx.instance.runtime_properties['login'] = True
         ctx.instance.runtime_properties['workdir'] = "simulation"
         ctx.logger.warning('HPC login connection simulated')
