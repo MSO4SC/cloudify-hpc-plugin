@@ -127,6 +127,7 @@ node_templates:
             external_monitor_entrypoint: { get_input: monitor_entrypoint }
             job_prefix: { get_input: job_prefix }
             workdir_prefix: "single_sbatch"
+            monitor_period: 15
 
     openstack_wm:
         type: hpc.nodes.WorkloadManager
@@ -135,6 +136,7 @@ node_templates:
             external_monitor_entrypoint: { get_input: monitor_entrypoint }
             job_prefix: { get_input: job_prefix }
             workdir_prefix: "single_shell"
+            monitor_period: 15
         relationships:
             - type: wm_contained_in
               target: my_server

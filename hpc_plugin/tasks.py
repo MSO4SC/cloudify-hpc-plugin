@@ -261,6 +261,7 @@ def preconfigure_job(config,
                      external_monitor_type,
                      external_monitor_orchestrator_port,
                      job_prefix,
+                     monitor_period,
                      simulate,
                      **kwargs):  # pylint: disable=W0613
     """ Set the job with the HPC credentials """
@@ -285,6 +286,7 @@ def preconfigure_job(config,
         config['workload_manager']
     ctx.source.instance.runtime_properties['simulate'] = simulate
     ctx.source.instance.runtime_properties['job_prefix'] = job_prefix
+    ctx.source.instance.runtime_properties['monitor_period'] = monitor_period
 
     ctx.source.instance.runtime_properties['workdir'] = \
         ctx.target.instance.runtime_properties['workdir']

@@ -19,9 +19,9 @@ import time
 
 from cloudify.decorators import workflow
 from cloudify.workflows import ctx, api, tasks
-from hpc_plugin import monitors
+from hpc_plugin.job_requester import JobRequester
 
-MONITOR_PERIOD = 15
+LOOP_PERIOD = 1
 
 
 class JobGraphInstance(object):
@@ -39,43 +39,29 @@ class JobGraphInstance(object):
             self._status = 'WAITING'
 
             # Get runtime properties
-            self.simulate = (instance._node_instance.  # pylint: disable=W0212
-                             runtime_properties["simulate"])
-            credentials = (instance.  # pylint: disable=W0212
-                           _node_instance.runtime_properties[
-                               "credentials"])
-            self.host = credentials["host"]
-            workload_manager = (instance.  # pylint: disable=W0212
-                                _node_instance.runtime_properties[
-                                    "workload_manager"])
-            prefix = (instance._node_instance.  # pylint: disable=W0212
-                      runtime_properties["job_prefix"])
-            self.workdir = instance._node_instance.runtime_properties['workdir']
-            external_monitor_type = (instance.  # pylint: disable=W0212
-                                     _node_instance.runtime_properties[
-                                         "external_monitor_type"])
-            external_monitor_entrypoint = (instance.  # pylint: disable=W0212
-                                           _node_instance.runtime_properties[
-                                               "external_monitor_entrypoint"])
-            external_monitor_port = (instance.  # pylint: disable=W0212
-                                     _node_instance.runtime_properties[
-                                         "external_monitor_port"])
+            runtime_properties = instance._node_instance.runtime_properties
+            self.simulate = runtime_properties["simulate"]
+            self.host = runtime_properties["credentials"]["host"]
+            self.workdir = runtime_properties['workdir']
 
             # Decide how to monitor the job
-            if external_monitor_entrypoint:
-                self.monitor_type = external_monitor_type
+            if runtime_properties["external_monitor_entrypoint"]:
+                self.monitor_type = runtime_properties["external_monitor_type"]
                 self.monitor_config = {
                     'url': ('http://' +
-                            external_monitor_entrypoint +
-                            external_monitor_port)
+                            runtime_properties["external_monitor_entrypoint"] +
+                            runtime_properties["external_monitor_port"])
                 }
             else:  # internal monitoring
-                self.monitor_type = workload_manager
-                self.monitor_config = credentials
+                self.monitor_type = runtime_properties["workload_manager"]
+                self.monitor_config = runtime_properties["credentials"]
+
+            self.monitor_period = int(runtime_properties["monitor_period"])
 
             # build job name
             instance_components = instance.id.split('_')
-            self.name = prefix + instance_components[-1]
+            self.name = runtime_properties["job_prefix"] +\
+                instance_components[-1]
         else:
             self._status = 'NONE'
             self.name = instance.id
@@ -346,6 +332,7 @@ class Monitor(object):
         self.timestamp = 0
         self.job_instances_map = job_instances_map
         self.logger = logger
+        self.jobs_requester = JobRequester()
 
     def update_status(self):
         """Gets all executing instances and update their state"""
@@ -364,7 +351,8 @@ class Monitor(object):
                                 'config': job_instance.monitor_config,
                                 'type': job_instance.monitor_type,
                                 'workdir': job_instance.workdir,
-                                'names': [job_instance.name]
+                                'names': [job_instance.name],
+                                'period': job_instance.monitor_period
                             }
                     else:
                         job_instance.set_status('COMPLETED')
@@ -373,21 +361,16 @@ class Monitor(object):
         if not monitor_jobs:
             return
 
-        # We wait to not sature the monitor
-        seconds_to_wait = MONITOR_PERIOD - (time.time() - self.timestamp)
-        if seconds_to_wait > 0:
-            sys.stdout.flush()  # necessary to output work properly with sleep
-            time.sleep(seconds_to_wait)
-        self.logger.debug("Reading job status..")
-
-        self.timestamp = time.time()
-
         # then look for the status of the instances through its name
-        states = monitors.get_states(monitor_jobs, self.logger)
+        states = self.jobs_requester.request(monitor_jobs, self.logger)
 
         # finally set job status
         for inst_name, state in states.iteritems():
             self.job_instances_map[inst_name].set_status(state)
+
+        # We wait to slow down the loop
+        sys.stdout.flush()  # necessary to output work properly with sleep
+        time.sleep(LOOP_PERIOD)
 
     def get_executions_iterator(self):
         """ Executing nodes iterator """

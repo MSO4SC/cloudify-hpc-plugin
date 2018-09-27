@@ -114,7 +114,6 @@ class SshClient(object):
                     raise err
             break
 
-
     def get_transport(self):
         """Gets the transport object of the client (paramiko)"""
         return self._client.get_transport()

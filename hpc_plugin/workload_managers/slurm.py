@@ -221,7 +221,7 @@ class Slurm(WorkloadManager):
         states = {}
         if exit_code == 0:
             states = self._parse_states(output, logger)
-        
+
         return states
 
     def _parse_states(self, raw_states, logger):

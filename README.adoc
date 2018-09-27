@@ -143,6 +143,7 @@ Use this type to describe a HPC infrastructure.
 * `job_prefix`: Job name prefix for the jobs created in this HPC. Default `cfyhpc`.
 * `base_dir`: Root directory in which to run the executions in this ifrastructure. Default `$HOME`.
 * `workdir_prefix`: Prefix name of the working directory that will be created for this infrastructure.
+* `monitor_period`: Seconds to check job status. This is necessary because workload managers can be overloaded if asked too much times in a short period of time. Default `60`.
 * `skip_cleanup`: True to not clean all files when destroying the deployment. Default `False`.
 * `simulate`: If true, don't send the jobs to the HPC and simulate that they finish inmediately. Useful for test new TOSCA files. Default `False`.
 

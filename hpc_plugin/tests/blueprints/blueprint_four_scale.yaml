@@ -89,6 +89,7 @@ node_templates:
             job_prefix: { get_input: job_prefix }
             base_dir: "$LUSTRE"
             workdir_prefix: "four_scale"
+            monitor_period: 15
             skip_cleanup: True
             simulate: True  # COMMENT to test against a real HPC
     

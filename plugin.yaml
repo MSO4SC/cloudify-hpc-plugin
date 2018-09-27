@@ -50,6 +50,10 @@ node_types:
                 description: Prefix of the working directory instead of blueprint name
                 default: ""
                 type: string
+            monitor_period:
+                description: Seconds to check job status.
+                default: 60
+                type: integer
             simulate:
                 description: Set to true to simulate job without sending it
                 type: boolean
@@ -202,6 +206,8 @@ relationships:
                             default: { get_property: [TARGET, external_monitor_orchestrator_port] }
                         job_prefix: 
                             default: { get_property: [TARGET, job_prefix] }
+                        monitor_period: 
+                            default: { get_property: [TARGET, monitor_period] }
                         simulate:
                             default: { get_property: [TARGET, simulate] }
     job_depends_on:
