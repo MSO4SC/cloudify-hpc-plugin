@@ -15,13 +15,129 @@
 """ Holds the slurm functions """
 
 
+from hpc_plugin.ssh import SshClient
 from workload_manager import WorkloadManager, get_prevailing_state
 
 
 class Slurm(WorkloadManager):
 
-    def _parse_slurm_job_settings(self, job_id, job_settings, prefix, suffix):
+    def _build_container_script(self, name, job_settings, logger):
+        # check input information correctness
+        if not isinstance(job_settings, dict) or \
+                not isinstance(name, basestring):
+            logger.error("Singularity Script malformed")
+            return None
 
+        if 'image' not in job_settings or 'command' not in job_settings or\
+                'max_time' not in job_settings:
+            logger.error("Singularity Script malformed")
+            return None
+
+        script = '#!/bin/bash -l\n\n'
+        script += self._parse_slurm_job_settings(name,
+                                                 job_settings,
+                                                 '#SBATCH', '\n')
+
+        script += '\n# DYNAMIC VARIABLES\n\n'
+
+        # load extra modules
+        if 'modules' in job_settings and job_settings['modules']:
+            script += 'module load {}\n'.format(
+                ' '.join(job_settings['modules']))
+
+        # TODO: use also an uploaded script
+        if 'pre' in job_settings:
+            for entry in job_settings['pre']:
+                script += entry+'\n'
+
+        script += '\nmpirun singularity exec '
+
+        if 'home' in job_settings and job_settings['home'] != '':
+            script += '-H ' + job_settings['home'] + ' '
+
+        if 'volumes' in job_settings:
+            for volume in job_settings['volumes']:
+                script += '-B ' + volume + ' '
+
+        # add executable and arguments
+        script += job_settings['image'] + ' ' + job_settings['command'] + '\n'
+
+        # TODO: use also an uploaded script
+        if 'post' in job_settings:
+            for entry in job_settings['post']:
+                script += entry+'\n'
+
+        return script
+
+    def _build_job_submission_call(self, name, job_settings, logger):
+        # check input information correctness
+        if not isinstance(job_settings, dict) or \
+                not isinstance(name, basestring):
+            return {'error': "Incorrect inputs"}
+
+        if 'type' not in job_settings or 'command' not in job_settings:
+            return {'error': "'type' and 'command' " +
+                    "must be defined in job settings"}
+
+        # Build single line command
+        slurm_call = ''
+
+        # load extra modules
+        if 'modules' in job_settings and job_settings['modules']:
+            slurm_call = 'module load {}; '.format(
+                ' '.join(job_settings['modules']))
+
+        if job_settings['type'] == 'SBATCH':
+            # sbatch command plus job name
+            slurm_call += "sbatch --parsable -J '" + name + "'"
+        elif job_settings['type'] == 'SRUN':
+            slurm_call += "nohup srun -J '" + name + "'"
+        else:
+            return {'error': "Job type '" + job_settings['type'] +
+                    "'not supported"}
+
+        if 'max_time' not in job_settings and job_settings['type'] == 'SRUN':
+            return {'error': "'SRUN' jobs must define the 'max_time' property"}
+
+        slurm_call += self._parse_slurm_job_settings(name,
+                                                     job_settings,
+                                                     None, None)
+
+        response = {}
+        if 'scale' in job_settings and \
+                int(job_settings['scale']) > 1:
+            if job_settings['type'] == 'SRUN':
+                return {'error': "'SRUN' does not allow scale property"}
+            # set the max of parallel jobs
+            scale_max = job_settings['scale']
+            # set the job array
+            slurm_call += ' --array=0-{}'.format(scale_max - 1)
+            if 'scale_max_in_parallel' in job_settings and \
+                    int(job_settings['scale_max_in_parallel']) > 0:
+                slurm_call += '%' + str(job_settings['scale_max_in_parallel'])
+                scale_max = job_settings['scale_max_in_parallel']
+            # map the orchestrator variables after last sbatch
+            scale_env_mapping_call = \
+                "sed -i '/# DYNAMIC VARIABLES/a\\" +\
+                "SCALE_INDEX=$SLURM_ARRAY_TASK_ID\\n" +\
+                "SCALE_COUNT=$SLURM_ARRAY_TASK_COUNT\\n" +\
+                "SCALE_MAX=" + str(scale_max) + "' " +\
+                job_settings['command'].split()[0]  # get only the file
+            response['scale_env_mapping_call'] = scale_env_mapping_call
+
+        # add executable and arguments
+        slurm_call += ' ' + job_settings['command']
+
+        if job_settings['type'] == 'SRUN':
+            slurm_call += ' &'
+
+        response['call'] = slurm_call
+        return response
+
+    def _build_job_cancellation_call(self, name, job_settings, logger):
+        return "scancel --name " + name
+
+    def _parse_slurm_job_settings(self, job_id, job_settings, prefix, suffix):
         _prefix = prefix if prefix else ''
         _suffix = suffix if suffix else ''
         _settings = ''
@@ -87,134 +203,28 @@ class Slurm(WorkloadManager):
 
         return _settings
 
-    def _build_container_script(self, name, job_settings, logger):
-        # check input information correctness
-        if not isinstance(job_settings, dict) or not isinstance(name,
-                                                                basestring):
-            logger.error("Singularity Script malformed")
-            return None
-
-        if 'image' not in job_settings or 'command' not in job_settings or\
-                'max_time' not in job_settings:
-            logger.error("Singularity Script malformed")
-            return None
-
-        script = '#!/bin/bash -l\n\n'
-        script += self._parse_slurm_job_settings(name,
-                                                 job_settings,
-                                                 '#SBATCH', '\n')
-
-        script += '\n# DYNAMIC VARIABLES\n\n'
-
-        # first set modules
-        if 'modules' in job_settings:
-            script += 'module load'
-            for module in job_settings['modules']:
-                script += ' ' + module
-            script += '\n\n'
-
-        # TODO: use also an uploaded script
-        if 'pre' in job_settings:
-            for entry in job_settings['pre']:
-                script += entry+'\n'
-
-        script += '\nmpirun singularity exec '
-
-        if 'home' in job_settings and job_settings['home'] != '':
-            script += '-H ' + job_settings['home'] + ' '
-
-        if 'volumes' in job_settings:
-            for volume in job_settings['volumes']:
-                script += '-B ' + volume + ' '
-
-        # add executable and arguments
-        script += job_settings['image'] + ' ' + job_settings['command'] + '\n'
-
-        # TODO: use also an uploaded script
-        if 'post' in job_settings:
-            for entry in job_settings['post']:
-                script += entry+'\n'
-
-        return script
-
-    def _build_job_submission_call(self, name, job_settings, logger):
-        # check input information correctness
-        if not isinstance(job_settings, dict) or not isinstance(name,
-                                                                basestring):
-            return {'error': "Incorrect inputs"}
-
-        if 'type' not in job_settings or 'command' not in job_settings:
-            return {'error': "'type' and 'command' " +
-                    "must be defined in job settings"}
-
-        # first set modules
-        slurm_call = ''
-        if 'modules' in job_settings and job_settings['modules']:
-            slurm_call += 'module load'
-            for module in job_settings['modules']:
-                slurm_call += ' ' + module
-            slurm_call += '; '
-
-        if job_settings['type'] == 'SBATCH':
-            # sbatch command plus job name
-            slurm_call += "sbatch --parsable -J '" + name + "'"
-        elif job_settings['type'] == 'SRUN':
-            slurm_call += "nohup srun -J '" + name + "'"
-        else:
-            return {'error': "Job type '" + job_settings['type'] +
-                    "'not supported"}
-
-        if 'max_time' not in job_settings and job_settings['type'] == 'SRUN':
-            return {'error': "'SRUN' jobs must define the 'max_time' property"}
-
-        slurm_call += self._parse_slurm_job_settings(name,
-                                                     job_settings,
-                                                     None, None)
-
-        response = {}
-        if 'scale' in job_settings and \
-                int(job_settings['scale']) > 1:
-            if job_settings['type'] == 'SRUN':
-                return {'error': "'SRUN' does not allow scale property"}
-            # set the job array
-            slurm_call += ' --array=0-' + str(int(job_settings['scale']) - 1)
-            # set the max of parallel jobs
-            scale_max = job_settings['scale']
-            if 'scale_max_in_parallel' in job_settings and \
-                    int(job_settings['scale_max_in_parallel']) > 0:
-                slurm_call += '%' + str(job_settings['scale_max_in_parallel'])
-                scale_max = job_settings['scale_max_in_parallel']
-            # map the orchestrator variables after last sbatch
-            scale_env_mapping_call = \
-                "sed -i '/# DYNAMIC VARIABLES/a\\" +\
-                "SCALE_INDEX=$SLURM_ARRAY_TASK_ID\\n" +\
-                "SCALE_COUNT=$SLURM_ARRAY_TASK_COUNT\\n" +\
-                "SCALE_MAX=" + str(scale_max) + "' " +\
-                job_settings['command'].split()[0]  # get only the file
-            response['scale_env_mapping_call'] = scale_env_mapping_call
-
-        # add executable and arguments
-        slurm_call += ' ' + job_settings['command']
-
-        # disable output
-        # slurm_call += ' >/dev/null 2>&1';
-
-        if job_settings['type'] == 'SRUN':
-            slurm_call += ' &'
-
-        response['call'] = slurm_call
-        return response
-
-    def _build_job_cancellation_call(self, name, job_settings, logger):
-        return "scancel --name " + name
-
 # Monitor
-    def build_raw_states_call(self, names, logger):
+    def get_states(self, workdir, credentials, job_names, logger):
         # TODO(emepetres) set start time of consulting
         # (sacct only check current day)
-        return "sacct -n -o JobName,State -X -P --name=" + ','.join(names)
+        call = "sacct -n -o JobName,State -X -P --name=" + ','.join(job_names)
 
-    def parse_states(self, raw_states, logger):
+        client = SshClient(credentials)
+
+        output, exit_code = client.execute_shell_command(
+            call,
+            workdir=workdir,
+            wait_result=True)
+
+        client.close_connection()
+
+        states = {}
+        if exit_code == 0:
+            states = self._parse_states(output, logger)
+        
+        return states
+
+    def _parse_states(self, raw_states, logger):
         """ Parse two colums sacct entries into a dict """
         jobs = raw_states.splitlines()
         parsed = {}

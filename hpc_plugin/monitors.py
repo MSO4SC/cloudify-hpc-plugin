@@ -16,7 +16,6 @@
 """ Holds the functions that requests monitor information """
 
 import requests
-from ssh import SshClient
 from workload_managers.workload_manager import (WorkloadManager,
                                                 state_int_to_str)
 
@@ -33,18 +32,12 @@ def get_states(monitor_jobs, logger):
         else:  # internal
             wm = WorkloadManager.factory(settings['type'])
             if wm:
-                call = wm.build_raw_states_call(settings['names'], logger)
-                client = SshClient(settings['config'])
-                output, exit_code = client.execute_shell_command(
-                    call,
-                    workdir=settings['workdir'],
-                    wait_result=True)
-
-                client.close_connection()
-
-                partial_states = {}
-                if exit_code == 0:
-                    partial_states = wm.parse_states(output, logger)
+                partial_states = wm.get_states(
+                    settings['workdir'],
+                    settings['config'],
+                    settings['names'],
+                    logger
+                )
             else:
                 partial_states = _no_states(host,
                                             settings['type'],

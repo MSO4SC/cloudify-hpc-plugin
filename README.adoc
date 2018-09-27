@@ -38,6 +38,7 @@ endif::[]
 :uri-prometheus: https://prometheus.io/
 :uri-singularity: http://singularity.lbl.gov/
 :uri-slurm: https://slurm.schedmd.com/
+:uri-torque: http://www.adaptivecomputing.com/products/open-source/torque/
 :uri-grafana: https://grafana.com/
 :uri-grafana-mso4sc-dashboard: https://github.com/MSO4SC/MSOMonitor/blob/master/grafana/MSO4SC.json
 :uri-monitor-compose: https://github.com/MSO4SC/MSOMonitor/blob/master/docker-compose.yml
@@ -61,11 +62,11 @@ toc::[]
 
 The plugin aims to enable {uri-cloudify}[Cloudify] to manage HPC resources, so at the end, combined with other plugins, it can orchestrate a hybrid cloud+hpc environment, with one or more cloud and hpc providerds at the same time.
 
-It adds a new resource type, <<hpc.nodes.Compute>>, that represents a HPC infrastructure, and <<hpc.nodes.job>> and <<hpc.nodes.singularity_job>>, that represents a job in the HPC and a job using a {uri-singularity}[Singularity] container respectively.
+It adds a new resource type, <<hpc.nodes.WorkloadManager>>, that represents an infrastructure interface (Slurm, Torque, or even Bash), and <<hpc.nodes.Job>> and <<hpc.nodes.SingularityJob>>, that represents a job in the HPC and a job using a {uri-singularity}[Singularity] container respectively.
 
 In order to Cloudify orchestrates properly the HPC resources, the help of an external monitor system is needed, from which the job status is retrieved. In the next release the plugin will also use the monitor to predict the overall state of the HPC and take best decisions about which partition and infrastructure to use for each job.
 
-IMPORTANT: Only {uri-slurm}[Slurm] based HPCs are supported for now as well as only {uri-prometheus}[Prometheus] is supported as external monitoring system.
+IMPORTANT: Only {uri-slurm}[Slurm] and {uri-torque}[Torque] based HPCs are supported for now (Bash for virtual machines), as well as only {uri-prometheus}[Prometheus] is supported as external monitoring system.
 
 
 
@@ -73,12 +74,13 @@ IMPORTANT: Only {uri-slurm}[Slurm] based HPCs are supported for now as well as o
 
 * Python version 2.7.x
 * Access to at least a {uri-slurm}[Slurm] based HPC by ssh user & password.
-* {uri-prometheus}[Prometheus] monitoring the infrastructures to be used ({uri-slurm-exporter}[Slurm exporter] has been developed for this purpose)
 
 === Optional:
 
+* Access to {uri-torque}[Moab/Torque] based HPC by ssh user & password.
 * The {uri-monitor-orchestrator}[Monitor Orchestrator] can be deployed in the same host as the monitor to allow the plugin to dynamically use new HPC infrastructures defined in TOSCA.
 * {uri-grafana}[Grafana] can be used to visualize the status of the HPCs.
+* {uri-prometheus}[Prometheus] monitoring the infrastructures to be used ({uri-slurm-exporter}[Slurm exporter] has been developed for this purpose)
 
 
 == Installation & Usage
@@ -105,11 +107,12 @@ config:
             -----END RSA PRIVATE KEY-----
         private_key_password: "[PRIVATE-KEY-PASSWORD]"
         password: "[HPC-SSH-PASS]"
+        login_shell: {true|false}
         tunnel:
             host: ...
             ...
     country_tz: "Europe/Madrid"
-    workload_manager: "SLURM"
+    workload_manager: {"SLURM"|"TORQUE"}
 ----
 
 . _credentials_: HPC and ssh credentials. At least `private_key` or `password` must be provided.
@@ -158,6 +161,7 @@ This example demonstrates how to add a new HPC.
                     host: "[HPC-HOST]"
                     user: "[HPC-SSH-USER]"
                     password: "[HPC-SSH-PASS]"
+                    login_shell: false
                 country_tz: "Europe/Madrid"
                 workload_manager: "SLURM"
             job_prefix: wm_
@@ -182,10 +186,10 @@ Use this tipe to describe a HPC job.
 **Properties:**
 
 * `job_options`: Job parameters and needed resources.
-** `type`: SRUN or SBATCH (job executed using a command or using a script).
+** `type`: SRUN or SBATCH (job executed using a command or using a script). TORQUE supports only SBATCH mode.
 ** `modules`: List of modules that will be load before executing the job. Optional.
 ** `partition`: Partition in which the job will be executed. If not provided, the HPC default will be used.
-** `command`: Job executable command with arguments if necessary. Mandatory.
+** `command`: Job executable command with arguments if necessary. Since TORQUE does NOT accept extra arguments in job submission command `qsub`, this field must contain only a name of the batch script to run for TORQUE. Mandatory.
 ** `nodes`: Necessary nodes of the job. Default `1`.
 ** `tasks`: Number of tasks of the job. Default `1`.
 ** `tasks_per_node`: Number of tasks per node. Default `1`.
@@ -220,14 +224,14 @@ NOTE: The variables `$SCALE_INDEX`, `$SCALE_COUNT` and `$SCALE_MAX` will be avai
 
 *Example*
 
-This example demonstrates how to describe a new job.
+This example demonstrates how to describe a new job for non-batched run (in Slurm).
 
 [source,yaml]
 ----
     hpc_job:
         type: hpc.nodes.Job
         properties:
-            job_options: 
+            job_options:
                 type: 'SRUN'
                 modules:
                     - gcc/5.3.0
@@ -242,6 +246,29 @@ This example demonstrates how to describe a new job.
                 revert: 'scripts/revert_example.sh'
                 inputs:
                     - 'example_job'
+...
+
+----
+
+This example demonstrates how to describe a new batch job (works with both Slurm and Torque).
+
+[source,yaml]
+----
+    hpc_batch_job:
+        type: hpc.nodes.job
+        properties:
+            job_options:
+                type: 'SBATCH'
+                command: "touch.script"
+            deployment:
+                bootstrap: 'scripts/bootstrap_sbatch_example.sh'
+                revert: 'scripts/revert_sbatch_example.sh'
+                inputs:
+                    - 'single'
+            skip_cleanup: True
+        relationships:
+            - type: job_contained_in_hpc
+              target: first_hpc
 ...
 
 ----
@@ -262,6 +289,7 @@ This example demonstrates how to describe a new job.
 **Derived From:** <<hpc.nodes.job>>
 
 Use this tipe to describe a HPC job executed from a {uri-singularity}[Singularity] image.
+Note that in this version TORQUE does not support Singularity jobs yet.
 
 **Properties:**
 

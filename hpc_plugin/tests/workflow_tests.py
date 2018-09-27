@@ -326,3 +326,6 @@ class TestPlugin(unittest.TestCase):
     #                          True)
     #     else:
     #         logging.warning('[WARNING] Login could not be tested')
+
+if __name__ == '__main__':
+    unittest.main()

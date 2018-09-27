@@ -102,16 +102,18 @@ def get_prevailing_state(state1, state2):
 
 class WorkloadManager(object):
 
+    @staticmethod
     def factory(workload_manager):
         if workload_manager == "SLURM":
             from slurm import Slurm
             return Slurm()
+        if workload_manager == "TORQUE":
+            from torque import Torque
+            return Torque()
         if workload_manager == "BASH":
             from bash import Bash
             return Bash()
-        else:
-            return None
-    factory = staticmethod(factory)
+        return None
 
     def submit_job(self,
                    ssh_client,
@@ -159,6 +161,7 @@ class WorkloadManager(object):
                                              workdir=workdir):
                 return False
 
+            # @TODO: use more general type names (e.g., BATCH/INLINE, etc)
             settings = {
                 "type": "SBATCH",
                 "command": name + ".script"
@@ -289,41 +292,7 @@ class WorkloadManager(object):
         else:
             return None
 
-    def get_states(self, ssh_client, names, logger):
-        """
-        Get the states of the jobs names
-
-        @type credentials: dictionary
-        @param credentials: dictionary with the HPC SSH credentials
-        @type names: list
-        @param names: list of the job names to retrieve their states
-        @rtype dict
-        @return a dictionary of job names and its states
-        """
-        raise NotImplementedError("'get_states' not implemented.")
-
-    def build_raw_states_call(self, names, logger):
-        """
-        Builds the call to get the states in its raw value
-
-        @type names: list
-        @param names: list of the job names to retrieve their states
-        @rtype string
-        @return command that will output the states in raw format
-        """
-        raise NotImplementedError("'build_raw_states_call' not implemented.")
-
-    def parse_states(self, raw_states, logger):
-        """
-        Parse the raw states values to our common format
-
-        @type raw_states: string
-        @param names: states value in raw format
-        @rtype dict
-        @return a dictionary of job names and its states
-        """
-        raise NotImplementedError("'parse_states' not implemented.")
-
+#   ################ ABSTRACT METHODS ################
     def _build_container_script(self,
                                 name,
                                 settings,
@@ -336,7 +305,7 @@ class WorkloadManager(object):
         @type job_settings: dictionary
         @param job_settings: dictionary with the container job options
         @rtype string
-        @return string to with the sbatch script. None if an error arise.
+        @return string with the batch script. None if an error arise.
         """
         raise NotImplementedError("'_build_container_script' not implemented.")
 
@@ -379,12 +348,29 @@ class WorkloadManager(object):
         raise NotImplementedError(
             "'_build_job_cancellation_call' not implemented.")
 
+    # Monitor
+    def get_states(self, ssh_client, names, logger):
+        """
+        Get the states of the jobs names
+
+        @type credentials: dictionary
+        @param credentials: dictionary with the HPC SSH credentials
+        @type names: list
+        @param names: list of the job names to retrieve their states
+        @rtype dict
+        @return a dictionary of job names and its states
+        """
+        raise NotImplementedError("'get_states' not implemented.")
+#   ##################################################
+
     def _create_shell_script(self,
                              ssh_client,
                              name,
                              script_content,
                              logger,
                              workdir=None):
+        # @TODO: why not to use ctx.download_resource and
+        #        ssh_client.open_sftp().put(...)?
         # escape for echo command
         script_data = script_content \
             .replace("\\", "\\\\") \

@@ -12,6 +12,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# History:
+#
+# 2018-02-07   hpcgogol@hlrs.de     added option login_shell
+#
 
 """Wrap of paramiko to send ssh commands
 
@@ -31,6 +36,11 @@ except ImportError:
     import socketserver as SocketServer
 
 from paramiko import client, RSAKey, ssh_exception
+from hpc_plugin.utilities import shlex_quote
+
+# # @TODO `posixpath` can be used for common pathname manipulations on
+# #       remote HPC systems
+# import posixpath as cli_path
 
 logging.getLogger("paramiko").setLevel(logging.WARNING)
 
@@ -49,7 +59,6 @@ class SshClient(object):
             self._host = "localhost"
             self._port = self._tunnel.port()
 
-        # print "Connecting to server ", str(address)+":"+str(port)
         self._client = client.SSHClient()
         self._client.set_missing_host_key_policy(client.AutoAddPolicy())
 
@@ -70,6 +79,17 @@ class SshClient(object):
             private_key = RSAKey.from_private_key(
                 key_file,
                 password=private_key_password)
+
+        # This switch allows to execute commands in a login shell.
+        # By default commands are executed on the remote host.
+        # See discussions in the following threads:
+        #   https://superuser.com/questions/306530/run-remote-ssh-command-with-full-login-shell
+        #   https://stackoverflow.com/questions/32139904/ssh-via-paramiko-load-bashrc
+        # @TODO: think of SSHClient.invoke_shell()
+        #        instead of SSHClient.exec_command()
+        self._login_shell = False
+        if 'login_shell' in credentials:
+            self._login_shell = credentials['login_shell']
 
         retries = 5
         passwd = credentials['password'] if 'password' in credentials else None
@@ -93,6 +113,7 @@ class SshClient(object):
                 else:
                     raise err
             break
+
 
     def get_transport(self):
         """Gets the transport object of the client (paramiko)"""
@@ -152,10 +173,14 @@ class SshClient(object):
 
         # Check if connection is made previously
         if self._client is not None:
+
+            if self._login_shell:
+                cmd = "bash -l -c {}".format(shlex_quote(command))
+            else:
+                cmd = command
             # there is one channel per command
             stdin, stdout, stderr = self._client.exec_command(
-                command,
-                # get_pty=True, # Ask for shell login, not working with srun
+                cmd,
                 timeout=exec_timeout)
 
             if wait_result:

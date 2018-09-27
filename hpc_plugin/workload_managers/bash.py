@@ -15,6 +15,7 @@
 """ Holds the slurm functions """
 
 
+from hpc_plugin.ssh import SshClient
 import workload_manager
 
 
@@ -48,10 +49,27 @@ class Bash(workload_manager.WorkloadManager):
         return "pkill -f " + name
 
 # Monitor
-    def build_raw_states_call(self, names, logger):
-        return "cat msomonitor.data"
+    def get_states(self, workdir, credentials, job_names, logger):
+        # TODO(emepetres) set start time of consulting
+        # (sacct only check current day)
+        call = "cat msomonitor.data"
 
-    def parse_states(self, raw_states, logger):
+        client = SshClient(credentials)
+
+        output, exit_code = client.execute_shell_command(
+            call,
+            workdir=workdir,
+            wait_result=True)
+
+        client.close_connection()
+
+        states = {}
+        if exit_code == 0:
+            states = self._parse_states(output, logger)
+        
+        return states
+
+    def _parse_states(self, raw_states, logger):
         """ Parse two colums exit codes into a dict """
         jobs = raw_states.splitlines()
         parsed = {}

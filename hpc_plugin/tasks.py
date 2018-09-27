@@ -75,6 +75,8 @@ def configure_execution(config,
     ctx.logger.info('Connecting to workload manager..')
     if not simulate:
         wm_type = config['workload_manager']
+        ctx.logger.info(' - manager: {wm_type}'.format(wm_type=wm_type))
+
         wm = WorkloadManager.factory(wm_type)
         if not wm:
             raise NonRecoverableError(
@@ -117,6 +119,7 @@ def configure_execution(config,
         ctx.instance.runtime_properties['workdir'] = workdir
         ctx.logger.info('..workload manager ready to be used on ' + workdir)
     else:
+        ctx.logger.info(' - [simulation]..')
         ctx.instance.runtime_properties['login'] = True
         ctx.instance.runtime_properties['workdir'] = "simulation"
         ctx.logger.warning('Workload manager connection simulated')
@@ -418,7 +421,7 @@ def send_job(job_options, **kwargs):  # pylint: disable=W0613
     simulate = ctx.instance.runtime_properties['simulate']
 
     name = kwargs['name']
-    is_singularity = 'hpc.nodes.singularity_job' in ctx.node.\
+    is_singularity = 'hpc.nodes.SingularityJob' in ctx.node.\
         type_hierarchy
 
     if not simulate:
@@ -475,7 +478,7 @@ def cleanup_job(job_options, skip, **kwargs):  # pylint: disable=W0613
     try:
         name = kwargs['name']
         if not simulate:
-            is_singularity = 'hpc.nodes.singularity_job' in ctx.node.\
+            is_singularity = 'hpc.nodes.SingularityJob' in ctx.node.\
                 type_hierarchy
             workdir = ctx.instance.runtime_properties['workdir']
             wm_type = ctx.instance.runtime_properties['workload_manager']
@@ -524,7 +527,7 @@ def stop_job(job_options, **kwargs):  # pylint: disable=W0613
 
     try:
         name = kwargs['name']
-        is_singularity = 'hpc.nodes.singularity_job' in ctx.node.\
+        is_singularity = 'hpc.nodes.SingularityJob' in ctx.node.\
             type_hierarchy
 
         if not simulate:
