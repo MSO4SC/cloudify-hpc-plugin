@@ -23,167 +23,397 @@ imports:
     - plugin.yaml
 
 inputs:
-    monitor_entrypoint:
-        description: Monitor entrypoint IP
-        default: ""
+  ################### HPC Infrastructre ##################
+  # It will be rendered as HPC select box
+  primary_hpc:
+    default:
+      INPUT:
+        name: Primary HPC
+        description: Select the HPC to be used
+        order: 10
+        type: list
+        choices:
+          REPLACE: INFRA_CONFIG.hpc_list
+
+  # Each one will be rendered in MSO4SC accordingly (lists->select box)
+  app_singuarity_image:
+    default:
+      INPUT:
+        name: Singularity Image
+        description: Select the singularity image to be used
+        advanced: true
+        order: 22
+        type: list
+        choices:
+        - name: SRegistry example
+          description: SRegistry example
+          uri: 'shub://sregistry.srv.cesga.es/mso4sc/sregistry:latest'
+          file: mso4sc-sregistry-latest.simg
+          default: true
+  
+  app_mpi_version:
+    default:
+      INPUT:
+        name: MPI version
+        description: MPI version to be used
+        advanced: true
+        order: 23
+        type: list
+        choices:
+          REPLACE: primary_hpc.definition.mpi_versions
+  
+  app_singularity_version:
+    default:
+      INPUT:
+        name: Singularity version
+        description: Singularity version to be used
+        advanced: true
+        order: 24
+        type: list
+        choices:
+          REPLACE: primary_hpc.definition.singularity_versions
+  
+  app_singularity_storage:
+    default:
+      INPUT:
+        name: Singularity storage
+        description: Singularity long term storage
+        advanced: true
+        order: 25
+        type: list
+        choices:
+          REPLACE: primary_hpc.definition.storages
+
+  partition:
+    default:
+      INPUT:
+        name: Partition
+        description: Partition in which the HPC jobs will run
+        advanced: true
+        order: 21
+        type: list
+        choices:
+          REPLACE: primary_hpc.definition.partitions
+          
+  # Won't be rendered, their value is a match with other inputs
+  hpc_wm_config:
+    default:
+      REPLACE: primary_hpc.definition.wm_config
+  hpc_wm_credentials:
+    default:
+      REPLACE: primary_hpc.definition.credentials
+  mpi_load_commands:
+    default:
+      REPLACE: app_mpi_version.commands
+  singularity_load_commands:
+    default:
+      REPLACE: app_singularity_version.commands
+  singularity_image_uri:
+    default:
+      REPLACE: app_singuarity_image.uri
+  singularity_image_filename:
+    default:
+      REPLACE: app_singuarity_image.file
+  partition_name:
+    default:
+      REPLACE: partition.name
+  singularity_image_storage:
+    default:
+      REPLACE: app_singularity_storage.id
+
+  ################# Cloud Infrastructre #################
+  # It will be rendered as OpenStack select box
+  primary_cloud:
+    default:
+      INPUT:
+        name: Primary OpenStack
+        description: Select the OpenStack to be used
+        order: 50
+        type: list
+        choices:
+          REPLACE: INFRA_CONFIG.openstack_list
+  
+  # each one will be rendered in MSO4SC accordingly (lists->select box)
+  openstack_image:
+    default:
+      INPUT:
+        name: Image
+        description: Select base OpenStack image to be used
+        type: list
+        advanced: true
+        order: 60
+        choices:
+          REPLACE: primary_cloud.definition.openstack_images
+  
+  openstack_flavor:
+    default:
+      INPUT:
+        name: Flavor
+        description: Select OpenStack flavor to be used
+        type: list
+        advanced: true
+        order: 61
+        choices:
+          REPLACE: primary_cloud.definition.openstack_flavors
+  
+  openstack_network:
+    default:
+      INPUT:
+        name: Network
+        description: Select OpenStack network
+        type: list
+        advanced: true
+        order: 62
+        choices:
+          REPLACE: primary_cloud.definition.openstack_networks
+  
+  # Won't be rendered, their value is a match with other inputs
+  cloud_wm_config:
+    default:
+      REPLACE: primary_cloud.definition.wm_config
+  cloud_wm_credentials:
+    default:
+      REPLACE: primary_cloud.definition.credentials
+  openstack_config:
+    default:
+      REPLACE: primary_cloud.definition.openstack_config
+  cloud_image:
+    default:
+      REPLACE: openstack_image.id
+  cloud_flavor:
+    default:
+      REPLACE: openstack_flavor.id
+  cloud_network:
+    default:
+      REPLACE: openstack_network.id
+
+  ################### DATA PUBLISH ##################  
+
+  # It will be rendered as a selection box of datasets
+  ckan_input_resource:
+    default:
+      INPUT:
+        name: Input dataset
+        description: Dataset resource that will be used as input
+        type: resource_list
+        order: 100
+        storage:
+          REPLACE: USER_CONFIG.storage_list.0
+  
+
+  # It will be rendered as a selection box of datasets
+  ckan_outputs_dataset:
+    default:
+      INPUT:
+        name: Outputs dataset
+        description: Dataset in which outputs will be published
+        type: dataset_list
+        order: 100
+        storage:
+          REPLACE: USER_CONFIG.storage_list.0
+
+  ####################### Optional ######################
+  test_file:
+    default:
+      INPUT:
+        name: Test file
+        description: Only to test file input
+        default: |
+                  Test file
+        type: file
+        advanced: true
+        order: 80
+        null: true
+  
+  test_bool:
+    default:
+      INPUT:
+        name: Test bool
+        description: Only to test bool input
+        default: false
+        type: bool
+        advanced: true
+        order: 80
+        null: true
+
+  test_int:
+    default:
+      INPUT:
+        name: Test int
+        description: Only to test int input
+        default: 0
+        type: int
+        advanced: true
+        order: 80
+        null: true
+
+  test_float:
+    default:
+      INPUT:
+        name: Test float
+        description: Only to test float input
+        default: 0.0
+        type: float
+        advanced: true
+        order: 80
+        null: true
+        
+  test_complex_input:
+    default:
+      first_tag:
+        first_first_tag:
+          INPUT:
+            name: First complex input test
+            description: Only to test complex input
+            default: test1.1
+            type: string
+            advanced: true
+            order: 85
+            null: true
+        first_second_tag:
+          foo: bar
+      second_tag:
+        INPUT:
+          name: Second complex input test
+          description: Only to test complex input
+          default: test2.1
+          type: string
+          advanced: true
+          order: 86
+          null: true
+
+  job_prefix:
+    default:
+      INPUT:
+        name: Job's prefix
+        description: Job names prefix
+        default: "mso"
+        advanced: true
+        order: 120
         type: string
 
-    job_prefix:
-        description: Job name prefix in HPCs
-        default: "cfyhpc"
+  monitor_entrypoint:
+    default:
+      INPUT:
+        name: Monitor Entrypoint (not used)
+        description: Monitor entrypoint IP (Not used)
+        default: ""
+        null: true
+        advanced: true
+        order: 130
         type: string
 
-    mso4sc_wm_hpc:
-        description: Configuration of the workload manager for the  HPC to be used
-        default: {}
-
-    partition:
-        description: Partition in which the jobs will run
-        default: "public"
-        type: string
-
-    mso4sc_wm_openstack:
-        description: Configuration of the workload manager for the VM to be used
-        default: {}
-
-    ################### DATA PUBLISH ##################
-    mso4sc_datacatalogue_entrypoint:
-        description: entrypoint of the data catalogue
-        default: "http://193.144.35.207"
-
-    mso4sc_datacatalogue_key:
-        description: API Key to publish the outputs
-        default: ""
-
-    mso4sc_outdataset_outputs_at:
-        description: ID of the CKAN output dataset
-        default: ""
-
-    #################### OPENSTACK ####################
-    openstack_config:
-        default: {}
-
-    openstack_network:
-        default: ""
-
-    openstack_keypair:
-        default: ""
-
-    openstack_floatingip:
-        default: ""
-    
-    openstack_image:
-        default: ""
-    
-    openstack_flavor:
-        default: ""
-
-    ###################################################
+  #######################################################
 
 node_templates:
+  hpc_wm:
+    type: hpc.nodes.WorkloadManager
+    properties:
+      config: { get_input: hpc_wm_config }
+      credentials: { get_input: hpc_wm_credentials }
+      external_monitor_entrypoint: { get_input: monitor_entrypoint }
+      job_prefix: { get_input: job_prefix }
+      workdir_prefix: "single_singularity"
+      skip_cleanup: true
 
-    mso4sc-network:
-        type: cloudify.openstack.nodes.Network
-        properties:
-            use_external_resource: true
-            resource_id: { get_input: openstack_network }
-            openstack_config: { get_input: openstack_config }
-
-    keypair:
-        type: cloudify.openstack.nodes.KeyPair
-        properties:
-            resource_id: { get_input: openstack_keypair }
-            private_key_path: { concat: [keys_repo/, { get_property: [SELF,resource_id] }] }
-            openstack_config: { get_input: openstack_config }
-
-    #my_floating_ip:
-    #    type: cloudify.openstack.nodes.FloatingIP
-    #    properties:
-    #        use_external_resource: true
-    #        resource_id: { get_input: openstack_floatingip }
-    #        openstack_config: { get_input: openstack_config }
-
-    my_server:
-        type: cloudify.openstack.nodes.Server
-        properties:
-            agent_config:
-                install_method: none
-            resource_id: cfy_test
-            image: { get_input: openstack_image }
-            flavor: { get_input: openstack_flavor }
-            openstack_config: { get_input: openstack_config }
-        relationships:
-            - type: cloudify.openstack.server_connected_to_keypair
-              target: keypair
-            - type: cloudify.relationships.connected_to
-              target: mso4sc-network
-            #- type: cloudify.openstack.server_connected_to_floating_ip
-            #  target: my_floating_ip
-
-    hpc_wm:
-        type: hpc.nodes.WorkloadManager
-        properties:
-            config: { get_input: mso4sc_wm_hpc }
-            external_monitor_entrypoint: { get_input: monitor_entrypoint }
-            job_prefix: { get_input: job_prefix }
-            workdir_prefix: "single_sbatch"
-            monitor_period: 15
-
-    openstack_wm:
-        type: hpc.nodes.WorkloadManager
-        properties:
-            config: { get_input: mso4sc_wm_openstack }
-            external_monitor_entrypoint: { get_input: monitor_entrypoint }
-            job_prefix: { get_input: job_prefix }
-            workdir_prefix: "single_shell"
-            monitor_period: 15
-        relationships:
-            - type: wm_contained_in
-              target: my_server
+  openstack_wm:
+    type: hpc.nodes.WorkloadManager
+    properties:
+      config: { get_input: cloud_wm_config }
+      credentials: { get_input: cloud_wm_credentials }
+      external_monitor_entrypoint: { get_input: monitor_entrypoint }
+      job_prefix: { get_input: job_prefix }
+      workdir_prefix: "single_openstack"
+    relationships:
+    - type: wm_contained_in
+      target: my_server
     
-    hpc_job:
-        type: hpc.nodes.Job
-        properties:
-            job_options:
-                type: 'SBATCH'
-                command: "touch.script single_hpc.test"
-            deployment:
-                bootstrap: 'scripts/bootstrap_sbatch_example.sh'
-                revert: 'scripts/revert_sbatch_example.sh'
-                inputs:
-                    - 'single'
-                    - { get_input: partition }
-            publish:
-                - type: "CKAN"
-                  entrypoint: { get_input: mso4sc_datacatalogue_entrypoint}
-                  api_key: { get_input: mso4sc_datacatalogue_key }
-                  dataset: { get_input: mso4sc_outdataset_outputs_at }
-                  file_path: "$CURRENT_WORKDIR/single_hpc.test"
-                  name: "single_hpc"
-                  description: "output test hpc"
-        relationships:
-            - type: job_managed_by_wm
-              target: hpc_wm
+  hpc_job:
+    type: hpc.nodes.SingularityJob
+    properties:
+      job_options: 
+        modules:
+          - gcc/5.3.0
+          - openmpi/1.10.2
+          - singularity/2.4.2
+        partition: { get_input: partition_name }
+        image: {concat: [{ get_input: singularity_image_storage },'/',{ get_input: singularity_image_filename }] }
+        home: '$HOME:/home/$USER'
+        volumes:
+          - '/scratch'
+        command: 'touch single.test'
+        nodes: 1
+        tasks: 1
+        tasks_per_node: 1
+        max_time: '00:01:00'
+      deployment:
+        bootstrap: 'scripts/singularity_bootstrap_example.sh'
+        #revert: 'scripts/singularity_revert_example.sh'
+        inputs:
+          - { get_input: singularity_image_storage }
+          - { get_input: singularity_image_filename }
+          - { get_input: singularity_image_uri }
+      skip_cleanup: True
+    relationships:
+    - type: job_managed_by_wm
+      target: hpc_wm
     
-    vm_job:
-        type: hpc.nodes.Job
-        properties:
-            job_options:
-                type: 'SHELL'
-                command: "touch single_vm.test"
-            publish:
-                - type: "CKAN"
-                  entrypoint: { get_input: mso4sc_datacatalogue_entrypoint}
-                  api_key: { get_input: mso4sc_datacatalogue_key }
-                  dataset: { get_input: mso4sc_outdataset_outputs_at }
-                  file_path: "$CURRENT_WORKDIR/single_vm.test"
-                  name: "single_vm"
-                  description: "output test vm"
-        relationships:
-            - type: job_managed_by_wm
-              target: openstack_wm
+  vm_job:
+    type: hpc.nodes.Job
+    properties:
+      job_options:
+        type: 'SHELL'
+        command: "touch single_vm.test"
+      publish:
+      - dataset: { get_input: ckan_outputs_dataset }
+        file_path: "$CURRENT_WORKDIR/single_vm.test"
+        name: "single_vm"
+        description: "output test vm"
+    relationships:
+    - type: job_managed_by_wm
+      target: openstack_wm
+      
+      
+  ########### OpenStack plugin ##########
+  mso4sc-network:
+    type: cloudify.openstack.nodes.Network
+    properties:
+      use_external_resource: true
+      resource_id: { get_input: cloud_network }
+      openstack_config: { get_input: openstack_config }
+
+  keypair:
+    type: cloudify.openstack.nodes.KeyPair
+    properties:
+      resource_id: "autokeypair"
+      private_key_path: { concat: [keys_repo/, { get_property: [SELF,resource_id] }] }
+      openstack_config: { get_input: openstack_config }
+
+  #my_floating_ip:
+  #  type: cloudify.openstack.nodes.FloatingIP
+  #  properties:
+  #    use_external_resource: true
+  #    resource_id: { get_input: openstack_floatingip }
+  #    openstack_config: { get_input: openstack_config }
+
+  my_server:
+    type: cloudify.openstack.nodes.Server
+    properties:
+      agent_config:
+        install_method: none
+      resource_id: cfy_test
+      image: { get_input: cloud_image }
+      flavor: { get_input: cloud_flavor }
+      openstack_config: { get_input: openstack_config }
+    relationships:
+    - type: cloudify.openstack.server_connected_to_keypair
+      target: keypair
+    - type: cloudify.relationships.connected_to
+      target: mso4sc-network
+    #- type: cloudify.openstack.server_connected_to_floating_ip
+    #  target: my_floating_ip
 
 outputs:
-    single_job_name:
-        description: single job name in the HPC
-        value: { get_attribute: [vm_job, job_name] }
+  single_job_name:
+    description: single job name in the VM
+    value: { get_attribute: [vm_job, job_name] }

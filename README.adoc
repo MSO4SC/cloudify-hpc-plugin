@@ -135,6 +135,7 @@ Use this type to describe a HPC infrastructure.
 
 **Properties:**
 
+* `credentials`: Connection credentials, as described in //TODO
 * `config`: HPC configuration, as described in <<hpc-config-properties>>.
 * `external_monitor_entrypoint`: Entrypoint of the external monitor that Cloudify will use instead of the internal one.
 * `external_monitor_port`: Port of the monitor. Default `:9090`.

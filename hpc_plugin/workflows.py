@@ -68,11 +68,11 @@ class JobGraphInstance(object):
             self.monitor_url = ""
 
     def queue(self):
-        """ Send the instance to the HPC queue if it is a Job """
+        """ Sends the job's instance to the workload manager queue """
         if not self.parent_node.is_job:
             return
 
-        self.winstance.send_event('Queuing HPC job..')
+        self.winstance.send_event('Queuing job..')
         result = self.winstance.execute_operation('hpc.interfaces.'
                                                   'lifecycle.queue',
                                                   kwargs={"name": self.name})
@@ -80,13 +80,13 @@ class JobGraphInstance(object):
         if result.task.get_state() == tasks.TASK_FAILED:
             init_state = 'FAILED'
         else:
-            self.winstance.send_event('..HPC job queued')
+            self.winstance.send_event('.. job queued')
             init_state = 'PENDING'
         self.set_status(init_state)
         return result.task
 
     def publish(self):
-        """ Send the instance to the HPC queue if it is a Job """
+        """ Sends the job's instance to the workload manager queue """
         if not self.parent_node.is_job:
             return
 
@@ -123,33 +123,33 @@ class JobGraphInstance(object):
                      self._status == 'TIMEOUT')
 
     def clean(self):
-        """ clean aux files if it is a Job """
+        """ Cleans job's aux files """
         if not self.parent_node.is_job:
             return
 
-        self.winstance.send_event('Cleaning HPC job..')
+        self.winstance.send_event('Cleaning job..')
         result = self.winstance.execute_operation('hpc.interfaces.'
                                                   'lifecycle.cleanup',
                                                   kwargs={"name": self.name})
         # result.task.wait_for_terminated()
-        self.winstance.send_event('..HPC job cleaned')
+        self.winstance.send_event('.. job cleaned')
 
         # print result.task.dump()
         return result.task
 
     def cancel(self):
-        """ Cancel the instance of the HPC if it is a Job """
+        """ Cancels the job instance of the workload manager """
         if not self.parent_node.is_job:
             return
 
         # First perform clean operation
         self.clean()
 
-        self.winstance.send_event('Cancelling HPC job..')
+        self.winstance.send_event('Cancelling job..')
         result = self.winstance.execute_operation('hpc.interfaces.'
                                                   'lifecycle.cancel',
                                                   kwargs={"name": self.name})
-        self.winstance.send_event('..HPC job canceled')
+        self.winstance.send_event('.. job canceled')
         result.task.wait_for_terminated()
 
         self._status = 'CANCELLED'
@@ -194,7 +194,7 @@ class JobGraphNode(object):
         self.children.append(node)
 
     def queue_all_instances(self):
-        """ Send all instances to the HPC queue if it represents a Job """
+        """ Sends all job instances to the workload manager queue """
         if not self.is_job:
             return []
 
@@ -204,17 +204,6 @@ class JobGraphNode(object):
 
         self.status = 'QUEUED'
         return tasks_list
-
-    # def publish(self):
-    #     """ Send all instances to the HPC queue if it represents a Job """
-    #     if not self.is_job:
-    #         return []
-
-    #     tasks_list = []
-    #     for job_instance in self.instances:
-    #         tasks_list.append(job_instance.publish())
-
-    #     return tasks_list
 
     def is_ready(self):
         """ True if it has no more dependencies to satisfy """
@@ -262,7 +251,7 @@ class JobGraphNode(object):
         return not self.failed
 
     def get_children_ready(self):
-        """ Get all children nodes that are ready to start """
+        """ Gets all children nodes that are ready to start """
         readys = []
         for child in self.children:
             if child.is_ready():
@@ -278,7 +267,7 @@ class JobGraphNode(object):
         return to_print
 
     def clean_all_instances(self):
-        """ Clean all files instances of the HPC if it represents a Job """
+        """ Cleans all job's files instances of the workload manager """
         if not self.is_job:
             return
 
@@ -287,7 +276,7 @@ class JobGraphNode(object):
         self.status = 'CANCELED'
 
     def cancel_all_instances(self):
-        """ Cancel all instances of the HPC if it represents a Job """
+        """ Cancels all job instances of the workload manager """
         if not self.is_job:
             return
 

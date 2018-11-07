@@ -1,7 +1,8 @@
 #!/bin/bash -l
 
-module load singularity/2.3.1
+module load singularity/2.4.2
 
 if [ ! -f $1/$2 ]; then
-    cp $SINGULARITY_REPO/$2 $1
+    cd $1
+    singularity pull $3
 fi

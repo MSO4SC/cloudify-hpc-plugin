@@ -21,7 +21,9 @@ node_types:
         derived_from: cloudify.nodes.Compute
         properties:
             config:
-                description: credentials, timezone and workload manager
+                description: type, and optionally timezone
+            credentials:
+                description: SSH credentials
             external_monitor_entrypoint:
                 description: Monitor entrypoint, port and orchestrator port
                 default: ""
@@ -72,6 +74,8 @@ node_types:
                     inputs:
                         config:
                             default: { get_property: [SELF, config] }
+                        credentials:
+                            default: { get_property: [SELF, credentials] }
                         base_dir:
                             default: { get_property: [SELF, base_dir] }
                         workdir_prefix:
@@ -83,6 +87,8 @@ node_types:
                     inputs:
                         config:
                             default: { get_property: [SELF, config] }
+                        credentials:
+                            default: { get_property: [SELF, credentials] }
                         skip:
                             default: { get_property: [SELF, skip_cleanup] }
                         simulate:
@@ -93,6 +99,8 @@ node_types:
                     inputs:
                         config:
                             default: { get_property: [SELF, config] }
+                        credentials:
+                            default: { get_property: [SELF, credentials] }
                         external_monitor_entrypoint: 
                             default: { get_property: [SELF, external_monitor_entrypoint] }
                         external_monitor_port: 
@@ -106,6 +114,8 @@ node_types:
                     inputs:
                         config:
                             default: { get_property: [SELF, config] }
+                        credentials:
+                            default: { get_property: [SELF, credentials] }
                         external_monitor_entrypoint: 
                             default: { get_property: [SELF, external_monitor_entrypoint] }
                         external_monitor_port: 
@@ -185,6 +195,8 @@ relationships:
                     inputs:
                         config: 
                             default: { get_property: [SOURCE, config] }
+                        credentials:
+                            default: { get_property: [SOURCE, credentials] }
                         simulate:
                             default: { get_property: [SOURCE, simulate] }
     job_managed_by_wm:
@@ -196,6 +208,8 @@ relationships:
                     inputs:
                         config: 
                             default: { get_property: [TARGET, config] }
+                        credentials:
+                            default: { get_property: [TARGET, credentials] }
                         external_monitor_entrypoint: 
                             default: { get_property: [TARGET, external_monitor_entrypoint] }
                         external_monitor_port: 

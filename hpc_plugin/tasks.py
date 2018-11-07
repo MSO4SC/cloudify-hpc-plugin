@@ -14,26 +14,27 @@
 # limitations under the License.
 """ Holds the plugin tasks """
 
-import requests
 import traceback
+import requests
 from cloudify import ctx
 from cloudify.decorators import operation
 from cloudify.exceptions import NonRecoverableError
 
-from ssh import SshClient
-from workload_managers.workload_manager import WorkloadManager
-from external_repositories.external_repository import ExternalRepository
+from hpc_plugin.ssh import SshClient
+from hpc_plugin.workload_managers.workload_manager import WorkloadManager
+from hpc_plugin.external_repositories.external_repository import ExternalRepository
 
 
 @operation
-def preconfigure_wm(config,
-                    simulate,
-                    **kwargs):  # pylint: disable=W0613
+def preconfigure_wm(
+        config,
+        credentials,
+        simulate,
+        **kwargs):  # pylint: disable=W0613
     """ Get workload manager config from infrastructure """
     ctx.logger.info('Preconfiguring workload manager..')
 
     if not simulate:
-        credentials = config['credentials']
         credentials_modified = False
 
         if 'ip' in ctx.target.instance.runtime_properties:
@@ -41,9 +42,10 @@ def preconfigure_wm(config,
                 ctx.target.instance.runtime_properties['ip']
             credentials_modified = True
 
-        for rel in ctx.target.instance.relationships:
+        for rel in ctx.target.instance.relationships:  # server relationships
             node = rel.target.node
             if node.type == 'cloudify.openstack.nodes.KeyPair':
+                # take private key from openstack
                 if 'private_key_path' in node.properties:
                     with open(node.properties['private_key_path'], 'r') \
                             as keyfile:
@@ -66,11 +68,13 @@ def preconfigure_wm(config,
 
 
 @operation
-def configure_execution(config,
-                        base_dir,
-                        workdir_prefix,
-                        simulate,
-                        **kwargs):  # pylint: disable=W0613
+def configure_execution(
+        config,
+        credentials,
+        base_dir,
+        workdir_prefix,
+        simulate,
+        **kwargs):  # pylint: disable=W0613
     """ Creates the working directory for the execution """
     ctx.logger.info('Connecting to workload manager..')
     if not simulate:
@@ -84,7 +88,6 @@ def configure_execution(config,
                 wm_type +
                 "' not supported.")
 
-        credentials = config['credentials']
         if 'credentials' in ctx.instance.runtime_properties:
             credentials = ctx.instance.runtime_properties['credentials']
         try:
@@ -126,10 +129,12 @@ def configure_execution(config,
 
 
 @operation
-def cleanup_execution(config,
-                      skip,
-                      simulate,
-                      **kwargs):  # pylint: disable=W0613
+def cleanup_execution(
+        config,
+        credentials,
+        skip,
+        simulate,
+        **kwargs):  # pylint: disable=W0613
     """ Cleans execution working directory """
     if skip:
         return
@@ -145,7 +150,6 @@ def cleanup_execution(config,
                 wm_type +
                 "' not supported.")
 
-        credentials = config['credentials']
         if 'credentials' in ctx.instance.runtime_properties:
             credentials = ctx.instance.runtime_properties['credentials']
         client = SshClient(credentials)
@@ -159,19 +163,20 @@ def cleanup_execution(config,
 
 
 @operation
-def start_monitoring_hpc(config,
-                         external_monitor_entrypoint,
-                         external_monitor_port,
-                         external_monitor_orchestrator_port,
-                         simulate,
-                         **kwargs):  # pylint: disable=W0613
+def start_monitoring_hpc(
+        config,
+        credentials,
+        external_monitor_entrypoint,
+        external_monitor_port,
+        external_monitor_orchestrator_port,
+        simulate,
+        **kwargs):  # pylint: disable=W0613
     """ Starts monitoring using the Monitor orchestrator """
     external_monitor_entrypoint = None  # FIXME: external monitor disabled
     if external_monitor_entrypoint:
         ctx.logger.info('Starting infrastructure monitor..')
 
         if not simulate:
-            credentials = config['credentials']
             if 'credentials' in ctx.instance.runtime_properties:
                 credentials = ctx.instance.runtime_properties['credentials']
             workload_manager = config['workload_manager']
@@ -201,23 +206,24 @@ def start_monitoring_hpc(config,
                     "failed to start node monitor: " + str(response
                                                            .status_code))
         else:
-            ctx.logger.warning('HPC monitor simulated')
+            ctx.logger.warning('monitor simulated')
 
 
 @operation
-def stop_monitoring_hpc(config,
-                        external_monitor_entrypoint,
-                        external_monitor_port,
-                        external_monitor_orchestrator_port,
-                        simulate,
-                        **kwargs):  # pylint: disable=W0613
+def stop_monitoring_hpc(
+        config,
+        credentials,
+        external_monitor_entrypoint,
+        external_monitor_port,
+        external_monitor_orchestrator_port,
+        simulate,
+        **kwargs):  # pylint: disable=W0613
     """ Stops monitoring using the Monitor Orchestrator """
     external_monitor_entrypoint = None  # FIXME: external monitor disabled
     if external_monitor_entrypoint:
         ctx.logger.info('Stoping infrastructure monitor..')
 
         if not simulate:
-            credentials = config['credentials']
             if 'credentials' in ctx.instance.runtime_properties:
                 credentials = ctx.instance.runtime_properties['credentials']
             workload_manager = config['workload_manager']
@@ -251,25 +257,27 @@ def stop_monitoring_hpc(config,
                         "failed to stop node monitor: " + str(response
                                                               .status_code))
         else:
-            ctx.logger.warning('HPC monitor simulated')
+            ctx.logger.warning('monitor simulated')
 
 
 @operation
-def preconfigure_job(config,
-                     external_monitor_entrypoint,
-                     external_monitor_port,
-                     external_monitor_type,
-                     external_monitor_orchestrator_port,
-                     job_prefix,
-                     monitor_period,
-                     simulate,
-                     **kwargs):  # pylint: disable=W0613
-    """ Set the job with the HPC credentials """
-    ctx.logger.info('Preconfiguring HPC job..')
+def preconfigure_job(
+        config,
+        credentials,
+        external_monitor_entrypoint,
+        external_monitor_port,
+        external_monitor_type,
+        external_monitor_orchestrator_port,
+        job_prefix,
+        monitor_period,
+        simulate,
+        **kwargs):  # pylint: disable=W0613
+    """ Match the job with its credentials """
+    ctx.logger.info('Preconfiguring job..')
 
     if 'credentials' not in ctx.target.instance.runtime_properties:
         ctx.source.instance.runtime_properties['credentials'] = \
-            config['credentials']
+            credentials
     else:
         ctx.source.instance.runtime_properties['credentials'] = \
             ctx.target.instance.runtime_properties['credentials']
@@ -293,9 +301,10 @@ def preconfigure_job(config,
 
 
 @operation
-def bootstrap_job(deployment,
-                  skip_cleanup,
-                  **kwarsgs):  # pylint: disable=W0613
+def bootstrap_job(
+            deployment,
+            skip_cleanup,
+            **kwarsgs):  # pylint: disable=W0613
     """Bootstrap a job with a script that receives SSH credentials as imput"""
     if not deployment:
         return
@@ -419,7 +428,7 @@ def deploy_job(script,
 
 @operation
 def send_job(job_options, **kwargs):  # pylint: disable=W0613
-    """ Sends a job to the HPC """
+    """ Sends a job to the workload manager """
     simulate = ctx.instance.runtime_properties['simulate']
 
     name = kwargs['name']
@@ -467,7 +476,7 @@ def send_job(job_options, **kwargs):  # pylint: disable=W0613
 
 @operation
 def cleanup_job(job_options, skip, **kwargs):  # pylint: disable=W0613
-    """Clean the aux files of the job in the HPC"""
+    """Clean the aux files of the job"""
     if skip:
         return
 
@@ -520,7 +529,7 @@ def cleanup_job(job_options, skip, **kwargs):  # pylint: disable=W0613
 
 @operation
 def stop_job(job_options, **kwargs):  # pylint: disable=W0613
-    """ Stops a job in the HPC """
+    """ Stops a job in the workload manager """
     try:
         simulate = ctx.instance.runtime_properties['simulate']
     except KeyError:
