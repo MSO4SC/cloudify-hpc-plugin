@@ -35,14 +35,28 @@ class Bash(workload_manager.WorkloadManager):
             return {'error': "Job type '" + job_settings['type'] +
                     "'not supported"}
 
+        # Build single line command
+        bash_call = ''
+
+        # NOTE an uploaded script could also be interesting to execute
+        if 'pre' in job_settings:
+            for entry in job_settings['pre']:
+                bash_call += entry + '; '
+
         # add executable and arguments, and save exit code on env
-        slurm_call = 'nohup bash -c "' + \
-            job_settings['command'] + ' ' +\
-            '; echo ' + name + ',$? >> msomonitor.data" ' + \
-            '&'
+        bash_call += job_settings['command'] + '; '
+        bash_call += 'echo ' + name + ',$? >> msomonitor.data; '
+
+        # NOTE an uploaded script could also be interesting to execute
+        if 'post' in job_settings:
+            for entry in job_settings['post']:
+                bash_call += entry + '; '
+
+        # Run in the background detached from terminal
+        bash_call = 'nohup sh -c "' + bash_call + '" &'
 
         response = {}
-        response['call'] = slurm_call
+        response['call'] = bash_call
         return response
 
     def _build_job_cancellation_call(self, name, job_settings, logger):
@@ -50,7 +64,7 @@ class Bash(workload_manager.WorkloadManager):
 
 # Monitor
     def get_states(self, workdir, credentials, job_names, logger):
-        # TODO(emepetres) set start time of consulting
+        # TODO set start time of consulting
         # (sacct only check current day)
         call = "cat msomonitor.data"
 
@@ -88,7 +102,7 @@ class Bash(workload_manager.WorkloadManager):
         elif exit_code == '126':  # cannot execute
             return workload_manager.JOBSTATESLIST[workload_manager.REVOKED]
         elif exit_code == '127':  # not found
-            return workload_manager.JOBSTATESLIST[workload_manager.BOOT_FAIL]
+            return workload_manager.JOBSTATESLIST[workload_manager.BOOTFAIL]
         elif exit_code == '130':  # terminated by ctrl+c
             return workload_manager.JOBSTATESLIST[workload_manager.CANCELLED]
         else:

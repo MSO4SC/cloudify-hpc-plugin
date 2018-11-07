@@ -22,7 +22,8 @@ from cloudify.exceptions import NonRecoverableError
 
 from hpc_plugin.ssh import SshClient
 from hpc_plugin.workload_managers.workload_manager import WorkloadManager
-from hpc_plugin.external_repositories.external_repository import ExternalRepository
+from hpc_plugin.external_repositories.external_repository import (
+    ExternalRepository)
 
 
 @operation

@@ -34,21 +34,17 @@ class Slurm(WorkloadManager):
             return None
 
         script = '#!/bin/bash -l\n\n'
+
         script += self._parse_slurm_job_settings(name,
                                                  job_settings,
                                                  '#SBATCH', '\n')
 
         script += '\n# DYNAMIC VARIABLES\n\n'
 
-        # load extra modules
-        if 'modules' in job_settings and job_settings['modules']:
-            script += 'module load {}\n'.format(
-                ' '.join(job_settings['modules']))
-
-        # TODO: use also an uploaded script
+        # NOTE an uploaded script could also be interesting to execute
         if 'pre' in job_settings:
             for entry in job_settings['pre']:
-                script += entry+'\n'
+                script += entry + '\n'
 
         script += '\nmpirun singularity exec '
 
@@ -62,10 +58,10 @@ class Slurm(WorkloadManager):
         # add executable and arguments
         script += job_settings['image'] + ' ' + job_settings['command'] + '\n'
 
-        # TODO: use also an uploaded script
+        # NOTE an uploaded script could also be interesting to execute
         if 'post' in job_settings:
             for entry in job_settings['post']:
-                script += entry+'\n'
+                script += entry + '\n'
 
         return script
 
@@ -82,16 +78,16 @@ class Slurm(WorkloadManager):
         # Build single line command
         slurm_call = ''
 
-        # load extra modules
-        if 'modules' in job_settings and job_settings['modules']:
-            slurm_call = 'module load {}; '.format(
-                ' '.join(job_settings['modules']))
+        # NOTE an uploaded script could also be interesting to execute
+        if 'pre' in job_settings:
+            for entry in job_settings['pre']:
+                slurm_call += entry + '; '
 
         if job_settings['type'] == 'SBATCH':
             # sbatch command plus job name
             slurm_call += "sbatch --parsable -J '" + name + "'"
         elif job_settings['type'] == 'SRUN':
-            slurm_call += "nohup srun -J '" + name + "'"
+            slurm_call += "srun -J '" + name + "'"
         else:
             return {'error': "Job type '" + job_settings['type'] +
                     "'not supported"}
@@ -126,10 +122,16 @@ class Slurm(WorkloadManager):
             response['scale_env_mapping_call'] = scale_env_mapping_call
 
         # add executable and arguments
-        slurm_call += ' ' + job_settings['command']
+        slurm_call += ' ' + job_settings['command'] + '; '
+
+        # NOTE an uploaded script could also be interesting to execute
+        if 'post' in job_settings:
+            for entry in job_settings['post']:
+                slurm_call += entry + '; '
 
         if job_settings['type'] == 'SRUN':
-            slurm_call += ' &'
+            # Run in the background detached from terminal
+            slurm_call = 'nohup sh -c "' + slurm_call + '" &'
 
         response['call'] = slurm_call
         return response
@@ -205,7 +207,7 @@ class Slurm(WorkloadManager):
 
 # Monitor
     def get_states(self, workdir, credentials, job_names, logger):
-        # TODO(emepetres) set start time of consulting
+        # TODO set start time of consulting
         # (sacct only check current day)
         call = "sacct -n -o JobName,State -X -P --name=" + ','.join(job_names)
 

@@ -35,6 +35,7 @@ try:
 except ImportError:
     import socketserver as SocketServer
 
+from logging import NullHandler
 from paramiko import client, RSAKey, ssh_exception
 from hpc_plugin.utilities import shlex_quote
 
@@ -43,6 +44,8 @@ from hpc_plugin.utilities import shlex_quote
 # import posixpath as cli_path
 
 logging.getLogger("paramiko").setLevel(logging.WARNING)
+# Hack to avoid "Error reading SSH protocol banner" random issue
+logging.getLogger('paramiko.transport').addHandler(NullHandler())
 
 
 class SshClient(object):
@@ -85,13 +88,13 @@ class SshClient(object):
         # See discussions in the following threads:
         #   https://superuser.com/questions/306530/run-remote-ssh-command-with-full-login-shell
         #   https://stackoverflow.com/questions/32139904/ssh-via-paramiko-load-bashrc
-        # @TODO: think of SSHClient.invoke_shell()
+        # @NOTE: think of SSHClient.invoke_shell()
         #        instead of SSHClient.exec_command()
         self._login_shell = False
         if 'login_shell' in credentials:
             self._login_shell = credentials['login_shell']
 
-        retries = 10
+        retries = 5
         passwd = credentials['password'] if 'password' in credentials else None
         while True:
             try:

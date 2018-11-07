@@ -36,6 +36,11 @@ class Torque(WorkloadManager):
 
         script = '#!/bin/bash -l\n\n'
 
+        # NOTE an uploaded script could also be interesting to execute
+        if 'pre' in job_settings:
+            for entry in job_settings['pre']:
+                script += entry + '\n'
+
 #       ################### Torque settings ###################
         if 'nodes' in job_settings:
             resources_request = "nodes={}".format(job_settings['nodes'])
@@ -58,10 +63,10 @@ class Torque(WorkloadManager):
 
         script += '\n# DYNAMIC VARIABLES\n\n'
 
-        # load extra modules
-        if 'modules' in job_settings and job_settings['modules']:
-            script += 'module load {}\n'.format(
-                ' '.join(job_settings['modules']))
+        # NOTE an uploaded script could also be interesting to execute
+        if 'pre' in job_settings:
+            for entry in job_settings['pre']:
+                script += entry + '\n'
 
         script += '\nmpirun singularity exec '
 
@@ -74,6 +79,11 @@ class Torque(WorkloadManager):
 
         # add executable and arguments
         script += job_settings['image'] + ' ' + job_settings['command'] + '\n'
+
+        # NOTE an uploaded script could also be interesting to execute
+        if 'post' in job_settings:
+            for entry in job_settings['post']:
+                script += entry + '\n'
 
         return script
 
@@ -94,10 +104,10 @@ class Torque(WorkloadManager):
         # Build single line command
         torque_call = ''
 
-        # load extra modules
-        if 'modules' in job_settings and job_settings['modules']:
-            torque_call = 'module load {}; '.format(
-                ' '.join(job_settings['modules']))
+        # NOTE an uploaded script could also be interesting to execute
+        if 'pre' in job_settings:
+            for entry in job_settings['pre']:
+                torque_call += entry + '; '
 
 #       ################### Torque settings ###################
         # qsub command plus job name
@@ -175,6 +185,12 @@ class Torque(WorkloadManager):
 
         # add executable and arguments
         torque_call += ' {}'.format(job_settings['command'])
+
+        # NOTE an uploaded script could also be interesting to execute
+        if 'post' in job_settings:
+            torque_call += '; '
+            for entry in job_settings['post']:
+                torque_call += entry + '; '
 
         response['call'] = torque_call
         return response

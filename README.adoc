@@ -93,34 +93,39 @@ Additionally {uri-mso4sc}[MSO4SC] provide {uri-vagrant}[Vagrant] and {uri-docker
 
 The HPC plugin requires credentials, endpoint and other setup information in order to authenticate and interact with them.
 
-This configuration properties are defined in <<hpc.nodes.Compute>> config properties.
+This configuration properties are defined in <<hpc.nodes.Compute>> _credentials_ and _config_ properties.
+
+[source,yaml]
+----
+credentials:
+    host: "[HPC-HOST]"
+    user: "[HPC-SSH-USER]"
+    private_key: |
+        -----BEGIN RSA PRIVATE KEY-----
+        ......
+        -----END RSA PRIVATE KEY-----
+    private_key_password: "[PRIVATE-KEY-PASSWORD]"
+    password: "[HPC-SSH-PASS]"
+    login_shell: {true|false}
+    tunnel:
+        host: ...
+        ...
+----
+
+. HPC and ssh credentials. At least `private_key` or `password` must be provided.
+.. _tunnel_: Follows the same structure as its parent (credentials), to connect to the HPC through an tunneled SSH connection.
 
 [source,yaml]
 ----
 config:
-    credentials:
-        host: "[HPC-HOST]"
-        user: "[HPC-SSH-USER]"
-        private_key: |
-            -----BEGIN RSA PRIVATE KEY-----
-            ......
-            -----END RSA PRIVATE KEY-----
-        private_key_password: "[PRIVATE-KEY-PASSWORD]"
-        password: "[HPC-SSH-PASS]"
-        login_shell: {true|false}
-        tunnel:
-            host: ...
-            ...
     country_tz: "Europe/Madrid"
     workload_manager: {"SLURM"|"TORQUE"}
 ----
 
-. _credentials_: HPC and ssh credentials. At least `private_key` or `password` must be provided.
-.. _tunnel_: Follows the same structure as its parent (credentials), to connect to the HPC through an tunneled SSH connection.
 . _country_tz_: Country Time Zone configured in the the HPC.
 . _workload_manager_: Workload manager used by the HPC.
 
-WARNING: Only Slurm is currently accepted as workload manager.
+WARNING: Only Slurm and Torque are currently accepted as workload managers.
 
 
 == Types
@@ -135,7 +140,7 @@ Use this type to describe a HPC infrastructure.
 
 **Properties:**
 
-* `credentials`: Connection credentials, as described in //TODO
+* `credentials`: Connection credentials, as described in <<hpc-config-properties>>.
 * `config`: HPC configuration, as described in <<hpc-config-properties>>.
 * `external_monitor_entrypoint`: Entrypoint of the external monitor that Cloudify will use instead of the internal one.
 * `external_monitor_port`: Port of the monitor. Default `:9090`.
@@ -158,12 +163,12 @@ This example demonstrates how to add a new HPC.
     hpc_wm:
         type: hpc.nodes.WorkloadManager
         properties:
+            credentials:
+                host: "[HPC-HOST]"
+                user: "[HPC-SSH-USER]"
+                password: "[HPC-SSH-PASS]"
+                login_shell: false
             config:
-                credentials:
-                    host: "[HPC-HOST]"
-                    user: "[HPC-SSH-USER]"
-                    password: "[HPC-SSH-PASS]"
-                    login_shell: false
                 country_tz: "Europe/Madrid"
                 workload_manager: "SLURM"
             job_prefix: wm_
@@ -189,7 +194,8 @@ Use this tipe to describe a HPC job.
 
 * `job_options`: Job parameters and needed resources.
 ** `type`: SRUN or SBATCH (job executed using a command or using a script). TORQUE supports only SBATCH mode.
-** `modules`: List of modules that will be load before executing the job. Optional.
+** `pre`: List of commands to be executed before running the job. Optional.
+** `post`: List of commands to be executed after running the job. Optional.
 ** `partition`: Partition in which the job will be executed. If not provided, the HPC default will be used.
 ** `command`: Job executable command with arguments if necessary. Since TORQUE does NOT accept extra arguments in job submission command `qsub`, this field must contain only a name of the batch script to run for TORQUE. Mandatory.
 ** `nodes`: Necessary nodes of the job. Default `1`.
@@ -235,8 +241,8 @@ This example demonstrates how to describe a new job for non-batched run (in Slur
         properties:
             job_options:
                 type: 'SRUN'
-                modules:
-                    - gcc/5.3.0
+                pre:
+                    - module load gcc/5.3.0
                 partition: 'thin-shared'
                 command: 'touch example.test'
                 nodes: 1
@@ -296,9 +302,8 @@ Note that in this version TORQUE does not support Singularity jobs yet.
 **Properties:**
 
 * `job_options`: Job parameters and needed resources.
-** `modules`: List of modules that will be load before executing the job. Optional.
 ** `pre`: List of commands to be executed before running singularity container. Optional.
-** `post`: List of commands to be executed after running singularity container.
+** `post`: List of commands to be executed after running singularity container. Optional.
 ** `image`: {uri-singularity}[Singularity] image file.
 ** `home`: Home volume that will be bind with the image instance (Optional).
 ** `volumes`: List of volumes that will be bind with the image instance.
@@ -336,13 +341,11 @@ This example demonstrates how to describe a new job executed in a {uri-singulari
         type: hpc.nodes.SingularityJob
         properties:
             job_options:
-                modules:
-                    - gcc/5.3.0
-                    - openmpi/1.10.2
-                    - singularity/2.3.1
-                partition: 'thin-shared'
                 pre:
+                    - module load gcc/5.3.0 openmpi/1.10.2
+                    - module load singularity/2.3.1
                     - touch pre.output
+                partition: 'thin-shared' 
                 post:
                     - touch post.output
                 image: '$LUSTRE/openmpi_1.10.7_ring.img'

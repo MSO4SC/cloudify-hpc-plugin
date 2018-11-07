@@ -102,12 +102,12 @@ inputs:
   hpc_wm_credentials:
     default:
       REPLACE: primary_hpc.definition.credentials
-  mpi_load_commands:
+  mpi_load_command:
     default:
-      REPLACE: app_mpi_version.commands
-  singularity_load_commands:
+      REPLACE: app_mpi_version.load_command
+  singularity_load_command:
     default:
-      REPLACE: app_singularity_version.commands
+      REPLACE: app_singularity_version.load_command
   singularity_image_uri:
     default:
       REPLACE: app_singuarity_image.uri
@@ -332,10 +332,9 @@ node_templates:
     type: hpc.nodes.SingularityJob
     properties:
       job_options: 
-        modules:
-          - gcc/5.3.0
-          - openmpi/1.10.2
-          - singularity/2.4.2
+        pre:
+        - { get_input: mpi_load_command }
+        - { get_input: singularity_load_command }
         partition: { get_input: partition_name }
         image: {concat: [{ get_input: singularity_image_storage },'/',{ get_input: singularity_image_filename }] }
         home: '$HOME:/home/$USER'
