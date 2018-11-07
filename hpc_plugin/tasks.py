@@ -580,7 +580,7 @@ def stop_job(job_options, **kwargs):  # pylint: disable=W0613
 
 
 @operation
-def publish(publish_options, **kwargs):
+def publish(publish_list, **kwargs):
     """ Publish the job outputs """
     try:
         simulate = ctx.instance.runtime_properties['simulate']
@@ -598,17 +598,17 @@ def publish(publish_options, **kwargs):
             workdir = ctx.instance.runtime_properties['workdir']
             client = SshClient(ctx.instance.runtime_properties['credentials'])
 
-            for publish_item in publish_options:
+            for publish_item in publish_list:
                 if not published:
                     break
-                er = ExternalRepository.factory(publish_item)
-                if not er:
+                exrep = ExternalRepository.factory(publish_item)
+                if not exrep:
                     client.close_connection()
                     raise NonRecoverableError(
                         "External repository '" +
-                        publish_item['type'] +
+                        publish_item['dataset']['type'] +
                         "' not supported.")
-                published = er.publish(client, ctx.logger, workdir)
+                published = exrep.publish(client, ctx.logger, workdir)
 
             client.close_connection()
         else:

@@ -21,15 +21,16 @@ from hpc_plugin.ssh import SshClient
 class ExternalRepository(object):
 
     def factory(publish_item):
-        if publish_item['type'] == "CKAN":
-            from ckan import Ckan
+        ptype = publish_item['dataset']['type'].upper()
+        if ptype == "CKAN":
+            from hpc_plugin.external_repositories.ckan import Ckan
             return Ckan(publish_item)
         else:
             return None
     factory = staticmethod(factory)
 
     def __init__(self, publish_item):
-        self.er_type = publish_item['type']
+        self.er_type = publish_item['dataset']['type']
 
     def publish(self,
                 ssh_client,

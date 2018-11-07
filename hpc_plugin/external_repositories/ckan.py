@@ -23,10 +23,10 @@ class Ckan(ExternalRepository):
     def __init__(self, publish_item):
         super(Ckan, self).__init__(publish_item)
 
-        dataset = publish_item['dataset']
-        self.entrypoint = dataset['config']['entrypoint']
-        self.api_key = dataset['config']['key']
-        self.dataset = dataset['resource']['url']
+        data = publish_item['dataset']
+        self.entrypoint = data['config']['entrypoint']
+        self.api_key = data['config']['key']
+        self.dataset = data['dataset']['id']
         self.file_path = publish_item['file_path']
         self.name = publish_item['name']
         self.description = publish_item["description"]

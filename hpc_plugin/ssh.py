@@ -91,7 +91,7 @@ class SshClient(object):
         if 'login_shell' in credentials:
             self._login_shell = credentials['login_shell']
 
-        retries = 5
+        retries = 10
         passwd = credentials['password'] if 'password' in credentials else None
         while True:
             try:
@@ -108,7 +108,7 @@ class SshClient(object):
                         str(err) == "Error reading SSH protocol banner":
                     retries -= 1
                     logging.getLogger("paramiko").\
-                        warning("Retrying SSH connection: "+str(err))
+                        warning("Retrying SSH connection: " + str(err))
                     continue
                 else:
                     raise err
@@ -149,7 +149,7 @@ class SshClient(object):
         call = ""
         if env is not None:
             for key, value in env.iteritems():
-                call += "export "+key+"=" + value + " && "
+                call += "export " + key + "=" + value + " && "
 
         if not workdir:
             call += cmd
@@ -336,7 +336,7 @@ class Handler(SocketServer.BaseRequestHandler):
                 except socket.error as err:
                     data = bytes('')
                     logging.getLogger("paramiko").\
-                        warning("Waiting for data: "+str(err))
+                        warning("Waiting for data: " + str(err))
                 if len(data) == 0:
                     break
                 chan.send(data)

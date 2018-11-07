@@ -167,7 +167,7 @@ node_types:
                 publish:
                     implementation: hpc.hpc_plugin.tasks.publish
                     inputs:
-                        publish_options:
+                        publish_list:
                             default: { get_property: [SELF, publish] }
                 cleanup:
                     implementation: hpc.hpc_plugin.tasks.cleanup_job
