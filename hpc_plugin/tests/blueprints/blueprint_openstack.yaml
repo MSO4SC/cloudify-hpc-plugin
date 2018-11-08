@@ -190,7 +190,7 @@ inputs:
     default:
       REPLACE: openstack_network.id
 
-  ################### DATA PUBLISH ##################  
+  ################### Data Publish ##################  
 
   # It will be rendered as a selection box of datasets
   ckan_input_resource:
@@ -214,6 +214,11 @@ inputs:
         order: 100
         storage:
           REPLACE: USER_CONFIG.storage_list.0
+  
+  #################### Instance info ####################
+  instance_id:
+    default:
+      REPLACE: INSTANCE.id
 
   ####################### Optional ######################
   test_file:
@@ -386,7 +391,7 @@ node_templates:
   keypair:
     type: cloudify.openstack.nodes.KeyPair
     properties:
-      resource_id: "autokeypair"
+      resource_id: { concat: ["autokeypair_", { get_input: instance_id}] }
       private_key_path: { concat: [keys_repo/, { get_property: [SELF,resource_id] }] }
       openstack_config: { get_input: openstack_config }
 
