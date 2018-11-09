@@ -176,7 +176,7 @@ inputs:
       REPLACE: primary_cloud.definition.wm_config
   cloud_wm_credentials:
     default:
-      REPLACE: primary_cloud.definition.credentials
+      REPLACE: openstack_image.credentials
   openstack_config:
     default:
       REPLACE: primary_cloud.definition.openstack_config
@@ -218,7 +218,7 @@ inputs:
   #################### Instance info ####################
   instance_id:
     default:
-      REPLACE: INSTANCE.id
+      REPLACE: INSTANCE_CONFIG.id
 
   ####################### Optional ######################
   test_file:
