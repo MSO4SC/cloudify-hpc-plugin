@@ -1,30 +1,321 @@
-#############################
-# Provider specific Inputs
-#############################
+app_mpi_version: &id009 {default: true, description: Stable mpi version, library: OpenMPI,
+  load_command: module load gcc/5.3.0 openmpi/1.10.2, name: OpenMPI 1.10.2, version: 1.10.2}
+app_singuarity_image: {default: true, description: SRegistry example, file: mso4sc-sregistry-latest.simg,
+  name: SRegistry example, uri: 'shub://sregistry.srv.cesga.es/mso4sc/sregistry:latest'}
+app_singularity_storage: &id011 {container_mount_point: /mnt, default: true, description: Regular
+    user file storage, name: HOME, path: $HOME}
+app_singularity_version: &id012 {default: true, description: Stable singularity version,
+  load_command: module load singularity/2.4.2, name: Singularity 2.4.2, version: 2.4.2}
+ckan_input_resource:
+  config: &id001 {entrypoint: 'http://193.144.35.207:80', key: '[CHANGE]'}
+  dataset:
+    author: Christophe Trophime
+    author_email: christophe.trophime@lncmi.cnrs.fr
+    creator_user_id: 4eacb6ae-1374-49da-9831-4f169fcc8a5b
+    extras: []
+    groups: []
+    id: b80cafdd-6573-430d-9618-d385e7be278d
+    isopen: false
+    license_id: other-closed
+    license_title: Other (Not Open)
+    maintainer: Christophe Trophime
+    maintainer_email: christophe.trophime@lncmi.cnrs.fr
+    metadata_created: '2018-09-04T12:15:30.731377'
+    metadata_modified: '2018-10-19T13:01:14.353330'
+    name: hl-test
+    notes: "Provides data set for a longitudinally cooled helix.\r\n\r\nList of mesh:\r\
+      \n\r\n* HL-31_H1.med\r\n* HL-31_H1.msh\r\n\r\nList of cfg available:\r\n\r\n\
+      * HL-31_H1_boomeramg[_I].cfg, \r\n* HL-31_H1_gamg[_I].cfg,\r\n* HL-31_H1_gasm[_I].cfg,\r\
+      \n* HL-31_H1_ml[_I].cfg.\r\n"
+    num_resources: 1
+    num_tags: 0
+    organization: {approval_status: approved, created: '2018-09-04T12:09:24.740513',
+      description: "Laboratoire National des Champs Magnetiques Intenses\r\nis the\
+        \ French User Magnet Facility", id: 97cdc0af-7c2a-4ff2-9f52-a6d5e86c385e,
+      image_url: 2018-09-04-120924.723398logoLNCMI.png, is_organization: true, name: lncmi,
+      revision_id: f8d3e51e-a165-4aed-8e9a-b7a87a3d258a, state: active, title: Lncmi,
+      type: organization}
+    owner_org: 97cdc0af-7c2a-4ff2-9f52-a6d5e86c385e
+    private: true
+    relationships_as_object: []
+    relationships_as_subject: []
+    resources:
+    - {cache_last_updated: null, cache_url: null, created: '2018-09-04T13:40:36.438153',
+      description: Dataset from Gitlab Cesga, format: TAR, hash: '', id: bfaea07c-75b5-4104-a730-5fb1a1c25650,
+      last_modified: null, mimetype: application/x-tar, mimetype_inner: null, name: HL-31_H1.tgz,
+      package_id: b80cafdd-6573-430d-9618-d385e7be278d, position: 0, resource_type: null,
+      revision_id: b6fb4c45-db3b-4552-aa2d-c287deb7b76b, size: null, state: active,
+      url: 'https://gitlab.srv.cesga.es/trophime/hifimagnet-msoapps/raw/master/Examples/HL-31_H1.tgz',
+      url_type: ''}
+    revision_id: a7b9a544-eeeb-4514-9f5a-c46eb03a8140
+    state: active
+    tags: []
+    title: A test Helix
+    type: dataset
+    url: ''
+    version: ''
+  resource: {cache_last_updated: null, cache_url: null, created: '2018-09-04T13:40:36.438153',
+    description: Dataset from Gitlab Cesga, format: TAR, hash: '', id: bfaea07c-75b5-4104-a730-5fb1a1c25650,
+    last_modified: null, mimetype: application/x-tar, mimetype_inner: null, name: HL-31_H1.tgz,
+    package_id: b80cafdd-6573-430d-9618-d385e7be278d, position: 0, resource_type: null,
+    revision_id: b6fb4c45-db3b-4552-aa2d-c287deb7b76b, size: null, state: active,
+    url: 'https://gitlab.srv.cesga.es/trophime/hifimagnet-msoapps/raw/master/Examples/HL-31_H1.tgz',
+    url_type: ''}
+  type: ckan
+ckan_outputs_dataset:
+  config: *id001
+  dataset:
+    author: ''
+    author_email: ''
+    creator_user_id: 27a6f38b-3ccf-431b-a892-d732dc48b662
+    extras: []
+    groups: []
+    id: 24ab5d07-d78a-4392-8077-e26336409d58
+    isopen: true
+    license_id: cc-by
+    license_title: Creative Commons Attribution
+    license_url: http://www.opendefinition.org/licenses/cc-by
+    maintainer: ''
+    maintainer_email: ''
+    metadata_created: '2018-08-28T11:35:36.892621'
+    metadata_modified: '2018-11-08T12:06:07.262371'
+    name: outputs
+    notes: Dataset with the outputs tests.
+    num_resources: 7
+    num_tags: 0
+    organization: {approval_status: approved, created: '2018-08-28T11:34:39.591796',
+      description: 'Atos datasets, for testing purposes', id: efe68d52-5882-445c-a064-cadbf01336d4,
+      image_url: 'https://upload.wikimedia.org/wikipedia/en/thumb/0/01/Atos.svg/316px-Atos.svg.png',
+      is_organization: true, name: atos, revision_id: 46e2c22a-b5bc-4ecd-bab6-cf1611eb06de,
+      state: active, title: Atos, type: organization}
+    owner_org: efe68d52-5882-445c-a064-cadbf01336d4
+    private: false
+    relationships_as_object: []
+    relationships_as_subject: []
+    resources:
+    - {cache_last_updated: null, cache_url: null, created: '2018-08-28T11:38:26.139036',
+      description: "Contains the following information for titles:\r\n\r\n    titleId\
+        \ (string) - a tconst, an alphanumeric unique identifier of the title\r\n\
+        \    ordering (integer)  a number to uniquely identify rows for a given titleId\r\
+        \n    title (string)  the localized title\r\n    region (string) - the region\
+        \ for this version of the title\r\n    language (string) - the language of\
+        \ the title\r\n    types (array) - Enumerated set of attributes for this alternative\
+        \ title. One or more of the following: \"alternative\", \"dvd\", \"festival\"\
+        , \"tv\", \"video\", \"working\", \"original\", \"imdbDisplay\". New values\
+        \ may be added in the future without warning\r\n    attributes (array) - Additional\
+        \ terms to describe this alternative title, not enumerated\r\n    isOriginalTitle\
+        \ (boolean)  0: not original title; 1: original title\r\n\r\ntitle.basics.tsv.gz\
+        \ - Contains the following information for titles:\r\n\r\n    tconst (string)\
+        \ - alphanumeric unique identifier of the title\r\n    titleType (string)\
+        \  the type/format of the title (e.g. movie, short, tvseries, tvepisode, video,\
+        \ etc)\r\n    primaryTitle (string)  the more popular title / the title used\
+        \ by the filmmakers on promotional materials at the point of release\r\n \
+        \   originalTitle (string) - original title, in the original language\r\n\
+        \    isAdult (boolean) - 0: non-adult title; 1: adult title\r\n    startYear\
+        \ (YYYY)  represents the release year of a title. In the case of TV Series,\
+        \ it is the series start year\r\n    endYear (YYYY)  TV Series end year. \\\
+        N for all other title types\r\n    runtimeMinutes  primary runtime of the\
+        \ title, in minutes\r\n    genres (string array)  includes up to three genres\
+        \ associated with the title", format: TSV, hash: '', id: 01a56860-5568-4ce4-98a6-0d8e8224b5e8,
+      last_modified: null, mimetype: text/tab-separated-values, mimetype_inner: null,
+      name: IMDb title.akas.tsv.gz, package_id: 24ab5d07-d78a-4392-8077-e26336409d58,
+      position: 0, resource_type: null, revision_id: 03e7217d-b6b2-4dfb-bb11-cbcf397a8f1d,
+      size: null, state: active, url: 'https://datasets.imdbws.com/title.akas.tsv.gz',
+      url_type: null}
+    - {cache_last_updated: null, cache_url: null, created: '2018-10-02T11:46:44.178191',
+      description: output test, format: '', hash: '', id: a9b0409a-0670-4907-af4b-c43e5be6134f,
+      last_modified: '2018-10-02T11:46:44.149005', mimetype: null, mimetype_inner: null,
+      name: test_single, package_id: 24ab5d07-d78a-4392-8077-e26336409d58, position: 1,
+      resource_type: null, revision_id: 92f065ea-0a62-4747-ae10-20a2888e7fbe, size: 13,
+      state: active, url: 'http://193.144.35.207:80/dataset/24ab5d07-d78a-4392-8077-e26336409d58/resource/a9b0409a-0670-4907-af4b-c43e5be6134f/download/test_single.test',
+      url_type: upload}
+    - {cache_last_updated: null, cache_url: null, created: '2018-11-07T13:05:52.309794',
+      description: output test vm, format: '', hash: '', id: d47d44dc-c255-437d-a113-4dc40090f947,
+      last_modified: '2018-11-07T13:05:52.277978', mimetype: null, mimetype_inner: null,
+      name: single_vm, package_id: 24ab5d07-d78a-4392-8077-e26336409d58, position: 2,
+      resource_type: null, revision_id: 41b31039-8afd-406a-9bad-30bd3b41bd7f, size: 0,
+      state: active, url: 'http://193.144.35.207:80/dataset/24ab5d07-d78a-4392-8077-e26336409d58/resource/d47d44dc-c255-437d-a113-4dc40090f947/download/single_vm.test',
+      url_type: upload}
+    - {cache_last_updated: null, cache_url: null, created: '2018-11-07T15:10:12.180456',
+      description: output test vm, format: '', hash: '', id: 8d5e2b01-170e-49c0-83d7-6cdfd89367ca,
+      last_modified: '2018-11-07T15:10:12.147763', mimetype: null, mimetype_inner: null,
+      name: single_vm, package_id: 24ab5d07-d78a-4392-8077-e26336409d58, position: 3,
+      resource_type: null, revision_id: b309ee3f-9e5f-461f-9102-41124851501c, size: 0,
+      state: active, url: 'http://193.144.35.207:80/dataset/24ab5d07-d78a-4392-8077-e26336409d58/resource/8d5e2b01-170e-49c0-83d7-6cdfd89367ca/download/single_vm.test',
+      url_type: upload}
+    - {cache_last_updated: null, cache_url: null, created: '2018-11-07T15:13:52.248218',
+      description: output test vm, format: '', hash: '', id: 802e2849-5ec3-442c-87c3-c72caf2655ef,
+      last_modified: '2018-11-07T15:13:52.217668', mimetype: null, mimetype_inner: null,
+      name: single_vm, package_id: 24ab5d07-d78a-4392-8077-e26336409d58, position: 4,
+      resource_type: null, revision_id: 960ea938-d069-4549-b216-ef0d78f81212, size: 0,
+      state: active, url: 'http://193.144.35.207:80/dataset/24ab5d07-d78a-4392-8077-e26336409d58/resource/802e2849-5ec3-442c-87c3-c72caf2655ef/download/single_vm.test',
+      url_type: upload}
+    - {cache_last_updated: null, cache_url: null, created: '2018-11-08T11:09:16.542589',
+      description: output test vm, format: '', hash: '', id: 49e4f189-231a-4353-9b05-f00a5e6c1c42,
+      last_modified: '2018-11-08T11:09:16.508510', mimetype: null, mimetype_inner: null,
+      name: single_vm, package_id: 24ab5d07-d78a-4392-8077-e26336409d58, position: 5,
+      resource_type: null, revision_id: 8016853b-7734-4df4-9107-ae80fc30567e, size: 0,
+      state: active, url: 'http://193.144.35.207:80/dataset/24ab5d07-d78a-4392-8077-e26336409d58/resource/49e4f189-231a-4353-9b05-f00a5e6c1c42/download/single_vm.test',
+      url_type: upload}
+    - {cache_last_updated: null, cache_url: null, created: '2018-11-08T12:06:07.281929',
+      description: output test vm, format: '', hash: '', id: 4719f001-7d32-452e-89ae-2ee140d8fde1,
+      last_modified: '2018-11-08T12:06:07.246697', mimetype: null, mimetype_inner: null,
+      name: single_vm, package_id: 24ab5d07-d78a-4392-8077-e26336409d58, position: 6,
+      resource_type: null, revision_id: 8016853b-7734-4df4-9107-ae80fc30567e, size: 0,
+      state: active, url: 'http://193.144.35.207:80/dataset/24ab5d07-d78a-4392-8077-e26336409d58/resource/4719f001-7d32-452e-89ae-2ee140d8fde1/download/single_vm.test',
+      url_type: upload}
+    revision_id: 84ee72bf-c0bc-4e7c-a15a-78f3ffe661ec
+    state: active
+    tags: []
+    title: Outputs
+    type: dataset
+    url: ''
+    version: ''
+  type: ckan
+cloud_flavor: '2'
+cloud_image: 53818d97-4d3c-4f6d-9525-b04e83331353
+cloud_network: 00da93b2-9192-45d0-b777-6359fe8246b7
+cloud_wm_config: &id007 {workload_manager: BASH}
+cloud_wm_credentials: &id002
+  host: ''
+  password: ''
+  private_key: ''
+  private_key_password: ''
+  tunnel: {host: 193.224.131.130, password: '[CHANGE]', user: '[CHANGE]'}
+  user: ubuntu
+hpc_wm_config: &id013 {country_tz: Europe/Madrid, workload_manager: SLURM}
+hpc_wm_credentials: &id008 {host: ft6.cesga.es, password: '', private_key: '[CHANGE]', private_key_password: '', user: otarijci}
+instance_id: test_'[CHANGE]'
+job_prefix: mso
+monitor_entrypoint: ''
+mpi_load_command: module load gcc/5.3.0 openmpi/1.10.2
+openstack_config: &id003
+  auth_url: http://193.224.131.130/identity
+  custom_configuration:
+    neutron_client: {endpoint_url: 'http://193.224.131.130:9696'}
+    nova_client: {bypass_url: 'http://193.224.131.130/compute/v2.1'}
+  logging:
+    groups: {cinder: 30, glance: 30, keystone: 30, neutron: 30, nova: 30}
+    loggers: {keystoneauth.session: 30}
+    use_cfy_logger: true
+  password: '[CHANGE]'
+  project_domain_name: default
+  project_name: admin
+  region: RegionOne
+  user_domain_name: Default
+  username: '[CHANGE]'
+openstack_flavor: &id004
+  default: true
+  description: Enough for most images
+  id: '2'
+  name: m1.small
+  resources: {memory: 2G, storage: 20G, vcpus: 1}
+openstack_image: &id005
+  credentials: *id002
+  default: true
+  description: Ubuntu LTS 16.04
+  id: 53818d97-4d3c-4f6d-9525-b04e83331353
+  mpi: None
+  name: Ubuntu 16.04
+  singularity: None
+  username: ubuntu
+openstack_network: &id006 {cidr: 10.0.0.0/24, default: true, description: Default
+    network for MSO4SC, gateway: 10.0.0.1, id: 00da93b2-9192-45d0-b777-6359fe8246b7,
+  name: mso4sc, version: IPv4}
+partition: &id010
+  default: true
+  description: Subset of nodes
+  name: thin-shared
+  properties: {cpus_per_node: 24, default_memory_per_cpu: 128M, max_memory_per_node: 512M,
+    max_nodes: 2, max_time: UNLIMITED, min_nodes: 0, shared: true, total_nodes: 2}
+partition_name: thin-shared
+primary_cloud:
+  definition:
+    openstack_config: *id003
+    openstack_flavors:
+    - *id004
+    - description: Smallest, minimal resources and not disk storage
+      id: '42'
+      name: m1.nano
+      resources: {memory: 64M, storage: 0G, vcpus: 1}
+    - description: Very few ram and not disk storage
+      id: '84'
+      name: m1.micro
+      resources: {memory: 128M, storage: 0G, vcpus: 1}
+    - description: Minimal storage, for low resources images
+      id: '1'
+      name: m1.tiny
+      resources: {memory: 512M, storage: 1G, vcpus: 1}
+    - description: For software with regular usage of ram and disk, and some parallelization
+        of processes.
+      id: '3'
+      name: m1.medium
+      resources: {memory: 4G, storage: 40G, vcpus: 2}
+    - description: For software with high usage of cpu, ram and disk.
+      id: '4'
+      name: m1.large
+      resources: {memory: 8G, storage: 80G, vcpus: 4}
+    - description: Bigest amount of resources
+      id: '5'
+      name: m1.xlarge
+      resources: {memory: 16G, storage: 160G, vcpus: 8}
+    openstack_images:
+    - *id005
+    - credentials:
+        host: ''
+        password: ''
+        private_key: ''
+        private_key_password: ''
+        tunnel: {host: 193.224.131.130, password: '[CHANGE]', user: '[CHANGE]'}
+        user: centos
+      description: CentOS 7
+      id: 3f483ff2-75e0-4ab8-aa4e-acb201b92153
+      mpi: None
+      name: CentOS-7-x86_64-GenericCloud-1802
+      singularity: None
+      username: centos
+    openstack_networks:
+    - *id006
+    openstack_volumes: None
+    wm_config: *id007
+  id: 11
+  infrastructure: SZE (OPENSTACK)
+  name: SZE
+  owner: 1
+primary_hpc:
+  definition:
+    credentials: *id008
+    local_volumes:
+    - {container_mount_point: /tmp, name: TEMP, path: /tmp}
+    mpi_versions:
+    - *id009
+    partitions:
+    - *id010
+    persistent_volumes:
+    - *id011
+    - {container_mount_point: /mnt, description: Big user files storage, name: LUSTRE,
+      path: $LUSTRE}
+    scratch_volume: {container_mount_point: /scratch, name: Scratch, path: /scratch}
+    singularity_versions:
+    - *id012
+    wm_config: *id013
+  id: 10
+  infrastructure: FTII (HPC)
+  name: FTII
+  owner: 1
+scratch_voulume_mount_point: /scratch
+singularity_image_filename: mso4sc-sregistry-latest.simg
+singularity_image_storage: $HOME
+singularity_image_uri: shub://sregistry.srv.cesga.es/mso4sc/sregistry:latest
+singularity_load_command: module load singularity/2.4.2
+test_bool: false
+test_complex_input:
+  first_tag:
+    first_first_tag: test1.1
+    first_second_tag: {foo: bar}
+  second_tag: test2.1
+test_file: 'Test file
 
-# Monitor
-monitor_entrypoint: ""
-
-# Job prefix name
-job_prefix: "cfyhpc"
-
-partition: "public"
-
-# First HPC configuration
-mso4sc_hpc_primary:
-    credentials:
-        host: "HOST"
-        user: "USER"
-        private_key: |
-            -----BEGIN RSA PRIVATE KEY-----
-            ....
-            -----END RSA PRIVATE KEY-----
-        login_shell: true
-    country_tz: "Europe/Madrid"
-    workload_manager: "SLURM"
-
-mso4sc_datacatalogue_entrypoint: "http://193.144.35.207"
-
-mso4sc_datacatalogue_key: "****"
-
-mso4sc_outdataset_outputs_at: "dataset_id"
+  '
+test_float: 0.0
+test_int: 0
