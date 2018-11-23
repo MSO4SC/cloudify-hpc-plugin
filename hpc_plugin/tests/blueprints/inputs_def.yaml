@@ -1,0 +1,400 @@
+inputs:
+  ################### HPC Infrastructre ##################
+  # It will be rendered as HPC select box
+  primary_hpc:
+    default:
+      INPUT:
+        name: Primary HPC
+        description: Select the HPC to be used
+        order: 10
+        type: list
+        choices:
+          REPLACE: INFRA_CONFIG.hpc_list
+  
+  hpc_base_dir:
+    default:
+      INPUT:
+        name: Base dir
+        description: Base HPC directory
+        advanced: true
+        order: 21
+        type: list
+        choices:
+          REPLACE: primary_hpc.definition.persistent_volumes
+
+  # Each one will be rendered in MSO4SC accordingly (lists->select box)
+  app_singuarity_image:
+    default:
+      INPUT:
+        name: Singularity Image
+        description: Select the singularity image to be used
+        advanced: true
+        order: 22
+        type: list
+        choices:
+        - name: SRegistry example
+          description: SRegistry example
+          uri: 'shub://sregistry.srv.cesga.es/mso4sc/sregistry:latest'
+          file: mso4sc-sregistry-latest.simg
+          default: true
+  
+  app_mpi_version:
+    default:
+      INPUT:
+        name: MPI version
+        description: MPI version to be used
+        advanced: true
+        order: 23
+        type: list
+        choices:
+          REPLACE: primary_hpc.definition.mpi_versions
+  
+  app_singularity_version:
+    default:
+      INPUT:
+        name: Singularity version
+        description: Singularity version to be used
+        advanced: true
+        order: 24
+        type: list
+        choices:
+          REPLACE: primary_hpc.definition.singularity_versions
+  
+  app_singularity_storage:
+    default:
+      INPUT:
+        name: Singularity storage
+        description: Singularity long term storage
+        advanced: true
+        order: 25
+        type: list
+        choices:
+          REPLACE: primary_hpc.definition.persistent_volumes
+
+  partition:
+    default:
+      INPUT:
+        name: Partition
+        description: Partition in which the HPC jobs will run
+        advanced: true
+        order: 21
+        type: list
+        choices:
+          REPLACE: primary_hpc.definition.partitions
+
+  # Won't be rendered, their value is a match with other inputs
+  hpc_wm_config:
+    default:
+      REPLACE: primary_hpc.definition.wm_config
+  hpc_wm_credentials:
+    default:
+      REPLACE: primary_hpc.definition.credentials
+  mpi_load_command:
+    default:
+      REPLACE: app_mpi_version.load_command
+  singularity_load_command:
+    default:
+      REPLACE: app_singularity_version.load_command
+  singularity_image_uri:
+    default:
+      REPLACE: app_singuarity_image.uri
+  singularity_image_filename:
+    default:
+      REPLACE: app_singuarity_image.file
+  partition_name:
+    default:
+      REPLACE: partition.name
+  singularity_image_storage:
+    default:
+      REPLACE: app_singularity_storage.path
+  singularity_mount_point:
+    default:
+      REPLACE: app_singularity_storage.container_mount_point
+  scratch_voulume_mount_point:
+    default:
+      REPLACE: primary_hpc.definition.scratch_volume.container_mount_point
+
+  ################# Cloud Infrastructre #################
+  # It will be rendered as OpenStack select box
+  primary_cloud:
+    default:
+      INPUT:
+        name: Primary OpenStack
+        description: Select the OpenStack to be used
+        order: 50
+        type: list
+        choices:
+          REPLACE: INFRA_CONFIG.openstack_list
+  
+  # each one will be rendered in MSO4SC accordingly (lists->select box)
+  openstack_image:
+    default:
+      INPUT:
+        name: Image
+        description: Select base OpenStack image to be used
+        type: list
+        advanced: true
+        order: 60
+        choices:
+          REPLACE: primary_cloud.definition.openstack_images
+  
+  openstack_flavor:
+    default:
+      INPUT:
+        name: OpenStack Flavor
+        description: Select OpenStack flavor to be used
+        type: list
+        advanced: true
+        order: 61
+        choices:
+          REPLACE: primary_cloud.definition.openstack_flavors
+  
+  openstack_network:
+    default:
+      INPUT:
+        name: OpenStack Network
+        description: Select OpenStack network
+        type: list
+        advanced: true
+        order: 62
+        choices:
+          REPLACE: primary_cloud.definition.openstack_networks
+  
+  # Won't be rendered, their value is a match with other inputs
+  cloud_wm_config:
+    default:
+      REPLACE: primary_cloud.definition.wm_config
+  cloud_wm_credentials:
+    default:
+      REPLACE: openstack_image.credentials
+  openstack_config:
+    default:
+      REPLACE: primary_cloud.definition.openstack_config
+  cloud_image:
+    default:
+      REPLACE: openstack_image.id
+  cloud_flavor:
+    default:
+      REPLACE: openstack_flavor.id
+  cloud_network:
+    default:
+      REPLACE: openstack_network.id
+
+  ################# Second Cloud Infrastructre #################
+  # It will be rendered as OpenStack select box
+  secondary_cloud:
+    default:
+      INPUT:
+        name: EOSC Hub
+        description: Select the EOSC infrastructure to be used
+        order: 70
+        type: list
+        choices:
+          REPLACE: INFRA_CONFIG.eosc_list
+  
+  # each one will be rendered in MSO4SC accordingly (lists->select box)
+  eosc_image:
+    default:
+      INPUT:
+        name: EOSC-Hub Image
+        description: Select base EOSC image to be used
+        type: list
+        advanced: true
+        order: 80
+        choices:
+          REPLACE: secondary_cloud.definition.eosc_images
+  
+  eosc_flavor:
+    default:
+      INPUT:
+        name: EOSC-Hub Flavor
+        description: Select EOSC-Hub flavor to be used
+        type: list
+        advanced: true
+        order: 81
+        choices:
+          REPLACE: secondary_cloud.definition.eosc_flavors
+  
+  eosc_network:
+    default:
+      INPUT:
+        name: EOSC-Hub Network
+        description: Select EOSC-Hub network
+        type: list
+        advanced: true
+        order: 82
+        choices:
+          REPLACE: secondary_cloud.definition.eosc_networks
+  
+  # Won't be rendered, their value is a match with other inputs
+  secondary_cloud_wm_config:
+    default:
+      REPLACE: secondary_cloud.definition.wm_config
+  secondary_cloud_wm_credentials:
+    default:
+      REPLACE: eosc_image.credentials
+  eosc_config:
+    default:
+      REPLACE: secondary_cloud.definition.eosc_config
+  secondary_cloud_image_name:
+    default:
+      REPLACE: eosc_image.name
+  secondary_cloud_image_id:
+    default:
+      REPLACE: eosc_image.id
+  secondary_cloud_image_user:
+    default:
+      REPLACE: eosc_image.credentials.user
+  secondary_cloud_image_pass:
+    default:
+      REPLACE: eosc_image.credentials.password
+  secondary_cloud_image_public:
+    default:
+      REPLACE: eosc_image.credentials.public_key
+  secondary_cloud_image_private:
+    default:
+      REPLACE: eosc_image.credentials.private_key
+  secondary_cloud_flavor_id:
+    default:
+      REPLACE: eosc_flavor.id
+  secondary_cloud_flavor_name:
+    default:
+      REPLACE: eosc_flavor.name
+  secondary_cloud_flavor_memory:
+    default:
+      REPLACE: eosc_flavor.config.memory
+  secondary_cloud_flavor_config:
+    default:
+      REPLACE: eosc_flavor.config
+  secondary_cloud_network_id:
+    default:
+      REPLACE: eosc_network.id
+  secondary_cloud_network_config:
+    default:
+      REPLACE: eosc_network.config
+
+  ################### Data Publish ##################  
+
+  # It will be rendered as a selection box of datasets
+  ckan_input_resource:
+    default:
+      INPUT:
+        name: Input dataset
+        description: Dataset resource that will be used as input
+        type: resource_list
+        order: 100
+        storage:
+          REPLACE: USER_CONFIG.storage_list.0
+  
+
+  # It will be rendered as a selection box of datasets
+  ckan_outputs_dataset:
+    default:
+      INPUT:
+        name: Outputs dataset
+        description: Dataset in which outputs will be published
+        type: dataset_list
+        order: 100
+        storage:
+          REPLACE: USER_CONFIG.storage_list.0
+
+  # Won't be rendered
+  input_url:
+    default:
+      REPLACE: ckan_input_resource.dataset.resource.url
+  
+  #################### Instance info ####################
+  instance_id:
+    default:
+      REPLACE: INSTANCE_CONFIG.id
+
+  ####################### Optional ######################
+  test_file:
+    default:
+      INPUT:
+        name: Test file
+        description: Only to test file input
+        default: |
+                  Test file
+        type: file
+        advanced: true
+        order: 110
+        null: true
+  
+  test_bool:
+    default:
+      INPUT:
+        name: Test bool
+        description: Only to test bool input
+        default: false
+        type: bool
+        advanced: true
+        order: 110
+        null: true
+
+  test_int:
+    default:
+      INPUT:
+        name: Test int
+        description: Only to test int input
+        default: 0
+        type: int
+        advanced: true
+        order: 110
+        null: true
+
+  test_float:
+    default:
+      INPUT:
+        name: Test float
+        description: Only to test float input
+        default: 0.0
+        type: float
+        advanced: true
+        order: 110
+        null: true
+        
+  test_complex_input:
+    default:
+      first_tag:
+        first_first_tag:
+          INPUT:
+            name: First complex input test
+            description: Only to test complex input
+            default: test1.1
+            type: string
+            advanced: true
+            order: 85
+            null: true
+        first_second_tag:
+          foo: bar
+      second_tag:
+        INPUT:
+          name: Second complex input test
+          description: Only to test complex input
+          default: test2.1
+          type: string
+          advanced: true
+          order: 86
+          null: true
+
+  job_prefix:
+    default:
+      INPUT:
+        name: Job's prefix
+        description: Job names prefix
+        default: "mso"
+        advanced: true
+        order: 120
+        type: string
+
+  monitor_entrypoint:
+    default:
+      INPUT:
+        name: Monitor Entrypoint (not used)
+        description: Monitor entrypoint IP (Not used)
+        default: ""
+        null: true
+        advanced: true
+        order: 130
+        type: string

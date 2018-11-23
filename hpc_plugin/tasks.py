@@ -426,7 +426,6 @@ def deploy_job(script,
 
     return exit_code is 0
 
-
 @operation
 def send_job(job_options, **kwargs):  # pylint: disable=W0613
     """ Sends a job to the workload manager """

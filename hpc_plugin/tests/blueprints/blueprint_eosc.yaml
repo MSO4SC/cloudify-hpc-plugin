@@ -1,0 +1,168 @@
+########
+# Copyright (c) 2017-2018 MSO4SC - javier.carnero@atos.net
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#        http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+tosca_definitions_version: cloudify_dsl_1_3
+
+imports:
+    # to speed things up, it is possible downloading this file,
+    - http://raw.githubusercontent.com/mso4sc/cloudify-hpc-plugin/master/resources/types/cfy_types.yaml
+    - https://raw.githubusercontent.com/MSO4SC/cloudify-im-extension/master/im.yaml
+    # relative import of plugin.yaml that resides in the blueprint directory
+    - plugin.yaml
+    - inputs_def.yaml
+
+node_templates:
+  hpc_wm:
+    type: hpc.nodes.WorkloadManager
+    properties:
+      config: { get_input: hpc_wm_config }
+      credentials: { get_input: hpc_wm_credentials }
+      external_monitor_entrypoint: { get_input: monitor_entrypoint }
+      job_prefix: { get_input: job_prefix }
+      base_dir: { get_input: hpc_base_dir }
+      monitor_period: 15
+      skip_cleanup: true
+      workdir_prefix: "single_singularity"
+      # simulate: True # Comment to test with real infrastructure
+      
+  im_wm:
+    type: hpc.nodes.WorkloadManager
+    properties:
+      config: { get_input: secondary_cloud_wm_config }
+      credentials: { get_input: secondary_cloud_wm_credentials }
+      external_monitor_entrypoint: { get_input: monitor_entrypoint }
+      job_prefix: { get_input: job_prefix }
+      workdir_prefix: "single_eosc"
+      skip_cleanup: True
+      # simulate: True # Comment to test with real infrastructure
+    relationships:
+    - type: wm_contained_in
+      target: vitual_machine
+
+  hpc_job:
+    type: hpc.nodes.SingularityJob
+    properties:
+      job_options: 
+        pre:
+        - { get_input: mpi_load_command }
+        - { get_input: singularity_load_command }
+        partition: { get_input: partition_name }
+        image: {concat: [{ get_input: singularity_image_storage },'/',{ get_input: singularity_image_filename }] }
+        volumes:
+        - { get_input: scratch_voulume_mount_point }
+        - { get_input: singularity_mount_point }
+        command: 'touch single.test'
+        nodes: 1
+        tasks: 1
+        tasks_per_node: 1
+        max_time: '00:01:00'
+        outputs:
+        - 
+      deployment:
+        bootstrap: 'scripts/singularity_bootstrap_example.sh'
+        # revert: 'scripts/singularity_revert_example.sh'
+        inputs:
+        - { get_input: singularity_image_storage }
+        - { get_input: singularity_image_filename }
+        - { get_input: singularity_image_uri }
+      skip_cleanup: True
+    relationships:
+    - type: job_managed_by_wm
+      target: hpc_wm
+
+  vm_job:
+    type: hpc.nodes.Job
+    properties:
+      job_options:
+        type: 'SHELL'
+        command: 'touch vm.test'
+      skip_cleanup: True
+      publish:
+      - dataset: { get_input: ckan_outputs_dataset }
+        file_path: "$CURRENT_WORKDIR/vm.test"
+        name: "vm_test"
+        description: "output test vm"
+    relationships:
+    - type: job_managed_by_wm
+      target: im_wm
+    - type: job_depends_on
+      target: hpc_job
+      
+  ########### IM extension ##########
+  vitual_machine:
+    type: im.nodes.Server
+    properties:
+      config: { get_input: eosc_config }
+      resource_id: vm_test
+      # simulate: True # Comment to test with real infrastructure
+    relationships:
+    - type: depends_on_setting
+      target: network
+    - type: depends_on_setting
+      target: image
+    - type: depends_on_setting
+      target: flavour
+    - type: depends_on_setting
+      target: software
+
+  network:
+    type: im.nodes.Network
+    properties:
+      name: net
+      config: { get_input: secondary_cloud_network_config }
+      use_external_resource: true
+      resource_id: { get_input: secondary_cloud_network_id }
+      # simulate: True # Comment to test with real infrastructure
+
+  image:
+    type: im.nodes.Image
+    properties:
+      name: { get_input: secondary_cloud_image_name }
+      config: 
+        id: { get_input: secondary_cloud_image_id }
+        storage: { get_input: secondary_cloud_flavor_memory }
+        username: { get_input: secondary_cloud_image_user }
+        password: { get_input: secondary_cloud_image_pass }
+        public_key: { get_input: secondary_cloud_image_public }
+        private_key: { get_input: secondary_cloud_image_private }
+      use_external_resource: true
+      resource_id: default_image
+      # simulate: True # Comment to test with real infrastructure
+
+  flavour:
+    type: im.nodes.Flavour
+    properties:
+      name: { get_input: secondary_cloud_flavor_name }
+      config: { get_input: secondary_cloud_flavor_config }
+      use_external_resource: true
+      resource_id: { get_input: secondary_cloud_flavor_id }
+      # simulate: True # Comment to test with real infrastructure
+
+  software:
+    type: im.nodes.Software
+    properties:
+      name: singularity-openmpi
+      config: 
+        packages: ["openmpi", "singularity"]
+        deploy: |
+          ln -s /usr/lib64/openmpi/bin/mpirun /usr/bin/mpirun
+      use_external_resource: true
+      resource_id: default_software
+      # simulate: True # Comment to test with real infrastructure
+
+outputs:
+  single_job_name:
+    description: single job name in the VM
+    value: { get_attribute: [vm_job, job_name] }

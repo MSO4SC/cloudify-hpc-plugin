@@ -1,13 +1,294 @@
-app_mpi_version: &id009 {default: true, description: Stable mpi version, library: OpenMPI,
-  load_command: module load gcc/5.3.0 openmpi/1.10.2, name: OpenMPI 1.10.2, version: 1.10.2}
-app_singuarity_image: {default: true, description: SRegistry example, file: mso4sc-sregistry-latest.simg,
-  name: SRegistry example, uri: 'shub://sregistry.srv.cesga.es/mso4sc/sregistry:latest'}
-app_singularity_storage: &id011 {container_mount_point: /mnt, default: true, description: Regular
-    user file storage, name: HOME, path: $HOME}
-app_singularity_version: &id012 {default: true, description: Stable singularity version,
-  load_command: module load singularity/2.4.2, name: Singularity 2.4.2, version: 2.4.2}
+# Copy this file to local-blueprint-inputs.yaml and change at least the [CHANGE] tags.
+################### HPC Infrastructre ##################
+primary_hpc:
+  id: 10
+  infrastructure: FTII (HPC)
+  name: FTII
+  owner: 1
+  definition:
+    credentials: &id008
+      host: ft6.cesga.es
+      user: ***
+      password: ''
+      private_key: |
+        -----BEGIN RSA PRIVATE KEY-----
+        ***
+        -----END RSA PRIVATE KEY-----
+      private_key_password: ''
+    local_volumes:
+    - container_mount_point: /tmp
+      name: TEMP
+      path: /tmp
+    mpi_versions:
+    - &id009
+      default: true
+      description: Stable mpi version
+      library: OpenMPI
+      load_command: &id015 module load gcc/5.3.0 openmpi/1.10.2
+      name: OpenMPI 1.10.2
+      version: 1.10.2
+    partitions:
+    - default: true
+      description: Subset of nodes
+      name: thin-shared
+      properties:
+        cpus_per_node: 24
+        default_memory_per_cpu: 128M
+        max_memory_per_node: 512M
+        max_nodes: 2
+        max_time: UNLIMITED
+        min_nodes: 0
+        shared: true
+        total_nodes: 2
+    - &id010
+      description: Short jobs of 1 complete node
+      name: &id014 cola-corta
+      properties:
+        cpus_per_node: 24
+        default_memory_per_cpu: 128M
+        max_memory_per_node: 512M
+        max_nodes: 2
+        max_time: UNLIMITED
+        min_nodes: 1
+        shared: false
+        total_nodes: 2
+    persistent_volumes:
+    - &id011
+      container_mount_point: /mnt
+      default: true
+      description: Regular user file storage
+      name: HOME
+      path: &id019 $HOME
+    - container_mount_point: /mnt
+      description: Big user files storage
+      name: LUSTRE
+      path: $LUSTRE
+    scratch_volume:
+      container_mount_point: /scratch
+      name: Scratch
+      path: &id020 /scratch
+    singularity_versions:
+    - &id012
+      default: true
+      description: Stable singularity version
+      load_command: &id016 module load singularity/2.4.2
+      name: Singularity 2.4.2
+      version: 2.4.2
+    wm_config: &id013
+      country_tz: Europe/Madrid
+      workload_manager: SLURM
+
+app_singuarity_image:
+  default: true
+  description: SRegistry example
+  file: &id018 mso4sc-sregistry-latest.simg
+  name: SRegistry example
+  uri: &id017 'shub://sregistry.srv.cesga.es/mso4sc/sregistry:latest'
+
+hpc_base_dir: *id019
+app_mpi_version: *id009
+app_singularity_version: *id012
+app_singularity_storage: *id011
+partition: *id010
+
+hpc_wm_config: *id013
+hpc_wm_credentials: *id008
+mpi_load_command: *id015
+singularity_load_command: *id016
+singularity_image_uri: *id017
+singularity_image_filename: *id018
+partition_name: *id014
+singularity_image_storage: *id019
+scratch_voulume_mount_point: *id020
+
+################# Cloud Infrastructre #################
+primary_cloud:
+  id: 11
+  infrastructure: SZE (OPENSTACK)
+  name: SZE
+  owner: 1
+  definition:
+    openstack_config: &id003 
+      auth_url: http://193.224.131.130/identity
+      custom_configuration:
+        neutron_client: {endpoint_url: 'http://193.224.131.130:9696'}
+        nova_client: {bypass_url: 'http://193.224.131.130/compute/v2.1'}
+      logging:
+        groups: {cinder: 30, glance: 30, keystone: 30, neutron: 30, nova: 30}
+        loggers: {keystoneauth.session: 30}
+        use_cfy_logger: true
+      password: ***
+      project_domain_name: default
+      project_name: ***
+      region: RegionOne
+      user_domain_name: Default
+      username: ***
+    openstack_flavors:
+    - &id004
+      default: true
+      description: Enough for most images
+      id: &id021 '2'
+      name: m1.small
+      resources: {memory: 2G, storage: 20G, vcpus: 1}
+    - description: Smallest, minimal resources and not disk storage
+      id: '42'
+      name: m1.nano
+      resources: {memory: 64M, storage: 0G, vcpus: 1}
+    - description: Very few ram and not disk storage
+      id: '84'
+      name: m1.micro
+      resources: {memory: 128M, storage: 0G, vcpus: 1}
+    - description: Minimal storage, for low resources images
+      id: '1'
+      name: m1.tiny
+      resources: {memory: 512M, storage: 1G, vcpus: 1}
+    - description: For software with regular usage of ram and disk, and some parallelization
+        of processes.
+      id: '3'
+      name: m1.medium
+      resources: {memory: 4G, storage: 40G, vcpus: 2}
+    - description: For software with high usage of cpu, ram and disk.
+      id: '4'
+      name: m1.large
+      resources: {memory: 8G, storage: 80G, vcpus: 4}
+    - description: Bigest amount of resources
+      id: '5'
+      name: m1.xlarge
+      resources: {memory: 16G, storage: 160G, vcpus: 8}
+    openstack_images:
+    - &id005
+      credentials: &id002
+        host: ''
+        password: ''
+        private_key: ''
+        private_key_password: ''
+        tunnel: {host: 193.224.131.130, password: ***, user: ***}
+        user: ubuntu
+      default: true
+      description: Ubuntu LTS 16.04
+      id: &id022 53818d97-4d3c-4f6d-9525-b04e83331353
+      mpi: None
+      name: Ubuntu 16.04
+      singularity: None
+      username: ubuntu
+    - credentials:
+        host: ''
+        password: ''
+        private_key: ''
+        private_key_password: ''
+        tunnel: {host: 193.224.131.130, password: ***, user: ***}
+        user: centos
+      description: CentOS 7
+      id: 3f483ff2-75e0-4ab8-aa4e-acb201b92153
+      mpi: None
+      name: CentOS-7-x86_64-GenericCloud-1802
+      singularity: None
+      username: centos
+    openstack_networks:
+    - &id006
+      cidr: 10.0.0.0/24
+      default: true
+      description: Default network for MSO4SC
+      gateway: 10.0.0.1
+      id: &id023 00da93b2-9192-45d0-b777-6359fe8246b7
+      name: mso4sc
+      version: IPv4
+    openstack_volumes: None
+    wm_config: &id007
+      workload_manager: BASH
+
+openstack_image: *id005
+openstack_flavor: *id004
+openstack_network: *id006
+
+cloud_wm_config: *id007
+cloud_wm_credentials: *id002
+openstack_config: *id003
+cloud_image: *id022
+cloud_flavor: *id021
+cloud_network: *id023
+
+################# Second Cloud Infrastructre #################
+secondary_cloud:
+  id: 12
+  infrastructure: Cesga (EOSC Hub)
+  name: Cesga Cloud
+  owner: 1
+  definition:
+    eosc_config: &id033 
+      id: im
+      host: 'http://im.srv.cesga.es:8800'
+      type: InfrastructureManager
+      user: ***
+      pass: ***
+      endpoint:
+        id: occi
+        type: OCCI
+        host: 'https://fedcloud-services.egi.cesga.es:11443'
+        proxy: 'file("/etc/im/pki/x509up_u0")'
+    eosc_flavors:
+    - &id034
+      default: true
+      description: Medium 4G
+      id: &id051 'default_flavour'
+      name: &id056 medium_4g
+      config: &id058 {memory: &id057 1024M, storage: 4G, cores: 1, type: medium_4g }
+    eosc_images:
+    - &id035
+      credentials: &id032
+        host: ''
+        user: &id059 'mso4sc'
+        password: &id060 'mso4sc'
+        public_key: &id061 ***
+        private_key: &id062 |
+          -----BEGIN RSA PRIVATE KEY-----
+          ***
+          -----END RSA PRIVATE KEY-----
+        private_key_password: ''
+      default: true
+      description: Centos 7
+      id: &id052 'https://fedcloud-services.egi.cesga.es:11443/117'
+      mpi: None
+      name: &id055 Centos-/
+      singularity: None
+    eosc_networks:
+    - &id036
+      cidr: 10.0.0.0/24
+      default: true
+      description: Default network for EOSC Hub
+      gateway: 10.0.0.1
+      id: &id053 default_network
+      name: default network
+      version: IPv4
+      config: &id054
+        outbound: True
+    eosc_volumes: None
+    wm_config: &id037
+      workload_manager: BASH
+
+eosc_image: *id035
+eosc_flavor: *id034
+eosc_network: *id036
+
+secondary_cloud_wm_config: *id037
+secondary_cloud_wm_credentials: *id032
+eosc_config: *id033
+secondary_cloud_image_name: *id055
+secondary_cloud_image_id: *id052
+secondary_cloud_image_user: *id059
+secondary_cloud_image_pass: *id060
+secondary_cloud_image_public: *id061
+secondary_cloud_image_private: *id062
+secondary_cloud_flavor_id: *id051
+secondary_cloud_flavor_name: *id056
+secondary_cloud_flavor_memory: *id057
+secondary_cloud_flavor_config: *id058
+secondary_cloud_network_id: *id053
+secondary_cloud_network_config: *id054
+
+################### Data Publish ##################
 ckan_input_resource:
-  config: &id001 {entrypoint: 'http://193.144.35.207:80', key: '[CHANGE]'}
+  config: &id001 {entrypoint: 'http://193.144.35.207:80', key: ***}
   dataset:
     author: Christophe Trophime
     author_email: christophe.trophime@lncmi.cnrs.fr
@@ -41,11 +322,11 @@ ckan_input_resource:
     relationships_as_subject: []
     resources:
     - {cache_last_updated: null, cache_url: null, created: '2018-09-04T13:40:36.438153',
-      description: Dataset from Gitlab Cesga, format: TAR, hash: '', id: bfaea07c-75b5-4104-a730-5fb1a1c25650,
-      last_modified: null, mimetype: application/x-tar, mimetype_inner: null, name: HL-31_H1.tgz,
+      description: Norne dataset, format: TAR, hash: '', id: bfaea07c-75b5-4104-a730-5fb1a1c25650,
+      last_modified: null, mimetype: application/x-tar, mimetype_inner: null, name: Norne.tgz,
       package_id: b80cafdd-6573-430d-9618-d385e7be278d, position: 0, resource_type: null,
       revision_id: b6fb4c45-db3b-4552-aa2d-c287deb7b76b, size: null, state: active,
-      url: 'https://gitlab.srv.cesga.es/trophime/hifimagnet-msoapps/raw/master/Examples/HL-31_H1.tgz',
+      url: 'https://gitlab.srv.cesga.es/atgeirr/OPM-public-testing-data/raw/master/norne.tgz',
       url_type: ''}
     revision_id: a7b9a544-eeeb-4514-9f5a-c46eb03a8140
     state: active
@@ -55,13 +336,14 @@ ckan_input_resource:
     url: ''
     version: ''
   resource: {cache_last_updated: null, cache_url: null, created: '2018-09-04T13:40:36.438153',
-    description: Dataset from Gitlab Cesga, format: TAR, hash: '', id: bfaea07c-75b5-4104-a730-5fb1a1c25650,
-    last_modified: null, mimetype: application/x-tar, mimetype_inner: null, name: HL-31_H1.tgz,
+    description: Norne dataset, format: TAR, hash: '', id: bfaea07c-75b5-4104-a730-5fb1a1c25650,
+    last_modified: null, mimetype: application/x-tar, mimetype_inner: null, name: Norne.tgz,
     package_id: b80cafdd-6573-430d-9618-d385e7be278d, position: 0, resource_type: null,
     revision_id: b6fb4c45-db3b-4552-aa2d-c287deb7b76b, size: null, state: active,
-    url: 'https://gitlab.srv.cesga.es/trophime/hifimagnet-msoapps/raw/master/Examples/HL-31_H1.tgz',
+    url: &id070 'https://gitlab.srv.cesga.es/atgeirr/OPM-public-testing-data/raw/master/norne.tgz',
     url_type: ''}
   type: ckan
+
 ckan_outputs_dataset:
   config: *id001
   dataset:
@@ -172,150 +454,23 @@ ckan_outputs_dataset:
     url: ''
     version: ''
   type: ckan
-cloud_flavor: '2'
-cloud_image: 53818d97-4d3c-4f6d-9525-b04e83331353
-cloud_network: 00da93b2-9192-45d0-b777-6359fe8246b7
-cloud_wm_config: &id007 {workload_manager: BASH}
-cloud_wm_credentials: &id002
-  host: ''
-  password: ''
-  private_key: ''
-  private_key_password: ''
-  tunnel: {host: 193.224.131.130, password: '[CHANGE]', user: '[CHANGE]'}
-  user: ubuntu
-hpc_wm_config: &id013 {country_tz: Europe/Madrid, workload_manager: SLURM}
-hpc_wm_credentials: &id008 {host: ft6.cesga.es, password: '', private_key: '[CHANGE]', private_key_password: '', user: otarijci}
-instance_id: test_'[CHANGE]'
-job_prefix: mso
-monitor_entrypoint: ''
-mpi_load_command: module load gcc/5.3.0 openmpi/1.10.2
-openstack_config: &id003
-  auth_url: http://193.224.131.130/identity
-  custom_configuration:
-    neutron_client: {endpoint_url: 'http://193.224.131.130:9696'}
-    nova_client: {bypass_url: 'http://193.224.131.130/compute/v2.1'}
-  logging:
-    groups: {cinder: 30, glance: 30, keystone: 30, neutron: 30, nova: 30}
-    loggers: {keystoneauth.session: 30}
-    use_cfy_logger: true
-  password: '[CHANGE]'
-  project_domain_name: default
-  project_name: admin
-  region: RegionOne
-  user_domain_name: Default
-  username: '[CHANGE]'
-openstack_flavor: &id004
-  default: true
-  description: Enough for most images
-  id: '2'
-  name: m1.small
-  resources: {memory: 2G, storage: 20G, vcpus: 1}
-openstack_image: &id005
-  credentials: *id002
-  default: true
-  description: Ubuntu LTS 16.04
-  id: 53818d97-4d3c-4f6d-9525-b04e83331353
-  mpi: None
-  name: Ubuntu 16.04
-  singularity: None
-  username: ubuntu
-openstack_network: &id006 {cidr: 10.0.0.0/24, default: true, description: Default
-    network for MSO4SC, gateway: 10.0.0.1, id: 00da93b2-9192-45d0-b777-6359fe8246b7,
-  name: mso4sc, version: IPv4}
-partition: &id010
-  default: true
-  description: Subset of nodes
-  name: thin-shared
-  properties: {cpus_per_node: 24, default_memory_per_cpu: 128M, max_memory_per_node: 512M,
-    max_nodes: 2, max_time: UNLIMITED, min_nodes: 0, shared: true, total_nodes: 2}
-partition_name: thin-shared
-primary_cloud:
-  definition:
-    openstack_config: *id003
-    openstack_flavors:
-    - *id004
-    - description: Smallest, minimal resources and not disk storage
-      id: '42'
-      name: m1.nano
-      resources: {memory: 64M, storage: 0G, vcpus: 1}
-    - description: Very few ram and not disk storage
-      id: '84'
-      name: m1.micro
-      resources: {memory: 128M, storage: 0G, vcpus: 1}
-    - description: Minimal storage, for low resources images
-      id: '1'
-      name: m1.tiny
-      resources: {memory: 512M, storage: 1G, vcpus: 1}
-    - description: For software with regular usage of ram and disk, and some parallelization
-        of processes.
-      id: '3'
-      name: m1.medium
-      resources: {memory: 4G, storage: 40G, vcpus: 2}
-    - description: For software with high usage of cpu, ram and disk.
-      id: '4'
-      name: m1.large
-      resources: {memory: 8G, storage: 80G, vcpus: 4}
-    - description: Bigest amount of resources
-      id: '5'
-      name: m1.xlarge
-      resources: {memory: 16G, storage: 160G, vcpus: 8}
-    openstack_images:
-    - *id005
-    - credentials:
-        host: ''
-        password: ''
-        private_key: ''
-        private_key_password: ''
-        tunnel: {host: 193.224.131.130, password: '[CHANGE]', user: '[CHANGE]'}
-        user: centos
-      description: CentOS 7
-      id: 3f483ff2-75e0-4ab8-aa4e-acb201b92153
-      mpi: None
-      name: CentOS-7-x86_64-GenericCloud-1802
-      singularity: None
-      username: centos
-    openstack_networks:
-    - *id006
-    openstack_volumes: None
-    wm_config: *id007
-  id: 11
-  infrastructure: SZE (OPENSTACK)
-  name: SZE
-  owner: 1
-primary_hpc:
-  definition:
-    credentials: *id008
-    local_volumes:
-    - {container_mount_point: /tmp, name: TEMP, path: /tmp}
-    mpi_versions:
-    - *id009
-    partitions:
-    - *id010
-    persistent_volumes:
-    - *id011
-    - {container_mount_point: /mnt, description: Big user files storage, name: LUSTRE,
-      path: $LUSTRE}
-    scratch_volume: {container_mount_point: /scratch, name: Scratch, path: /scratch}
-    singularity_versions:
-    - *id012
-    wm_config: *id013
-  id: 10
-  infrastructure: FTII (HPC)
-  name: FTII
-  owner: 1
-scratch_voulume_mount_point: /scratch
-singularity_image_filename: mso4sc-sregistry-latest.simg
-singularity_image_storage: $HOME
-singularity_image_uri: shub://sregistry.srv.cesga.es/mso4sc/sregistry:latest
-singularity_load_command: module load singularity/2.4.2
+
+input_url: *id070
+
+#################### Instance info ####################
+instance_id: test_181121T1400300
+
+####################### Optional ######################
+test_file: 'Test file
+
+  '
 test_bool: false
+test_int: 0
+test_float: 0.0
 test_complex_input:
   first_tag:
     first_first_tag: test1.1
     first_second_tag: {foo: bar}
   second_tag: test2.1
-test_file: 'Test file
-
-  '
-test_float: 0.0
-test_int: 0
+job_prefix: mso
+monitor_entrypoint: ''
