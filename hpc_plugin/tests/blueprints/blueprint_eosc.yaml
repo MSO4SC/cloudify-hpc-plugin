@@ -35,7 +35,7 @@ node_templates:
       monitor_period: 15
       skip_cleanup: true
       workdir_prefix: "single_singularity"
-      # simulate: True # Comment to test with real infrastructure
+      simulate: True # Comment to test with real infrastructure
       
   im_wm:
     type: hpc.nodes.WorkloadManager
@@ -46,7 +46,7 @@ node_templates:
       job_prefix: { get_input: job_prefix }
       workdir_prefix: "single_eosc"
       skip_cleanup: True
-      # simulate: True # Comment to test with real infrastructure
+      simulate: True # Comment to test with real infrastructure
     relationships:
     - type: wm_contained_in
       target: vitual_machine
@@ -106,7 +106,7 @@ node_templates:
     properties:
       config: { get_input: eosc_config }
       resource_id: vm_test
-      # simulate: True # Comment to test with real infrastructure
+      simulate: True # Comment to test with real infrastructure
     relationships:
     - type: depends_on_setting
       target: network
@@ -124,7 +124,7 @@ node_templates:
       config: { get_input: secondary_cloud_network_config }
       use_external_resource: true
       resource_id: { get_input: secondary_cloud_network_id }
-      # simulate: True # Comment to test with real infrastructure
+      simulate: True # Comment to test with real infrastructure
 
   image:
     type: im.nodes.Image
@@ -139,7 +139,7 @@ node_templates:
         private_key: { get_input: secondary_cloud_image_private }
       use_external_resource: true
       resource_id: default_image
-      # simulate: True # Comment to test with real infrastructure
+      simulate: True # Comment to test with real infrastructure
 
   flavour:
     type: im.nodes.Flavour
@@ -148,7 +148,7 @@ node_templates:
       config: { get_input: secondary_cloud_flavor_config }
       use_external_resource: true
       resource_id: { get_input: secondary_cloud_flavor_id }
-      # simulate: True # Comment to test with real infrastructure
+      simulate: True # Comment to test with real infrastructure
 
   software:
     type: im.nodes.Software
@@ -160,7 +160,7 @@ node_templates:
           ln -s /usr/lib64/openmpi/bin/mpirun /usr/bin/mpirun
       use_external_resource: true
       resource_id: default_software
-      # simulate: True # Comment to test with real infrastructure
+      simulate: True # Comment to test with real infrastructure
 
 outputs:
   single_job_name:
