@@ -60,7 +60,7 @@ node_templates:
       credentials: { get_input: hpc_wm_credentials }
       external_monitor_entrypoint: { get_input: monitor_entrypoint }
       job_prefix: { get_input: job_prefix }
-      base_dir: { get_input: hpc_base_dir }
+      base_dir: { get_input: hpc_base_dir_path }
       monitor_period: 15
       skip_cleanup: true
       workdir_prefix: "single_singularity"
@@ -94,7 +94,7 @@ node_templates:
         volumes:
         - { get_input: scratch_voulume_mount_point }
         - { get_input: singularity_mount_point }
-        command: 'flow $CURRENT_WORKDIR/run_generated.param output_dir=$CURRENT_WORKDIR/simoutput'
+        command: 'flow --parameter-file=$CURRENT_WORKDIR/run_generated.param --output-dir=$CURRENT_WORKDIR/simoutput'
         nodes: { get_input: parallel_nodes }
         tasks: { get_input: parallel_tasks }
         tasks_per_node: { get_input: parallel_tasks_per_node }
@@ -103,12 +103,17 @@ node_templates:
         - 'tar czvf output.tgz $CURRENT_WORKDIR/simoutput '
       deployment:
         bootstrap: 'scripts/singularity_bootstrap_run-flow-generic.sh'
-        revert: 'scripts/singularity_revert_run-flow-generic.sh'
+        # revert: 'scripts/singularity_revert_run-flow-generic.sh'
         inputs:
         - { get_input: input_url }
         - { get_input: singularity_image_uri_opm }
         - *singularity_image_filename
       skip_cleanup: True
+      publish:
+      - dataset: { get_input: ckan_outputs_dataset }
+        file_path: "$CURRENT_WORKDIR/output.tgz"
+        name: opm-flow-test
+        description: OPM Flow test
     relationships:
     - type: job_managed_by_wm
       target: hpc_wm
@@ -120,11 +125,6 @@ node_templates:
         type: 'SHELL'
         command: 'touch processed_sim.out'
       skip_cleanup: True
-      publish:
-      - dataset: { get_input: ckan_outputs_dataset }
-        file_path: "$CURRENT_WORKDIR/processed_sim.out"
-        name: "processed_outputs"
-        description: "Processed outputs"
     relationships:
       - type: job_managed_by_wm
         target: im_wm

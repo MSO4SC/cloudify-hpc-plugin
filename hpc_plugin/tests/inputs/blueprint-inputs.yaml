@@ -85,12 +85,13 @@ app_singuarity_image:
   name: SRegistry example
   uri: &id017 'shub://sregistry.srv.cesga.es/mso4sc/sregistry:latest'
 
-hpc_base_dir: *id019
+hpc_base_dir: *id011
 app_mpi_version: *id009
 app_singularity_version: *id012
 app_singularity_storage: *id011
 partition: *id010
 
+hpc_base_dir_path: *id019
 hpc_wm_config: *id013
 hpc_wm_credentials: *id008
 mpi_load_command: *id015

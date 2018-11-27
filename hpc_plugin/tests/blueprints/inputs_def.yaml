@@ -83,6 +83,9 @@ inputs:
           REPLACE: primary_hpc.definition.partitions
 
   # Won't be rendered, their value is a match with other inputs
+  hpc_base_dir_path:
+    default:
+      REPLACE: hpc_base_dir.path
   hpc_wm_config:
     default:
       REPLACE: primary_hpc.definition.wm_config
@@ -301,7 +304,7 @@ inputs:
   # Won't be rendered
   input_url:
     default:
-      REPLACE: ckan_input_resource.dataset.resource.url
+      REPLACE: ckan_input_resource.resource.url
   
   #################### Instance info ####################
   instance_id:
