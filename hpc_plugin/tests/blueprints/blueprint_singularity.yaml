@@ -26,7 +26,8 @@ imports:
 node_templates:
     hpc_wm:
         type: hpc.nodes.WorkloadManager
-        properties:config: { get_input: hpc_wm_config }
+        properties:
+            config: { get_input: hpc_wm_config }
             credentials: { get_input: hpc_wm_credentials }
             external_monitor_entrypoint: { get_input: monitor_entrypoint }
             job_prefix: { get_input: job_prefix }
