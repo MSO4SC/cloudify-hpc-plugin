@@ -8,7 +8,7 @@ plugins:
         # URL to archive containing the plugin or name of directory containing
         # the plugin if it is included in the the blueprint directory under the
         # "plugins" directory.
-        source: https://github.com/MSO4SC/cloudify-hpc-plugin/archive/canary.zip
+        source: https://github.com/MSO4SC/cloudify-hpc-plugin/archive/master.zip
         package_name: cloudify-hpc-plugin
         package_version: '2.0.0'
 
