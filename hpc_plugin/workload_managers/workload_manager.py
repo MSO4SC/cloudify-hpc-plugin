@@ -277,7 +277,7 @@ class WorkloadManager(object):
             call,
             workdir=workdir)
 
-    def create_new_workdir(self, ssh_client, base_dir, base_name):
+    def create_new_workdir(self, ssh_client, base_dir, base_name, logger):
         workdir = self._get_time_name(base_name)
 
         # we make sure that the workdir does not exists
@@ -290,6 +290,8 @@ class WorkloadManager(object):
                 "mkdir -p " + base_dir + "/" + workdir):
             return full_path
         else:
+            logger.warning("Failed to create '" + base_dir +
+                           "/" + workdir + "' directory.")
             return None
 
 #   ################ ABSTRACT METHODS ################
@@ -389,8 +391,6 @@ class WorkloadManager(object):
                 "failed to create script: call '" + create_call +
                 "', exit code " + str(exit_code))
             return False
-
-        return True
 
     def _get_random_name(self, base_name):
         """ Get a random name with a prefix """

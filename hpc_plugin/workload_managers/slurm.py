@@ -223,6 +223,8 @@ class Slurm(WorkloadManager):
         states = {}
         if exit_code == 0:
             states = self._parse_states(output, logger)
+        else:
+            logger.warning("Failed to get states")
 
         return states
 
