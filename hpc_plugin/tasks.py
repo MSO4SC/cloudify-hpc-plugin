@@ -114,7 +114,7 @@ def configure_execution(
         if workdir_prefix is "":
             prefix = ctx.blueprint.id
 
-        workdir = wm.create_new_workdir(client, base_dir, prefix)
+        workdir = wm.create_new_workdir(client, base_dir, prefix, ctx.logger)
         client.close_connection()
         if workdir is None:
             raise NonRecoverableError(
@@ -303,9 +303,9 @@ def preconfigure_job(
 
 @operation
 def bootstrap_job(
-            deployment,
-            skip_cleanup,
-            **kwarsgs):  # pylint: disable=W0613
+        deployment,
+        skip_cleanup,
+        **kwarsgs):  # pylint: disable=W0613
     """Bootstrap a job with a script that receives SSH credentials as imput"""
     if not deployment:
         return
@@ -320,23 +320,24 @@ def bootstrap_job(
         name = "bootstrap_" + ctx.instance.id + ".sh"
         wm_type = ctx.instance.runtime_properties['workload_manager']
 
-        is_bootstraped = deploy_job(
-            deployment['bootstrap'],
-            inputs,
-            credentials,
-            wm_type,
-            workdir,
-            name,
-            ctx.logger,
-            skip_cleanup)
+        if deploy_job(
+                deployment['bootstrap'],
+                inputs,
+                credentials,
+                wm_type,
+                workdir,
+                name,
+                ctx.logger,
+                skip_cleanup):
+            ctx.logger.info('..job bootstraped')
+        else:
+            ctx.logger.error('Job not bootstraped')
+            raise NonRecoverableError("Bootstrap failed")
     else:
-        is_bootstraped = True
-
-    if is_bootstraped:
-        ctx.logger.info('..job bootstraped')
-    else:
-        ctx.logger.error('Job not bootstraped.')
-        raise NonRecoverableError("Bootstrap failed")
+        if 'bootstrap' in deployment:
+            ctx.logger.waring('..bootstrap simulated')
+        else:
+            ctx.logger.info('..nothing to bootstrap')
 
 
 @operation
@@ -356,25 +357,27 @@ def revert_job(deployment, skip_cleanup, **kwarsgs):  # pylint: disable=W0613
             name = "revert_" + ctx.instance.id + ".sh"
             wm_type = ctx.instance.runtime_properties['workload_manager']
 
-            is_reverted = deploy_job(
-                deployment['revert'],
-                inputs,
-                credentials,
-                wm_type,
-                workdir,
-                name,
-                ctx.logger,
-                skip_cleanup)
+            if deploy_job(
+                    deployment['revert'],
+                    inputs,
+                    credentials,
+                    wm_type,
+                    workdir,
+                    name,
+                    ctx.logger,
+                    skip_cleanup):
+                ctx.logger.info('..job reverted')
+            else:
+                ctx.logger.error('Job not reverted')
+                raise NonRecoverableError("Revert failed")
         else:
-            is_reverted = True
-
-        if is_reverted:
-            ctx.logger.info('..job reverted')
-        else:
-            ctx.logger.error('Job could not be reverted.')
+            if 'revert' in deployment:
+                ctx.logger.waring('..revert simulated')
+            else:
+                ctx.logger.info('..nothing to revert')
     except KeyError:
         # The job wasn't configured properly, so there was no bootstrap
-        ctx.logger.warning('Job was not reverted as it was not configured.')
+        ctx.logger.warning('Job was not reverted as it was not configured')
 
 
 def deploy_job(script,
@@ -385,7 +388,7 @@ def deploy_job(script,
                name,
                logger,
                skip_cleanup):  # pylint: disable=W0613
-    """ Exec a eployment job script that receives SSH credentials as input """
+    """ Exec a deployment job script that receives SSH credentials as input """
 
     wm = WorkloadManager.factory(wm_type)
     if not wm:
@@ -425,6 +428,7 @@ def deploy_job(script,
     client.close_connection()
 
     return exit_code is 0
+
 
 @operation
 def send_job(job_options, **kwargs):  # pylint: disable=W0613
@@ -466,10 +470,10 @@ def send_job(job_options, **kwargs):  # pylint: disable=W0613
     if is_submitted:
         ctx.logger.info('Job ' + name + ' (' + ctx.instance.id + ') sent.')
     else:
-        ctx.logger.error('Job ' + name + ' (' + ctx.instance.id +
-                         ') not sent.')
-        raise NonRecoverableError('Job ' + name + ' (' + ctx.instance.id +
-                                  ') not sent.')
+        ctx.logger.error(
+            'Job ' + name + ' (' + ctx.instance.id + ') not sent.')
+        raise NonRecoverableError(
+            'Job ' + name + ' (' + ctx.instance.id + ') not sent.')
 
     ctx.instance.runtime_properties['job_name'] = name
 
