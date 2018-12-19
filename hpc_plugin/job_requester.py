@@ -17,6 +17,7 @@
 
 import time
 import requests
+from threading import Lock
 from workload_managers.workload_manager import (WorkloadManager,
                                                 state_int_to_str)
 
@@ -25,6 +26,7 @@ class JobRequester(object):
     """ Safely gets the jobs status when requested """
     class __JobRequester(object):
         _last_time = {}
+        _lock = Lock()
 
         def request(self, monitor_jobs, logger):
             """ Retrieves the status of every job"""
@@ -100,6 +102,7 @@ class JobRequester(object):
             for name in names:  # TODO cancel those jobs
                 states[name] = 'FAILED'
             return states
+
     instance = None
 
     def __init__(self):
