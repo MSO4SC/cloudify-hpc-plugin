@@ -10,7 +10,7 @@ plugins:
         # "plugins" directory.
         source: https://github.com/MSO4SC/cloudify-hpc-plugin/archive/canary.zip
         package_name: cloudify-hpc-plugin
-        package_version: '2.1.0'
+        package_version: '2.1.1'
 
 workflows:
     run_jobs:
