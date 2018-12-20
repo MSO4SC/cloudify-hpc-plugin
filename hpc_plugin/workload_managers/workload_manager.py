@@ -386,11 +386,14 @@ class WorkloadManager(object):
             create_call,
             workdir=workdir,
             wait_result=True)
+
         if exit_code is not 0:
             logger.error(
                 "failed to create script: call '" + create_call +
                 "', exit code " + str(exit_code))
             return False
+
+        return True
 
     def _get_random_name(self, base_name):
         """ Get a random name with a prefix """

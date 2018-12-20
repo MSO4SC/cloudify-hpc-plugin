@@ -154,7 +154,7 @@ def cleanup_execution(
         if 'credentials' in ctx.instance.runtime_properties:
             credentials = ctx.instance.runtime_properties['credentials']
         client = SshClient(credentials)
-        _, exit_code = client.execute_shell_command(
+        client.execute_shell_command(
             'rm -r ' + workdir,
             wait_result=True)
         client.close_connection()
@@ -398,6 +398,7 @@ def deploy_job(script,
             "' not supported.")
 
     # Execute the script and manage the output
+    success = False
     client = SshClient(credentials)
     if wm._create_shell_script(client,
                                name,
@@ -419,6 +420,8 @@ def deploy_job(script,
             logger.warning(
                 "failed to deploy job: call '" + call + "', exit code " +
                 str(exit_code))
+        else:
+            success = True
 
         if not skip_cleanup:
             if not client.execute_shell_command(
@@ -428,7 +431,7 @@ def deploy_job(script,
 
     client.close_connection()
 
-    return exit_code is 0
+    return success
 
 
 @operation
