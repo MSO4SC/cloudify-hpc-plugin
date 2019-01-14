@@ -5,9 +5,9 @@ test:
   - pip install tox
   - tox -e flake8
   - tox -e py27
-only:
-  refs:
-  - branches
+  only:
+    refs:
+    - branches
 
 #staging:
 #  type: deploy
