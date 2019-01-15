@@ -90,15 +90,16 @@ class TestSlurm(unittest.TestCase):
         self.assertIn('call', response)
 
         call = response['call']
-        self.assertEqual(call, "nohup srun -J 'test' " +
-                               "-e test.err -o test.out " +
-                               "-t 00:05:00 cmd &")
+        self.assertEqual(call, 'nohup sh -c "srun -J \'test\' ' +
+                               '-e test.err -o test.out ' +
+                               '-t 00:05:00 cmd; " &')
 
     def test_complete_srun_call(self):
         """ Complete srun command. """
         response = self.wm._build_job_submission_call('test',
-                                                      {'modules': ['mod1',
-                                                                   'mod2'],
+                                                      {'pre': [
+                                                          'module load mod1',
+                                                          './some_script.sh'],
                                                        'type': 'SRUN',
                                                        'command': 'cmd',
                                                        'stderr_file':
@@ -116,27 +117,33 @@ class TestSlurm(unittest.TestCase):
                                                        'mail_user':
                                                        'user@email.com',
                                                        'mail_type': 'ALL',
-                                                       'max_time': '00:05:00'},
+                                                       'max_time': '00:05:00',
+                                                       'post': [
+                                                          './cleanup1.sh',
+                                                          './cleanup2.sh']},
                                                       self.logger)
         self.assertNotIn('error', response)
         self.assertIn('call', response)
 
         call = response['call']
-        self.assertEqual(call, "module load mod1 mod2; "
-                               "nohup srun -J 'test'"
-                               " -e stderr.out"
-                               " -o stdout.out"
-                               " -t 00:05:00"
-                               " -p thinnodes"
-                               " -N 4"
-                               " -n 96"
-                               " --ntasks-per-node=24"
-                               " --mem=4GB"
-                               " --reservation=mso4sc"
-                               " --qos=qos"
-                               " --mail-user=user@email.com"
-                               " --mail-type=ALL"
-                               " cmd &")
+        self.assertEqual(call, 'nohup sh -c "'
+                               'module load mod1; ./some_script.sh; '
+                               'srun -J \'test\''
+                               ' -e stderr.out'
+                               ' -o stdout.out'
+                               ' -t 00:05:00'
+                               ' -p thinnodes'
+                               ' -N 4'
+                               ' -n 96'
+                               ' --ntasks-per-node=24'
+                               ' --mem=4GB'
+                               ' --reservation=mso4sc'
+                               ' --qos=qos'
+                               ' --mail-user=user@email.com'
+                               ' --mail-type=ALL'
+                               ' cmd; '
+                               './cleanup1.sh; ./cleanup2.sh; '
+                               '" &')
 
     def test_basic_sbatch_call(self):
         """ Basic sbatch command. """
@@ -149,13 +156,14 @@ class TestSlurm(unittest.TestCase):
 
         call = response['call']
         self.assertEqual(call, "sbatch --parsable -J 'test' " +
-                               "-e test.err -o test.out cmd")
+                               "-e test.err -o test.out cmd; ")
 
     def test_complete_sbatch_call(self):
         """ Complete sbatch command. """
         response = self.wm._build_job_submission_call('test',
-                                                      {'modules': ['mod1',
-                                                                   'mod2'],
+                                                      {'pre': [
+                                                          'module load mod1',
+                                                          './some_script.sh'],
                                                        'type': 'SBATCH',
                                                        'command': 'cmd',
                                                        'stderr_file':
@@ -173,13 +181,16 @@ class TestSlurm(unittest.TestCase):
                                                        'mail_user':
                                                        'user@email.com',
                                                        'mail_type': 'ALL',
-                                                       'max_time': '00:05:00'},
+                                                       'max_time': '00:05:00',
+                                                       'post': [
+                                                          './cleanup1.sh',
+                                                          './cleanup2.sh']},
                                                       self.logger)
         self.assertNotIn('error', response)
         self.assertIn('call', response)
 
         call = response['call']
-        self.assertEqual(call, "module load mod1 mod2; "
+        self.assertEqual(call, "module load mod1; ./some_script.sh; "
                                "sbatch --parsable -J 'test'"
                                " -e stderr.out"
                                " -o stdout.out"
@@ -193,7 +204,8 @@ class TestSlurm(unittest.TestCase):
                                " --qos=qos"
                                " --mail-user=user@email.com"
                                " --mail-type=ALL"
-                               " cmd")
+                               " cmd; "
+                               "./cleanup1.sh; ./cleanup2.sh; ")
 
     def test_random_name(self):
         """ Random name formation. """

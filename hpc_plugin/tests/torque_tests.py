@@ -89,50 +89,62 @@ class TestTorque(unittest.TestCase):
         """ Complete batch call. """
         response = self.wm._build_job_submission_call(
             'test',
-            dict(modules=['mod1', 'mod2'],
-                 type='SBATCH',
-                 command='cmd',
-                 partition='thinnodes',
-                 nodes=4,
-                 tasks=96,
-                 tasks_per_node=24,
-                 max_time='00:05:00'),
+            dict(pre=[
+                'module load mod1',
+                './some_script.sh'],
+                type='SBATCH',
+                command='cmd',
+                partition='thinnodes',
+                nodes=4,
+                tasks=96,
+                tasks_per_node=24,
+                max_time='00:05:00',
+                post=[
+                './cleanup1.sh',
+                './cleanup2.sh']),
             self.logger)
         self.assertNotIn('error', response)
         self.assertIn('call', response)
 
         call = response['call']
-        self.assertEqual(call, "module load mod1 mod2; "
+        self.assertEqual(call, "module load mod1; ./some_script.sh; "
                                "qsub -V"
                                " -N test"
                                " -l nodes=4:ppn=24,walltime=00:05:00"
-                               " cmd")
+                               " cmd; "
+                               "./cleanup1.sh; ./cleanup2.sh; ")
 
     def test_batch_call_with_job_array(self):
-        """ Complete batch call. """
+        """ Complete batch array call. """
         response = self.wm._build_job_submission_call(
             'test',
-            dict(modules=['mod1', 'mod2'],
-                 type='SBATCH',
-                 command='cmd',
-                 partition='thinnodes',
-                 nodes=4,
-                 tasks=96,
-                 tasks_per_node=24,
-                 max_time='00:05:00',
-                 scale=10,
-                 scale_max_in_parallel=2),
+            dict(pre=[
+                'module load mod1',
+                './some_script.sh'],
+                type='SBATCH',
+                command='cmd',
+                partition='thinnodes',
+                nodes=4,
+                tasks=96,
+                tasks_per_node=24,
+                max_time='00:05:00',
+                scale=10,
+                scale_max_in_parallel=2,
+                post=[
+                './cleanup1.sh',
+                './cleanup2.sh']),
             self.logger)
         self.assertNotIn('error', response)
         self.assertIn('call', response)
 
         call = response['call']
-        self.assertEqual(call, "module load mod1 mod2; "
+        self.assertEqual(call, "module load mod1; ./some_script.sh; "
                                "qsub -V"
                                " -N test"
                                " -l nodes=4:ppn=24,walltime=00:05:00"
                                " -J 0-9%2"
-                               " cmd")
+                               " cmd; "
+                               "./cleanup1.sh; ./cleanup2.sh; ")
         scale_env_mapping_call = response['scale_env_mapping_call']
         self.assertEqual(scale_env_mapping_call,
                          "sed -i '/# DYNAMIC VARIABLES/a\\"

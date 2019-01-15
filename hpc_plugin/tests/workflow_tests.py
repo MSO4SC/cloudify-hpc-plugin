@@ -60,7 +60,7 @@ class TestPlugin(unittest.TestCase):
                                        'scripts')],
                    inputs='set_inputs')
     def test_srun(self, cfy_local):
-        """ Install & Run workflows. """
+        """ Single SRUN Job Blueprint """
         cfy_local.execute('install', task_retries=0)
         cfy_local.execute('run_jobs', task_retries=0)
         cfy_local.execute('uninstall', task_retries=0)
@@ -91,7 +91,7 @@ class TestPlugin(unittest.TestCase):
                                        'scripts')],
                    inputs='set_inputs')
     def test_sbatch(self, cfy_local):
-        """ Install & Run workflows. """
+        """ Single SBATCH Job Blueprint """
         cfy_local.execute('install', task_retries=0)
         cfy_local.execute('run_jobs', task_retries=0)
         cfy_local.execute('uninstall', task_retries=0)
@@ -122,7 +122,7 @@ class TestPlugin(unittest.TestCase):
                                        'scripts')],
                    inputs='set_inputs')
     def test_sbatch_output(self, cfy_local):
-        """ Install & Run workflows. """
+        """ Single SBATCH Output Job Blueprint """
         cfy_local.execute('install', task_retries=0)
         cfy_local.execute('run_jobs', task_retries=0)
         cfy_local.execute('uninstall', task_retries=0)
@@ -153,7 +153,7 @@ class TestPlugin(unittest.TestCase):
                                        'scripts')],
                    inputs='set_inputs')
     def test_sbatch_scale(self, cfy_local):
-        """ Install & Run workflows. """
+        """ SBATCH Scale Job Blueprint """
         cfy_local.execute('install', task_retries=0)
         cfy_local.execute('run_jobs', task_retries=0)
         cfy_local.execute('uninstall', task_retries=0)
@@ -184,7 +184,7 @@ class TestPlugin(unittest.TestCase):
                                        'scripts')],
                    inputs='set_inputs')
     def test_singularity(self, cfy_local):
-        """ Install & Run workflows. """
+        """ Single Singularity Job Blueprint """
         cfy_local.execute('install', task_retries=0)
         cfy_local.execute('run_jobs', task_retries=0)
         cfy_local.execute('uninstall', task_retries=0)
@@ -216,7 +216,7 @@ class TestPlugin(unittest.TestCase):
                                        'scripts')],
                    inputs='set_inputs')
     def test_singularity_scale(self, cfy_local):
-        """ Install & Run workflows. """
+        """ Single Singularity Sacale Job Blueprint """
         cfy_local.execute('install', task_retries=0)
         cfy_local.execute('run_jobs', task_retries=0)
         cfy_local.execute('uninstall', task_retries=0)
@@ -261,7 +261,7 @@ class TestPlugin(unittest.TestCase):
                                        'scripts')],
                    inputs='set_inputs')
     def test_four(self, cfy_local):
-        """ Install & Run workflows. """
+        """ Four Jobs Blueprint """
         cfy_local.execute('install', task_retries=0)
         cfy_local.execute('run_jobs', task_retries=0)
         cfy_local.execute('uninstall', task_retries=0)
@@ -306,7 +306,7 @@ class TestPlugin(unittest.TestCase):
                                        'scripts')],
                    inputs='set_inputs')
     def test_four_scale(self, cfy_local):
-        """ Install & Run workflows. """
+        """ Four Scale Jobs Blueprint """
         cfy_local.execute('install', task_retries=0)
         cfy_local.execute('run_jobs', task_retries=0)
         cfy_local.execute('uninstall', task_retries=0)
@@ -338,7 +338,7 @@ class TestPlugin(unittest.TestCase):
     #                                    'scripts')],
     #                inputs='set_inputs')
     # def test_openstack(self, cfy_local):
-    #     """ Install & Run workflows. """
+    #     """ Openstack Blueprint """
     #     cfy_local.execute('install', task_retries=5)
     #     cfy_local.execute('run_jobs', task_retries=0)
     #     cfy_local.execute('uninstall', task_retries=0)
@@ -369,7 +369,7 @@ class TestPlugin(unittest.TestCase):
                                        'scripts')],
                    inputs='set_inputs')
     def test_eosc(self, cfy_local):
-        """ Install & Run workflows. """
+        """ EOSC Blueprint """
         cfy_local.execute('install', task_retries=0)
         cfy_local.execute('run_jobs', task_retries=0)
         cfy_local.execute('uninstall', task_retries=0)
@@ -409,7 +409,7 @@ class TestPlugin(unittest.TestCase):
                          'scripts')],
                    inputs='set_inputs')
     def test_eosc_opm(self, cfy_local):
-        """ Install & Run workflows. """
+        """ EOSC & OPM Blueprint """
         cfy_local.execute('install', task_retries=0)
         cfy_local.execute('run_jobs', task_retries=0)
         cfy_local.execute('uninstall', task_retries=0)

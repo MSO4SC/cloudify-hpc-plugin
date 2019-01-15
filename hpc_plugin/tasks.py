@@ -335,7 +335,7 @@ def bootstrap_job(
             raise NonRecoverableError("Bootstrap failed")
     else:
         if 'bootstrap' in deployment:
-            ctx.logger.waring('..bootstrap simulated')
+            ctx.logger.warning('..bootstrap simulated')
         else:
             ctx.logger.info('..nothing to bootstrap')
 
@@ -372,7 +372,7 @@ def revert_job(deployment, skip_cleanup, **kwarsgs):  # pylint: disable=W0613
                 raise NonRecoverableError("Revert failed")
         else:
             if 'revert' in deployment:
-                ctx.logger.waring('..revert simulated')
+                ctx.logger.warning('..revert simulated')
             else:
                 ctx.logger.info('..nothing to revert')
     except KeyError:
