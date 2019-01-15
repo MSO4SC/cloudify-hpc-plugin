@@ -8,7 +8,7 @@ primary_hpc:
   definition:
     credentials: &id008
       host: ft6.cesga.es
-      user: ***
+      user: "***"
       password: ''
       private_key: |
         -----BEGIN RSA PRIVATE KEY-----
@@ -118,12 +118,12 @@ primary_cloud:
         groups: {cinder: 30, glance: 30, keystone: 30, neutron: 30, nova: 30}
         loggers: {keystoneauth.session: 30}
         use_cfy_logger: true
-      password: ***
+      password: "***"
       project_domain_name: default
-      project_name: ***
+      project_name: "***"
       region: RegionOne
       user_domain_name: Default
-      username: ***
+      username: "***"
     openstack_flavors:
     - &id004
       default: true
@@ -163,7 +163,7 @@ primary_cloud:
         password: ''
         private_key: ''
         private_key_password: ''
-        tunnel: {host: 193.224.131.130, password: ***, user: ***}
+        tunnel: {host: 193.224.131.130, password: "***", user: "***"}
         user: ubuntu
       default: true
       description: Ubuntu LTS 16.04
@@ -177,7 +177,7 @@ primary_cloud:
         password: ''
         private_key: ''
         private_key_password: ''
-        tunnel: {host: 193.224.131.130, password: ***, user: ***}
+        tunnel: {host: 193.224.131.130, password: "***", user: "***"}
         user: centos
       description: CentOS 7
       id: 3f483ff2-75e0-4ab8-aa4e-acb201b92153
@@ -220,8 +220,8 @@ secondary_cloud:
       id: im
       host: 'http://im.srv.cesga.es:8800'
       type: InfrastructureManager
-      user: ***
-      pass: ***
+      user: "***"
+      pass: "***"
       endpoint:
         id: occi
         type: OCCI
@@ -240,7 +240,7 @@ secondary_cloud:
         host: ''
         user: &id059 'mso4sc'
         password: &id060 'mso4sc'
-        public_key: &id061 ***
+        public_key: &id061 "***"
         private_key: &id062 |
           -----BEGIN RSA PRIVATE KEY-----
           ***
@@ -289,7 +289,7 @@ secondary_cloud_network_config: *id054
 
 ################### Data Publish ##################
 ckan_input_resource:
-  config: &id001 {entrypoint: 'http://193.144.35.207:80', key: ***}
+  config: &id001 {entrypoint: 'http://193.144.35.207:80', key: "***"}
   dataset:
     author: Christophe Trophime
     author_email: christophe.trophime@lncmi.cnrs.fr
