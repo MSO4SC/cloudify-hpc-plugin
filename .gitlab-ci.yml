@@ -37,7 +37,7 @@ create_wagon:
   image: centos:7
   script:
   - yum install -y -q zip
-  - zip -r hpc_plugin.zip .
+  - DIR=${PWD##*/} && cd .. && zip -r $DIR/hpc_plugin.zip $DIR -x $DIR/.\* && cd $DIR
   - yum install -y -q epel-release
   - yum install -y -q python python-pip
   - pip install -q wagon==0.6.1
