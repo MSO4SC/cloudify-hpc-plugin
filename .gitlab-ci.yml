@@ -1,7 +1,7 @@
-image: python:2.7
-
 stages:
   - test
+  - package
+#  - deploy
 
 # Change pip's cache directory to be inside the project directory since we can
 # only cache local items.
@@ -16,43 +16,42 @@ variables:
 cache:
   paths:
     - .cache/pip
-    - venv/
-
-before_script:
-  - python -V               # Print out python version for debugging
-  - pip install virtualenv
-  - virtualenv venv
-  - source venv/bin/activate
 
 flake8_linter:
   stage: test
+  image: python:2.7
   script:
   - pip install tox flake8  # you can also use tox
   - tox -e flake8
 
 unittests:
   stage: test
+  image: python:2.7
   script:
   - pip install tox
   - tox -e py27
 
-# run:
-#   script:
-#   - python setup.py bdist_wheel
-#   # an alternative approach is to install and run:
-#   - pip install dist/*
-#   # run the command here
-#   artifacts:
-#     paths:
-#     - dist/*.whl
-
-# pages:
-#   script:
-#   - pip install sphinx sphinx-rtd-theme
-#   - cd doc ; make html
-#   - mv build/html/ ../public/
-#   artifacts:
-#     paths:
-#     - public
-#   only:
-#   - master
+create_wagon:
+  stage: package
+  image: centos:7
+  dependencies:
+  - $CI_COMMIT_REF_NAME
+  script:
+  - yum install -y -q zip
+  - zip -r hpc_plugin.zip .
+  - yum install -y -q epel-release
+  - yum install -y -q python python-pip
+  - pip install -q wagon==0.6.1
+  - wagon create hpc_plugin.zip -a '--no-cache-dir -c constraints.txt'
+  environment:
+    name: $CI_COMMIT_REF_NAME
+    url: http://portal.mso4sc.com
+  artifacts:
+    name: "$CI_COMMIT_REF_NAME-package"
+    paths:
+    - "*.wgn"
+    expire_in: 1 hour
+  only:
+    - staging
+    - canary
+    - master
