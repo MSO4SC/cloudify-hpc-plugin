@@ -59,7 +59,7 @@ deploy:
   stage: deploy
   image: centos:7
   dependencies:
-  - $CI_COMMIT_REF_NAME-package
+  - package
   script:
   - yum install -y -q epel-release
   - yum install -y -q python python-pip
