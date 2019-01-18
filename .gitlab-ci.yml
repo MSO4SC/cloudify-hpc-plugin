@@ -1,7 +1,7 @@
 stages:
   - test
   - package
-#  - deploy
+  - deploy
 
 # Change pip's cache directory to be inside the project directory since we can
 # only cache local items.
@@ -32,7 +32,7 @@ unittests:
   - pip install tox
   - tox -e py27
 
-create_wagon:
+package:
   stage: package
   image: centos:7
   script:
@@ -49,7 +49,32 @@ create_wagon:
     name: "$CI_COMMIT_REF_NAME-package"
     paths:
     - "*.wgn"
-    expire_in: 1 hour
+    expire_in: 1 week
+  only:
+    - staging
+    - canary
+    - master
+
+deploy:
+  stage: deploy
+  image: centos:7
+  dependencies:
+  - $CI_COMMIT_REF_NAME-package
+  script:
+  - yum install -y -q epel-release
+  - yum install -y -q python python-pip
+  - curl -L -O http://repository.cloudifysource.org/cloudify/18.10.4/community-release/cloudify-cli-community-18.10.4.rpm
+  - rpm -i cloudify-cli-community-18.10.4.rpm
+  - cfy profile use $ORCHESTRATOR_HOST -t default_tenant -u $ORCHESTRATOR_ADMIN_USER -p $ORCHESTRATOR_ADMIN_PASSWD
+  - cfy plugins upload *.wgn -y plugin.yaml -t default_tenant
+  environment:
+    name: $CI_COMMIT_REF_NAME
+    url: http://portal.mso4sc.com
+  artifacts:
+    name: "$CI_COMMIT_REF_NAME-package"
+    paths:
+    - "*.wgn"
+    expire_in: 1 week
   only:
     - staging
     - canary
