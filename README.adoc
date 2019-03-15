@@ -42,12 +42,9 @@ endif::[]
 :uri-grafana: https://grafana.com/
 :uri-grafana-mso4sc-dashboard: https://github.com/MSO4SC/MSOMonitor/blob/master/grafana/MSO4SC.json
 :uri-monitor-compose: https://github.com/MSO4SC/MSOMonitor/blob/master/docker-compose.yml
+:uri-original-repo: https://github.com/MSO4SC/cloudify-hpc-plugin
 
-
-
-ifdef::status[]
-image:https://img.shields.io/travis/MSO4SC/cloudify-hpc-plugin/master.svg[Build Status (Travis CI), link={uri-ci-travis}]
-endif::[]
+NOTE: Originally developed under the H2020 project {uri-mso4sc}[MSO4SC]: {uri-original-repo}
 
 A HPC plugin for {uri-cloudify}[Cloudify] that enables it to manage HPC resources in one or more infrastructures. The currently supported resource types are described below.
 
